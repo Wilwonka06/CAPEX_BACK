@@ -1,12 +1,13 @@
+require('dotenv').config();
 const express = require('express');
-const ejemploRoutes = require('./routes/ejemploRoutes');
+const { connectDB } = require('./config/database');
 
 const app = express();
-
-// Middlewares
 app.use(express.json());
 
-// Rutas
-app.use('/api', ejemploRoutes);
+// Conexión a MySQL
+connectDB();
 
-module.exports = app;
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`El servidor está corriendo en el puerto: ${process.env.PORT || 3000}`);
+});
