@@ -8,6 +8,9 @@ app.use(express.json());
 // Conexión a MySQL
 connectDB();
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`El servidor está corriendo en el puerto: ${process.env.PORT || 3000}`);
+// Aquí irían tus rutas
+app.get('/', (req, res) => {
+  res.send('API funcionando correctamente');
 });
+
+module.exports = app; // 👈 Exportamos app para usarlo en server.js
