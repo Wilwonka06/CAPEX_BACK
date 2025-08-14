@@ -20,7 +20,7 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   phone: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(20),
     allowNull: true
   },
   roleId: {
