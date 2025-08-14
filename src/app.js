@@ -1,12 +1,19 @@
+require('dotenv').config();
 const express = require('express');
-const ejemploRoutes = require('./routes/ejemploRoutes');
+const { connectDB } = require('./config/database');
 
 const app = express();
-
-// Middlewares
 app.use(express.json());
 
-// Rutas
-app.use('/api', ejemploRoutes);
+// Conexión a MySQL
+connectDB();
 
-module.exports = app;
+app.use('/api/scheduling', require('./routes/SchedulingRoutes'));
+
+
+// Aquí irían tus rutas
+app.get('/', (req, res) => {
+  res.send('API funcionando correctamente');
+});
+
+module.exports = app; // 👈 Exportamos app para usarlo en server.j
