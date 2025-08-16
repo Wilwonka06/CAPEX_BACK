@@ -2,11 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const { connectDB } = require('./config/database');
 
+
 // Importar solo lo necesario
 const { ErrorMiddleware, commonMiddleware } = require('./middlewares');
 
 // Importar rutas
 const usersRoutes = require('./routes/UsersRoutes');
+app.use('/api/scheduling', require('./routes/SchedulingRoutes'));
 
 const app = express();
 
