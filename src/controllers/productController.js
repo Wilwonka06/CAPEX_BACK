@@ -1,14 +1,14 @@
-const Producto = require('../models/Producto');
-const FichaTecnica = require('../models/FichaTecnica');
-const Caracteristica = require('../models/Caracteristica');
+const Product = require('../models/Product');
+const TechnicalSheet = require('../models/TechnicalSheet');
+const Characteristic = require('../models/Characteristic');
 
 // Obtener todos los productos
 const getAllProductos = async (req, res) => {
   try {
-    const productos = await Producto.findAll({
+    const productos = await Product.findAll({
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -34,10 +34,10 @@ const getAllProductos = async (req, res) => {
 const getProductoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const producto = await Producto.findByPk(id, {
+    const producto = await Product.findByPk(id, {
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -80,7 +80,7 @@ const createProducto = async (req, res) => {
     } = req.body;
 
     // Verificar si el nombre ya existe
-    const existingProducto = await Producto.findOne({ where: { nombre } });
+    const existingProducto = await Product.findOne({ where: { nombre } });
     if (existingProducto) {
       return res.status(400).json({
         success: false,
@@ -89,7 +89,7 @@ const createProducto = async (req, res) => {
     }
 
     // Crear el producto
-    const newProducto = await Producto.create({
+    const newProducto = await Product.create({
       nombre,
       id_categoria_producto,
       costo,
@@ -103,7 +103,7 @@ const createProducto = async (req, res) => {
     if (caracteristicas && Array.isArray(caracteristicas)) {
       for (const caracteristica of caracteristicas) {
         if (caracteristica.id_caracteristica && caracteristica.valor) {
-          await FichaTecnica.create({
+          await TechnicalSheet.create({
             id_producto: newProducto.id_producto,
             id_caracteristica: caracteristica.id_caracteristica,
             valor: caracteristica.valor
@@ -113,10 +113,10 @@ const createProducto = async (req, res) => {
     }
 
     // Obtener el producto con sus características
-    const productoCompleto = await Producto.findByPk(newProducto.id_producto, {
+    const productoCompleto = await Product.findByPk(newProducto.id_producto, {
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -156,7 +156,7 @@ const updateProducto = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const producto = await Producto.findByPk(id);
+    const producto = await Product.findByPk(id);
     if (!producto) {
       return res.status(404).json({
         success: false,
@@ -166,7 +166,7 @@ const updateProducto = async (req, res) => {
 
     // Si se está actualizando el nombre, verificar que no exista
     if (updateData.nombre && updateData.nombre !== producto.nombre) {
-      const existingProducto = await Producto.findOne({ where: { nombre: updateData.nombre } });
+      const existingProducto = await Product.findOne({ where: { nombre: updateData.nombre } });
       if (existingProducto) {
         return res.status(400).json({
           success: false,
@@ -180,12 +180,12 @@ const updateProducto = async (req, res) => {
     // Si se proporcionan características, actualizarlas
     if (updateData.caracteristicas && Array.isArray(updateData.caracteristicas)) {
       // Eliminar características existentes
-      await FichaTecnica.destroy({ where: { id_producto: id } });
+      await TechnicalSheet.destroy({ where: { id_producto: id } });
       
       // Agregar nuevas características
       for (const caracteristica of updateData.caracteristicas) {
         if (caracteristica.id_caracteristica && caracteristica.valor) {
-          await FichaTecnica.create({
+          await TechnicalSheet.create({
             id_producto: id,
             id_caracteristica: caracteristica.id_caracteristica,
             valor: caracteristica.valor
@@ -195,10 +195,10 @@ const updateProducto = async (req, res) => {
     }
 
     // Obtener el producto actualizado con sus características
-    const productoActualizado = await Producto.findByPk(id, {
+    const productoActualizado = await Product.findByPk(id, {
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -225,7 +225,7 @@ const deleteProducto = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const producto = await Producto.findByPk(id);
+    const producto = await Product.findByPk(id);
     if (!producto) {
       return res.status(404).json({
         success: false,
@@ -262,7 +262,7 @@ const searchProductos = async (req, res) => {
       });
     }
 
-    const productos = await Producto.findAll({
+    const productos = await Product.findAll({
       where: {
         nombre: {
           [require('sequelize').Op.like]: `%${nombre}%`
@@ -270,7 +270,7 @@ const searchProductos = async (req, res) => {
       },
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }

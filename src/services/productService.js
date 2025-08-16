@@ -1,9 +1,9 @@
-const Producto = require('../models/Producto');
-const FichaTecnica = require('../models/FichaTecnica');
-const Caracteristica = require('../models/Caracteristica');
+const Product = require('../models/Product');
+const TechnicalSheet = require('../models/TechnicalSheet');
+const Characteristic = require('../models/Characteristic');
 const { Op } = require('sequelize');
 
-class ProductoService {
+class ProductService {
   // Obtener todos los productos con paginación
   async getAllProductos(page = 1, limit = 10, includeCaracteristicas = true) {
     const offset = (page - 1) * limit;
@@ -17,14 +17,14 @@ class ProductoService {
     if (includeCaracteristicas) {
       options.include = [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
       ];
     }
 
-    const { count, rows } = await Producto.findAndCountAll(options);
+    const { count, rows } = await Product.findAndCountAll(options);
     
     return {
       productos: rows,
@@ -46,14 +46,14 @@ class ProductoService {
     if (includeCaracteristicas) {
       options.include = [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
       ];
     }
 
-    return await Producto.findOne(options);
+    return await Product.findOne(options);
   }
 
   // Crear nuevo producto
@@ -61,7 +61,7 @@ class ProductoService {
     const { caracteristicas, ...productoInfo } = productoData;
 
     // Verificar si el nombre ya existe
-    const existingProducto = await Producto.findOne({ 
+    const existingProducto = await Product.findOne({ 
       where: { nombre: productoInfo.nombre } 
     });
     
@@ -70,7 +70,7 @@ class ProductoService {
     }
 
     // Crear el producto
-    const newProducto = await Producto.create(productoInfo);
+    const newProducto = await Product.create(productoInfo);
 
     // Agregar características si se proporcionan
     if (caracteristicas && Array.isArray(caracteristicas)) {
@@ -85,14 +85,14 @@ class ProductoService {
   async updateProducto(id, updateData) {
     const { caracteristicas, ...productoInfo } = updateData;
     
-    const producto = await Producto.findByPk(id);
+    const producto = await Product.findByPk(id);
     if (!producto) {
       throw new Error('Producto no encontrado');
     }
 
     // Verificar si el nuevo nombre ya existe (si se está actualizando)
     if (productoInfo.nombre && productoInfo.nombre !== producto.nombre) {
-      const existingProducto = await Producto.findOne({ 
+      const existingProducto = await Product.findOne({ 
         where: { nombre: productoInfo.nombre } 
       });
       
@@ -115,7 +115,7 @@ class ProductoService {
 
   // Eliminar producto
   async deleteProducto(id) {
-    const producto = await Producto.findByPk(id);
+    const producto = await Product.findByPk(id);
     if (!producto) {
       throw new Error('Producto no encontrado');
     }
@@ -128,7 +128,7 @@ class ProductoService {
   async searchProductos(nombre, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const { count, rows } = await Producto.findAndCountAll({
+    const { count, rows } = await Product.findAndCountAll({
       where: {
         nombre: {
           [Op.like]: `%${nombre}%`
@@ -136,7 +136,7 @@ class ProductoService {
       },
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -179,11 +179,11 @@ class ProductoService {
       whereClause.stock = { [Op.gte]: filters.stock_min };
     }
 
-    const { count, rows } = await Producto.findAndCountAll({
+    const { count, rows } = await Product.findAndCountAll({
       where: whereClause,
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -210,7 +210,7 @@ class ProductoService {
   async addCaracteristicasToProducto(productoId, caracteristicas) {
     for (const caracteristica of caracteristicas) {
       if (caracteristica.id_caracteristica && caracteristica.valor) {
-        await FichaTecnica.create({
+        await TechnicalSheet.create({
           id_producto: productoId,
           id_caracteristica: caracteristica.id_caracteristica,
           valor: caracteristica.valor
@@ -222,7 +222,7 @@ class ProductoService {
   // Actualizar características de un producto
   async updateCaracteristicasOfProducto(productoId, caracteristicas) {
     // Eliminar características existentes
-    await FichaTecnica.destroy({ where: { id_producto: productoId } });
+    await TechnicalSheet.destroy({ where: { id_producto: productoId } });
     
     // Agregar nuevas características
     await this.addCaracteristicasToProducto(productoId, caracteristicas);
@@ -230,7 +230,7 @@ class ProductoService {
 
   // Obtener productos con bajo stock
   async getProductosBajoStock(limite = 10) {
-    return await Producto.findAll({
+    return await Product.findAll({
       where: {
         stock: {
           [Op.lte]: limite
@@ -238,7 +238,7 @@ class ProductoService {
       },
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { attributes: ['valor'] }
         }
@@ -249,7 +249,7 @@ class ProductoService {
 
   // Actualizar stock de un producto
   async updateStock(productoId, cantidad) {
-    const producto = await Producto.findByPk(productoId);
+    const producto = await Product.findByPk(productoId);
     if (!producto) {
       throw new Error('Producto no encontrado');
     }
@@ -265,12 +265,12 @@ class ProductoService {
 
   // Obtener estadísticas de productos
   async getEstadisticas() {
-    const totalProductos = await Producto.count();
-    const productosSinStock = await Producto.count({ where: { stock: 0 } });
-    const productosBajoStock = await Producto.count({ where: { stock: { [Op.lte]: 10 } } });
+    const totalProductos = await Product.count();
+    const productosSinStock = await Product.count({ where: { stock: 0 } });
+    const productosBajoStock = await Product.count({ where: { stock: { [Op.lte]: 10 } } });
     
-    const precioPromedio = await Producto.findOne({
-      attributes: [[Producto.sequelize.fn('AVG', Producto.sequelize.col('precio_venta')), 'promedio']]
+    const precioPromedio = await Product.findOne({
+      attributes: [[Product.sequelize.fn('AVG', Product.sequelize.col('precio_venta')), 'promedio']]
     });
 
     return {
@@ -282,4 +282,4 @@ class ProductoService {
   }
 }
 
-module.exports = new ProductoService();
+module.exports = new ProductService();

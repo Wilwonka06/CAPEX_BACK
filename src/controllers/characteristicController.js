@@ -1,13 +1,13 @@
-const Caracteristica = require('../models/Caracteristica');
-const Producto = require('../models/Producto');
+const Characteristic = require('../models/Characteristic');
+const Product = require('../models/Product');
 
 // Obtener todas las características
 const getAllCaracteristicas = async (req, res) => {
   try {
-    const caracteristicas = await Caracteristica.findAll({
+    const caracteristicas = await Characteristic.findAll({
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
@@ -33,10 +33,10 @@ const getAllCaracteristicas = async (req, res) => {
 const getCaracteristicaById = async (req, res) => {
   try {
     const { id } = req.params;
-    const caracteristica = await Caracteristica.findByPk(id, {
+    const caracteristica = await Characteristic.findByPk(id, {
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
@@ -70,7 +70,7 @@ const createCaracteristica = async (req, res) => {
     const { nombre } = req.body;
 
     // Verificar si el nombre ya existe
-    const existingCaracteristica = await Caracteristica.findOne({ where: { nombre } });
+    const existingCaracteristica = await Characteristic.findOne({ where: { nombre } });
     if (existingCaracteristica) {
       return res.status(400).json({
         success: false,
@@ -79,7 +79,7 @@ const createCaracteristica = async (req, res) => {
     }
 
     // Crear la característica
-    const newCaracteristica = await Caracteristica.create({
+    const newCaracteristica = await Characteristic.create({
       nombre
     });
 
@@ -116,7 +116,7 @@ const updateCaracteristica = async (req, res) => {
     const { id } = req.params;
     const { nombre } = req.body;
 
-    const caracteristica = await Caracteristica.findByPk(id);
+    const caracteristica = await Characteristic.findByPk(id);
     if (!caracteristica) {
       return res.status(404).json({
         success: false,
@@ -126,7 +126,7 @@ const updateCaracteristica = async (req, res) => {
 
     // Si se está actualizando el nombre, verificar que no exista
     if (nombre && nombre !== caracteristica.nombre) {
-      const existingCaracteristica = await Caracteristica.findOne({ where: { nombre } });
+      const existingCaracteristica = await Characteristic.findOne({ where: { nombre } });
       if (existingCaracteristica) {
         return res.status(400).json({
           success: false,
@@ -157,7 +157,7 @@ const deleteCaracteristica = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const caracteristica = await Caracteristica.findByPk(id);
+    const caracteristica = await Characteristic.findByPk(id);
     if (!caracteristica) {
       return res.status(404).json({
         success: false,

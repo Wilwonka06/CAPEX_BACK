@@ -1,4 +1,4 @@
-const Proveedor = require('../models/Proveedor');
+const Supplier = require('../models/Supplier');
 const { Op } = require('sequelize');
 
 class ProveedorService {

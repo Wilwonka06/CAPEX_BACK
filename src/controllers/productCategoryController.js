@@ -1,6 +1,6 @@
-const CategoriaProducto = require('../models/CategoriaProducto');
-const Producto = require('../models/Producto');
-const categoriaProductoService = require('../services/categoriaProductoService');
+const ProductCategory = require('../models/ProductCategory');
+const Product = require('../models/Product');
+const productCategoryService = require('../services/productCategoryService');
 
 // Obtener todas las categorías
 const getAllCategorias = async (req, res) => {
@@ -8,7 +8,7 @@ const getAllCategorias = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     
-    const result = await categoriaProductoService.getAllCategorias(page, limit);
+    const result = await productCategoryService.getAllCategorias(page, limit);
     
     res.status(200).json({
       success: true,
@@ -29,7 +29,7 @@ const getAllCategorias = async (req, res) => {
 const getCategoriaById = async (req, res) => {
   try {
     const { id } = req.params;
-    const categoria = await categoriaProductoService.getCategoriaById(id);
+    const categoria = await productCategoryService.getCategoriaById(id);
 
     if (!categoria) {
       return res.status(404).json({
@@ -57,7 +57,7 @@ const createCategoria = async (req, res) => {
   try {
     const { nombre, estado } = req.body;
 
-    const newCategoria = await categoriaProductoService.createCategoria({
+    const newCategoria = await productCategoryService.createCategoria({
       nombre,
       estado: estado || 'Activo'
     });
@@ -102,7 +102,7 @@ const updateCategoria = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const categoria = await categoriaProductoService.updateCategoria(id, updateData);
+    const categoria = await productCategoryService.updateCategoria(id, updateData);
 
     res.status(200).json({
       success: true,
@@ -139,7 +139,7 @@ const deleteCategoria = async (req, res) => {
   try {
     const { id } = req.params;
     
-    await categoriaProductoService.deleteCategoria(id);
+    await productCategoryService.deleteCategoria(id);
 
     res.status(200).json({
       success: true,
@@ -184,7 +184,7 @@ const searchCategorias = async (req, res) => {
       });
     }
 
-    const result = await categoriaProductoService.searchCategorias(nombre, page, limit);
+    const result = await productCategoryService.searchCategorias(nombre, page, limit);
 
     res.status(200).json({
       success: true,
@@ -215,7 +215,7 @@ const getCategoriasByEstado = async (req, res) => {
       });
     }
 
-    const result = await categoriaProductoService.getCategoriasByEstado(estado, page, limit);
+    const result = await productCategoryService.getCategoriasByEstado(estado, page, limit);
 
     res.status(200).json({
       success: true,

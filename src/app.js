@@ -1,16 +1,16 @@
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const productoRoutes = require('./routes/productoRoutes');
-const caracteristicaRoutes = require('./routes/caracteristicaRoutes');
-const proveedorRoutes = require('./routes/proveedorRoutes');
-const categoriaProductoRoutes = require('./routes/categoriaProductoRoutes');
+const productRoutes = require('./routes/productRoutes');
+const characteristicRoutes = require('./routes/characteristicRoutes');
+const supplierRoutes = require('./routes/supplierRoutes');
+const productCategoryRoutes = require('./routes/productCategoryRoutes');
 
 // Importar modelos directamente
-const Producto = require('./models/Producto');
-const Caracteristica = require('./models/Caracteristica');
-const FichaTecnica = require('./models/FichaTecnica');
-const Proveedor = require('./models/Proveedor');
-const CategoriaProducto = require('./models/CategoriaProducto');
+const Product = require('./models/Product');
+const Characteristic = require('./models/Characteristic');
+const TechnicalSheet = require('./models/TechnicalSheet');
+const Supplier = require('./models/Supplier');
+const ProductCategory = require('./models/ProductCategory');
 
 const app = express();
 
@@ -19,51 +19,51 @@ connectDB();
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
-Producto.hasMany(FichaTecnica, {
+Product.hasMany(TechnicalSheet, {
   foreignKey: 'id_producto',
   as: 'fichasTecnicas'
 });
 
 // Una ficha técnica pertenece a un producto
-FichaTecnica.belongsTo(Producto, {
+TechnicalSheet.belongsTo(Product, {
   foreignKey: 'id_producto',
   as: 'producto'
 });
 
 // Una característica puede estar en muchas fichas técnicas
-Caracteristica.hasMany(FichaTecnica, {
+Characteristic.hasMany(TechnicalSheet, {
   foreignKey: 'id_caracteristica',
   as: 'fichasTecnicas'
 });
 
 // Una ficha técnica pertenece a una característica
-FichaTecnica.belongsTo(Caracteristica, {
+TechnicalSheet.belongsTo(Characteristic, {
   foreignKey: 'id_caracteristica',
   as: 'caracteristica'
 });
 
-// Relación muchos a muchos entre Producto y Caracteristica a través de FichaTecnica
-Producto.belongsToMany(Caracteristica, {
-  through: FichaTecnica,
+// Relación muchos a muchos entre Product y Characteristic a través de TechnicalSheet
+Product.belongsToMany(Characteristic, {
+  through: TechnicalSheet,
   foreignKey: 'id_producto',
   otherKey: 'id_caracteristica',
   as: 'caracteristicas'
 });
 
-Caracteristica.belongsToMany(Producto, {
-  through: FichaTecnica,
+Characteristic.belongsToMany(Product, {
+  through: TechnicalSheet,
   foreignKey: 'id_caracteristica',
   otherKey: 'id_producto',
   as: 'productos'
 });
 
-// Relación entre CategoriaProducto y Producto
-CategoriaProducto.hasMany(Producto, {
+// Relación entre ProductCategory y Product
+ProductCategory.hasMany(Product, {
   foreignKey: 'id_categoria_producto',
   as: 'productos'
 });
 
-Producto.belongsTo(CategoriaProducto, {
+Product.belongsTo(ProductCategory, {
   foreignKey: 'id_categoria_producto',
   as: 'categoria'
 });
@@ -100,13 +100,13 @@ app.get('/', (req, res) => {
 });
 
 // Rutas de la API
-app.use('/api/productos', productoRoutes);
-app.use('/api/caracteristicas', caracteristicaRoutes);
-app.use('/api/proveedores', proveedorRoutes);
-app.use('/api/categorias-productos', categoriaProductoRoutes);
+app.use('/api/productos', productRoutes);
+app.use('/api/caracteristicas', characteristicRoutes);
+app.use('/api/proveedores', supplierRoutes);
+app.use('/api/categorias-productos', productCategoryRoutes);
 
 // Middleware para manejar rutas no encontradas
-app.use((req, res) => {   // sin '*'
+app.use((req, res) => {   
   res.status(404).json({
     success: false,
     message: 'Ruta no encontrada',

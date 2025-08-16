@@ -8,12 +8,12 @@ const {
   deleteCategoria,
   searchCategorias,
   getCategoriasByEstado
-} = require('../controllers/categoriaProductoController');
+} = require('../controllers/productCategoryController');
 const {
   validateCreateCategoriaProducto,
   validateUpdateCategoriaProducto,
   validateSearchCategoriaProducto
-} = require('../middlewares/categoriaProductoMiddleware');
+} = require('../middlewares/productCategoryMiddleware');
 
 // Rutas para categorías de productos
 router.get('/', getAllCategorias);

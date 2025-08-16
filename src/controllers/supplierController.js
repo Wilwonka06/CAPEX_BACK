@@ -1,9 +1,9 @@
-const Proveedor = require('../models/Proveedor');
+const Supplier = require('../models/Supplier');
 
 // Obtener todos los proveedores
 const getAllProveedores = async (req, res) => {
   try {
-    const proveedores = await Proveedor.findAll();
+    const proveedores = await Supplier.findAll();
     
     res.status(200).json({
       success: true,
@@ -24,7 +24,7 @@ const getAllProveedores = async (req, res) => {
 const getProveedorById = async (req, res) => {
   try {
     const { id } = req.params;
-    const proveedor = await Proveedor.findByPk(id);
+    const proveedor = await Supplier.findByPk(id);
 
     if (!proveedor) {
       return res.status(404).json({
@@ -61,8 +61,16 @@ const createProveedor = async (req, res) => {
       estado 
     } = req.body;
 
+    // Validación adicional de seguridad
+    if (!nit || !tipo_proveedor || !nombre) {
+      return res.status(400).json({
+        success: false,
+        message: 'Los campos NIT, tipo de proveedor y nombre son obligatorios'
+      });
+    }
+
     // Verificar si el NIT ya existe
-    const existingProveedor = await Proveedor.findOne({ where: { nit } });
+    const existingProveedor = await Supplier.findOne({ where: { nit } });
     if (existingProveedor) {
       return res.status(400).json({
         success: false,
@@ -72,7 +80,7 @@ const createProveedor = async (req, res) => {
 
     // Verificar si el correo ya existe (si se proporciona)
     if (correo) {
-      const existingEmail = await Proveedor.findOne({ where: { correo } });
+      const existingEmail = await Supplier.findOne({ where: { correo } });
       if (existingEmail) {
         return res.status(400).json({
           success: false,
@@ -82,7 +90,7 @@ const createProveedor = async (req, res) => {
     }
 
     // Crear el proveedor
-    const newProveedor = await Proveedor.create({
+    const newProveedor = await Supplier.create({
       nit,
       tipo_proveedor,
       nombre,
@@ -126,7 +134,7 @@ const updateProveedor = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const proveedor = await Proveedor.findByPk(id);
+    const proveedor = await Supplier.findByPk(id);
     if (!proveedor) {
       return res.status(404).json({
         success: false,
@@ -136,7 +144,7 @@ const updateProveedor = async (req, res) => {
 
     // Si se está actualizando el NIT, verificar que no exista
     if (updateData.nit && updateData.nit !== proveedor.nit) {
-      const existingProveedor = await Proveedor.findOne({ where: { nit: updateData.nit } });
+      const existingProveedor = await Supplier.findOne({ where: { nit: updateData.nit } });
       if (existingProveedor) {
         return res.status(400).json({
           success: false,
@@ -147,7 +155,7 @@ const updateProveedor = async (req, res) => {
 
     // Si se está actualizando el correo, verificar que no exista
     if (updateData.correo && updateData.correo !== proveedor.correo) {
-      const existingEmail = await Proveedor.findOne({ where: { correo: updateData.correo } });
+      const existingEmail = await Supplier.findOne({ where: { correo: updateData.correo } });
       if (existingEmail) {
         return res.status(400).json({
           success: false,
@@ -178,7 +186,7 @@ const deleteProveedor = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const proveedor = await Proveedor.findByPk(id);
+    const proveedor = await Supplier.findByPk(id);
     if (!proveedor) {
       return res.status(404).json({
         success: false,
@@ -214,7 +222,7 @@ const searchProveedores = async (req, res) => {
       });
     }
 
-    const proveedores = await Proveedor.findAll({
+    const proveedores = await Supplier.findAll({
       where: {
         nombre: {
           [require('sequelize').Op.like]: `%${nombre}%`
@@ -249,7 +257,7 @@ const getProveedoresByEstado = async (req, res) => {
       });
     }
 
-    const proveedores = await Proveedor.findAll({
+    const proveedores = await Supplier.findAll({
       where: { estado }
     });
 

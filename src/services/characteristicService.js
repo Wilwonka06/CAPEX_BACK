@@ -1,9 +1,9 @@
-const Caracteristica = require('../models/Caracteristica');
-const Producto = require('../models/Producto');
-const FichaTecnica = require('../models/FichaTecnica');
+const Characteristic = require('../models/Characteristic');
+const Product = require('../models/Product');
+const TechnicalSheet = require('../models/TechnicalSheet');
 const { Op } = require('sequelize');
 
-class CaracteristicaService {
+class CharacteristicService {
   // Obtener todas las características con paginación
   async getAllCaracteristicas(page = 1, limit = 10, includeProductos = false) {
     const offset = (page - 1) * limit;
@@ -17,14 +17,14 @@ class CaracteristicaService {
     if (includeProductos) {
       options.include = [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
       ];
     }
 
-    const { count, rows } = await Caracteristica.findAndCountAll(options);
+    const { count, rows } = await Characteristic.findAndCountAll(options);
     
     return {
       caracteristicas: rows,
@@ -46,14 +46,14 @@ class CaracteristicaService {
     if (includeProductos) {
       options.include = [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
       ];
     }
 
-    return await Caracteristica.findOne(options);
+    return await Characteristic.findOne(options);
   }
 
   // Crear nueva característica
@@ -61,7 +61,7 @@ class CaracteristicaService {
     const { nombre } = caracteristicaData;
 
     // Verificar si el nombre ya existe
-    const existingCaracteristica = await Caracteristica.findOne({ 
+    const existingCaracteristica = await Characteristic.findOne({ 
       where: { nombre } 
     });
     
@@ -69,21 +69,21 @@ class CaracteristicaService {
       throw new Error('El nombre de la característica ya existe');
     }
 
-    return await Caracteristica.create({ nombre });
+    return await Characteristic.create({ nombre });
   }
 
   // Actualizar característica
   async updateCaracteristica(id, updateData) {
     const { nombre } = updateData;
     
-    const caracteristica = await Caracteristica.findByPk(id);
+    const caracteristica = await Characteristic.findByPk(id);
     if (!caracteristica) {
       throw new Error('Característica no encontrada');
     }
 
     // Verificar si el nuevo nombre ya existe
     if (nombre && nombre !== caracteristica.nombre) {
-      const existingCaracteristica = await Caracteristica.findOne({ 
+      const existingCaracteristica = await Characteristic.findOne({ 
         where: { nombre } 
       });
       
@@ -98,13 +98,13 @@ class CaracteristicaService {
 
   // Eliminar característica
   async deleteCaracteristica(id) {
-    const caracteristica = await Caracteristica.findByPk(id);
+    const caracteristica = await Characteristic.findByPk(id);
     if (!caracteristica) {
       throw new Error('Característica no encontrada');
     }
 
     // Verificar si la característica está siendo usada por algún producto
-    const fichasTecnicas = await FichaTecnica.count({
+    const fichasTecnicas = await TechnicalSheet.count({
       where: { id_caracteristica: id }
     });
 
@@ -120,7 +120,7 @@ class CaracteristicaService {
   async searchCaracteristicas(nombre, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const { count, rows } = await Caracteristica.findAndCountAll({
+    const { count, rows } = await Characteristic.findAndCountAll({
       where: {
         nombre: {
           [Op.like]: `%${nombre}%`
@@ -128,7 +128,7 @@ class CaracteristicaService {
       },
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
@@ -153,22 +153,22 @@ class CaracteristicaService {
 
   // Obtener características más utilizadas
   async getCaracteristicasMasUtilizadas(limit = 10) {
-    const caracteristicas = await Caracteristica.findAll({
+    const caracteristicas = await Characteristic.findAll({
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
       ],
-      order: [[Producto, 'id_producto', 'DESC']],
+      order: [[Product, 'id_producto', 'DESC']],
       limit
     });
 
     // Contar productos por característica
     const caracteristicasConConteo = await Promise.all(
       caracteristicas.map(async (caracteristica) => {
-        const conteo = await FichaTecnica.count({
+        const conteo = await TechnicalSheet.count({
           where: { id_caracteristica: caracteristica.id_caracteristica }
         });
         
@@ -185,10 +185,10 @@ class CaracteristicaService {
 
   // Obtener características no utilizadas
   async getCaracteristicasNoUtilizadas() {
-    const caracteristicas = await Caracteristica.findAll({
+    const caracteristicas = await Characteristic.findAll({
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos',
           through: { attributes: ['valor'] }
         }
@@ -198,7 +198,7 @@ class CaracteristicaService {
     const caracteristicasNoUtilizadas = [];
 
     for (const caracteristica of caracteristicas) {
-      const conteo = await FichaTecnica.count({
+      const conteo = await TechnicalSheet.count({
         where: { id_caracteristica: caracteristica.id_caracteristica }
       });
 
@@ -214,15 +214,15 @@ class CaracteristicaService {
   async getProductosByCaracteristica(caracteristicaId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const caracteristica = await Caracteristica.findByPk(caracteristicaId);
+    const caracteristica = await Characteristic.findByPk(caracteristicaId);
     if (!caracteristica) {
       throw new Error('Característica no encontrada');
     }
 
-    const { count, rows } = await Producto.findAndCountAll({
+    const { count, rows } = await Product.findAndCountAll({
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           as: 'caracteristicas',
           through: { 
             attributes: ['valor'],
@@ -251,24 +251,24 @@ class CaracteristicaService {
 
   // Obtener estadísticas de características
   async getEstadisticas() {
-    const totalCaracteristicas = await Caracteristica.count();
-    const caracteristicasUtilizadas = await FichaTecnica.count({
+    const totalCaracteristicas = await Characteristic.count();
+    const caracteristicasUtilizadas = await TechnicalSheet.count({
       distinct: true,
       col: 'id_caracteristica'
     });
     const caracteristicasNoUtilizadas = totalCaracteristicas - caracteristicasUtilizadas;
 
     // Obtener la característica más utilizada
-    const caracteristicaMasUtilizada = await FichaTecnica.findOne({
+    const caracteristicaMasUtilizada = await TechnicalSheet.findOne({
       attributes: [
         'id_caracteristica',
-        [FichaTecnica.sequelize.fn('COUNT', FichaTecnica.sequelize.col('id_caracteristica')), 'conteo']
+        [TechnicalSheet.sequelize.fn('COUNT', TechnicalSheet.sequelize.col('id_caracteristica')), 'conteo']
       ],
       group: ['id_caracteristica'],
-      order: [[FichaTecnica.sequelize.fn('COUNT', FichaTecnica.sequelize.col('id_caracteristica')), 'DESC']],
+      order: [[TechnicalSheet.sequelize.fn('COUNT', TechnicalSheet.sequelize.col('id_caracteristica')), 'DESC']],
       include: [
         {
-          model: Caracteristica,
+          model: Characteristic,
           attributes: ['nombre']
         }
       ]
@@ -280,7 +280,7 @@ class CaracteristicaService {
       caracteristicasNoUtilizadas,
       caracteristicaMasUtilizada: caracteristicaMasUtilizada ? {
         id: caracteristicaMasUtilizada.id_caracteristica,
-        nombre: caracteristicaMasUtilizada.Caracteristica?.nombre,
+        nombre: caracteristicaMasUtilizada.Characteristic?.nombre,
         conteo: caracteristicaMasUtilizada.dataValues.conteo
       } : null
     };
@@ -312,4 +312,4 @@ class CaracteristicaService {
   }
 }
 
-module.exports = new CaracteristicaService();
+module.exports = new CharacteristicService();

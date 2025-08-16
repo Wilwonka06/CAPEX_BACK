@@ -6,7 +6,7 @@ const {
   createCaracteristica,
   updateCaracteristica,
   deleteCaracteristica
-} = require('../controllers/caracteristicaController');
+} = require('../controllers/characteristicController');
 
 // Rutas para características
 router.get('/', getAllCaracteristicas);

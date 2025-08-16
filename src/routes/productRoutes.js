@@ -7,7 +7,7 @@ const {
   updateProducto,
   deleteProducto,
   searchProductos
-} = require('../controllers/productoController');
+} = require('../controllers/productController');
 
 // Rutas para productos
 router.get('/', getAllProductos);

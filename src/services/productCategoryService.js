@@ -1,13 +1,13 @@
-const CategoriaProducto = require('../models/CategoriaProducto');
-const Producto = require('../models/Producto');
+const ProductCategory = require('../models/ProductCategory');
+const Product = require('../models/Product');
 const { Op } = require('sequelize');
 
-class CategoriaProductoService {
+class ProductCategoryService {
   // Obtener todas las categorías con paginación
   async getAllCategorias(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const { count, rows } = await CategoriaProducto.findAndCountAll({
+    const { count, rows } = await ProductCategory.findAndCountAll({
       limit,
       offset,
       order: [['nombre', 'ASC']]
@@ -28,10 +28,10 @@ class CategoriaProductoService {
 
   // Obtener categoría por ID
   async getCategoriaById(id) {
-    return await CategoriaProducto.findByPk(id, {
+    return await ProductCategory.findByPk(id, {
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos'
         }
       ]
@@ -43,7 +43,7 @@ class CategoriaProductoService {
     const { nombre } = categoriaData;
 
     // Verificar si el nombre ya existe
-    const existingCategoria = await CategoriaProducto.findOne({ 
+    const existingCategoria = await ProductCategory.findOne({ 
       where: { nombre } 
     });
     
@@ -51,19 +51,19 @@ class CategoriaProductoService {
       throw new Error('El nombre de la categoría ya existe');
     }
 
-    return await CategoriaProducto.create(categoriaData);
+    return await ProductCategory.create(categoriaData);
   }
 
   // Actualizar categoría
   async updateCategoria(id, updateData) {
-    const categoria = await CategoriaProducto.findByPk(id);
+    const categoria = await ProductCategory.findByPk(id);
     if (!categoria) {
       throw new Error('Categoría no encontrada');
     }
 
     // Si se está actualizando el nombre, verificar que no exista
     if (updateData.nombre && updateData.nombre !== categoria.nombre) {
-      const existingCategoria = await CategoriaProducto.findOne({ 
+      const existingCategoria = await ProductCategory.findOne({ 
         where: { nombre: updateData.nombre } 
       });
       
@@ -78,10 +78,10 @@ class CategoriaProductoService {
 
   // Eliminar categoría
   async deleteCategoria(id) {
-    const categoria = await CategoriaProducto.findByPk(id, {
+    const categoria = await ProductCategory.findByPk(id, {
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos'
         }
       ]
@@ -104,7 +104,7 @@ class CategoriaProductoService {
   async searchCategorias(nombre, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const { count, rows } = await CategoriaProducto.findAndCountAll({
+    const { count, rows } = await ProductCategory.findAndCountAll({
       where: {
         nombre: {
           [Op.like]: `%${nombre}%`
@@ -132,7 +132,7 @@ class CategoriaProductoService {
   async getCategoriasByEstado(estado, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
-    const { count, rows } = await CategoriaProducto.findAndCountAll({
+    const { count, rows } = await ProductCategory.findAndCountAll({
       where: { estado },
       limit,
       offset,
@@ -164,15 +164,15 @@ class CategoriaProductoService {
 
   // Obtener estadísticas de categorías
   async getEstadisticas() {
-    const totalCategorias = await CategoriaProducto.count();
-    const categoriasActivas = await CategoriaProducto.count({ where: { estado: 'Activo' } });
-    const categoriasInactivas = await CategoriaProducto.count({ where: { estado: 'Inactivo' } });
+    const totalCategorias = await ProductCategory.count();
+    const categoriasActivas = await ProductCategory.count({ where: { estado: 'Activo' } });
+    const categoriasInactivas = await ProductCategory.count({ where: { estado: 'Inactivo' } });
 
     // Obtener categorías con productos
-    const categoriasConProductos = await CategoriaProducto.findAll({
+    const categoriasConProductos = await ProductCategory.findAll({
       include: [
         {
-          model: Producto,
+          model: Product,
           as: 'productos'
         }
       ]
@@ -193,4 +193,4 @@ class CategoriaProductoService {
   }
 }
 
-module.exports = new CategoriaProductoService();
+module.exports = new ProductCategoryService();
