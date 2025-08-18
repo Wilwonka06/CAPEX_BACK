@@ -1,14 +1,13 @@
 # CAPEX Backend API
 
-API REST construida con Node.js, Express, MySQL y Sequelize.
+API Backend para CAPEX construida con Node.js, Express, MySQL y Sequelize.
 
 ## 🚀 Características
 
-- **Base de datos**: MySQL con Sequelize ORM
-- **Framework**: Express.js
-- **Validación**: Express-validator
-- **Variables de entorno**: dotenv
-- **Desarrollo**: Nodemon para auto-reload
+- **Base de datos:** MySQL con Sequelize ORM
+- **Validaciones:** Express-validator para validación de datos
+- **Arquitectura:** MVC con separación de responsabilidades
+- **Relaciones:** Modelos relacionados con fichas técnicas
 
 ## 📋 Prerrequisitos
 
@@ -16,57 +15,35 @@ API REST construida con Node.js, Express, MySQL y Sequelize.
 - MySQL Server
 - npm o yarn
 
-## ⚙️ Instalación
+## 🔧 Instalación
 
-1. **Clonar el repositorio**
 ```bash
-git clone <tu-repositorio>
-cd CAPEX_BACK
-```
-
-2. **Instalar dependencias**
-```bash
+# Instalar dependencias
 npm install
-```
 
-3. **Configurar variables de entorno**
-Crea un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+# Configurar variables de entorno
+cp .env.example .env
 
-```env
-# Configuración del servidor
-PORT=3000
-
-# Configuración de MySQL
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=capex_db
-DB_USER=root
-DB_PASSWORD=tu_password
-DB_DIALECT=mysql
-
-# Configuración de JWT (opcional para autenticación)
-JWT_SECRET=tu_jwt_secret_super_seguro
-JWT_EXPIRES_IN=24h
-```
-
-4. **Crear la base de datos**
-```sql
-CREATE DATABASE capex_db;
-```
-
-## 🏃‍♂️ Ejecutar el proyecto
-
-### Desarrollo
-```bash
+# Ejecutar en desarrollo
 npm run dev
-```
 
-### Producción
-```bash
+# Ejecutar en producción
 npm start
 ```
 
-El servidor estará disponible en: `http://localhost:3000`
+## 🌐 Endpoints de la API
+
+### Base URL
+
+```
+http://localhost:3000
+```
+
+### Endpoints disponibles
+- **Productos:** `/api/productos`
+- **Características:** `/api/caracteristicas`
+- **Proveedores:** `/api/proveedores`
+- **Categorías:** `/api/categorias-productos`
 
 ## 📚 Endpoints de la API
 
@@ -203,26 +180,37 @@ curl -X POST http://localhost:3000/api/caracteristicas \
 CAPEX_BACK/
 ├── src/
 │   ├── config/
-│   │   └── database.js           # Configuración de MySQL
+│   │   └── database.js              # Configuración de MySQL
 │   ├── controllers/
-│   │   ├── productoController.js # Controladores de productos
-│   │   ├── caracteristicaController.js # Controladores de características
-│   │   └── proveedorController.js # Controladores de proveedores
+│   │   ├── productController.js     # Controladores de productos
+│   │   ├── characteristicController.js # Controladores de características
+│   │   ├── supplierController.js    # Controladores de proveedores
+│   │   └── productCategoryController.js # Controladores de categorías
 │   ├── models/
-│   │   ├── Producto.js           # Modelo de producto
-│   │   ├── Caracteristica.js     # Modelo de característica
-│   │   ├── FichaTecnica.js       # Modelo de ficha técnica
-│   │   ├── Proveedor.js          # Modelo de proveedor
-│   │   └── index.js              # Relaciones entre modelos
+│   │   ├── Product.js               # Modelo de producto
+│   │   ├── Characteristic.js        # Modelo de característica
+│   │   ├── TechnicalSheet.js        # Modelo de ficha técnica
+│   │   ├── Supplier.js              # Modelo de proveedor
+│   │   └── ProductCategory.js       # Modelo de categoría
 │   ├── routes/
-│   │   ├── productoRoutes.js     # Rutas de productos
-│   │   ├── caracteristicaRoutes.js # Rutas de características
-│   │   └── proveedorRoutes.js    # Rutas de proveedores
-│   ├── middlewares/              # Middlewares personalizados
-│   ├── services/                 # Lógica de negocio
-│   ├── app.js                   # Configuración de Express
-│   └── server.js                # Punto de entrada
-├── .env                         # Variables de entorno
+│   │   ├── productRoutes.js         # Rutas de productos
+│   │   ├── characteristicRoutes.js  # Rutas de características
+│   │   ├── supplierRoutes.js        # Rutas de proveedores
+│   │   └── productCategoryRoutes.js # Rutas de categorías
+│   ├── middlewares/
+│   │   ├── validationMiddleware.js  # Middleware de validación
+│   │   ├── productMiddleware.js     # Validaciones de productos
+│   │   ├── characteristicMiddleware.js # Validaciones de características
+│   │   ├── supplierMiddleware.js    # Validaciones de proveedores
+│   │   └── productCategoryMiddleware.js # Validaciones de categorías
+│   ├── services/
+│   │   ├── productService.js        # Lógica de negocio de productos
+│   │   ├── characteristicService.js # Lógica de negocio de características
+│   │   ├── supplierService.js       # Lógica de negocio de proveedores
+│   │   └── productCategoryService.js # Lógica de negocio de categorías
+│   ├── app.js                      # Configuración de Express
+│   └── server.js                   # Punto de entrada
+├── .env                            # Variables de entorno
 ├── package.json
 └── README.md
 ```

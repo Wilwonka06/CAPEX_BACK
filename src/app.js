@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
 const productRoutes = require('./routes/productRoutes');
@@ -114,4 +115,4 @@ app.use((req, res) => {
   });
 });
 
-module.exports = app;
+module.exports = app; 
