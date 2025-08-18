@@ -3,38 +3,34 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
 const User = sequelize.define('User', {
-  id_usuario: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
-  },
-  nombre: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/
-    }
-  },
-  tipo_documento: {
-    type: DataTypes.ENUM('Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'),
+    autoIncrement: true,
     allowNull: false
   },
-  documento: {
-    type: DataTypes.STRING(20),
-    allowNull: false,
-    unique: true,
-    validate: {
-      is: /^[A-Za-z0-9]+$/
-    }
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
-  telefono: {
+  documentType: {
     type: DataTypes.STRING(20),
-    allowNull: false,
-    validate: {
-      is: /^\+[0-9]{7,15}$/
-    }
+    allowNull: false
   },
-  correo: {
+  documentNumber: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  phone: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  roleId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  email: {
     type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
@@ -42,17 +38,13 @@ const User = sequelize.define('User', {
       isEmail: true
     }
   },
-  contrasena: {
+  password: {
     type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      is: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/
-    }
+    allowNull: false
   }
 }, {
-  tableName: 'usuarios',
-  timestamps: false,
-  underscored: true
+  tableName: 'Users',
+  timestamps: false
 });
 
 module.exports = User;

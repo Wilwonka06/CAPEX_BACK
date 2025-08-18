@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 /**
  * Servicio para gestión de usuarios
