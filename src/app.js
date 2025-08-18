@@ -12,10 +12,14 @@ connectDB();
 app.use('/api/scheduling', require('./routes/SchedulingRoutes'));
 app.use('/api/employees', require('./routes/EmployeeRoutes'));
 app.use('/api/service-categories', require('./routes/ServiceCategoryRoutes'));
+app.use('/api/users', require('./routes/UsersRoutes'));
 
-// Aquí irían tus rutas
+// Ruta principal
 app.get('/', (req, res) => {
-  res.send('API funcionando correctamente');
+  res.json({ 
+    message: 'CAPEX API funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
 });
 
-module.exports = app; // 👈 Exportamos app para usarlo en server.js
+module.exports = app;
