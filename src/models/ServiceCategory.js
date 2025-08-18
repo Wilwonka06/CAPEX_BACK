@@ -13,7 +13,7 @@ const ServiceCategory = sequelize.define('ServiceCategory', {
     allowNull: false,
     unique: true,
     validate: {
-      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+$/
+      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/i
     }
   },
   descripcion: {

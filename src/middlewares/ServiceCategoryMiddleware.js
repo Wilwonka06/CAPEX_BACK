@@ -15,7 +15,7 @@ const validateServiceCategoryData = (req, res, next) => {
   }
 
   // Validar formato del nombre (solo letras, incluyendo acentos)
-  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+$/;
+  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
   if (!nameRegex.test(nombre)) {
     return res.status(400).json({
       success: false,
@@ -61,7 +61,7 @@ const validateServiceCategoryUpdate = (req, res, next) => {
 
   // Si se proporciona nombre, validar formato
   if (nombre) {
-    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+$/;
+    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
     if (!nameRegex.test(nombre)) {
       return res.status(400).json({
         success: false,

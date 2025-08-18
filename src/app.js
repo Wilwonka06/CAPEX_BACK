@@ -13,6 +13,7 @@ app.use('/api/scheduling', require('./routes/SchedulingRoutes'));
 app.use('/api/employees', require('./routes/EmployeeRoutes'));
 app.use('/api/service-categories', require('./routes/ServiceCategoryRoutes'));
 app.use('/api/users', require('./routes/UsersRoutes'));
+app.use("/api/services", require ('./routes/ServicesRoutes'));
 
 // Ruta principal
 app.get('/', (req, res) => {

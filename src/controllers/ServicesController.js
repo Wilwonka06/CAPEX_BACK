@@ -1,53 +1,53 @@
-// controllers/servicioController.js
-const servicioService = require("../services/servicioService");
+// controllers/serviceController.js
+const ServicesService = require("../services/ServicesService");
 
-// Crear un servicio
+// Create service
 exports.create = async (req, res) => {
   try {
-    const servicio = await servicioService.createServicio(req.body);
-    res.status(201).json(servicio);
+    const service = await ServicesService.createService(req.body);
+    res.status(201).json(service);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// Listar todos los servicios
+// Get all services
 exports.getAll = async (req, res) => {
   try {
-    const servicios = await servicioService.getAllServicios();
-    res.json(servicios);
+    const services = await ServicesService.getAllServices();
+    res.json(services);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Obtener un servicio por ID
+// Get service by ID
 exports.getById = async (req, res) => {
   try {
-    const servicio = await servicioService.getServicioById(req.params.id);
-    if (!servicio) {
-      return res.status(404).json({ error: "Servicio no encontrado" });
+    const service = await ServicesService.getServiceById(req.params.id);
+    if (!service) {
+      return res.status(404).json({ error: "Service not found" });
     }
-    res.json(servicio);
+    res.json(service);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Actualizar un servicio
+// Update service
 exports.update = async (req, res) => {
   try {
-    const servicio = await servicioService.updateServicio(req.params.id, req.body);
-    res.json(servicio);
+    const service = await ServicesService.updateService(req.params.id, req.body);
+    res.json(service);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// Eliminar un servicio
+// Delete service
 exports.delete = async (req, res) => {
   try {
-    const result = await servicioService.deleteServicio(req.params.id);
+    const result = await ServicesService.deleteService(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });

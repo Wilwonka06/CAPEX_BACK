@@ -1,13 +1,15 @@
-// routes/servicioRoutes.js
 const express = require("express");
 const router = express.Router();
-const servicioController = require("../controllers/servicioController");
-const validarServicio = require("../middlewares/validarServicio");
+const ServicesController = require("../controllers/ServicesController");
+const {
+  validateServiceData,
+  validateServiceUpdate,
+} = require("../middlewares/ServicesMiddleware");
 
-router.post("/", validarServicio, servicioController.create);
-router.get("/", servicioController.getAll);
-router.get("/:id", servicioController.getById);
-router.put("/:id", validarServicio, servicioController.update);
-router.delete("/:id", servicioController.delete);
+router.post("/", validateServiceData, ServicesController.create);
+router.get("/", ServicesController.getAll);
+router.get("/:id", ServicesController.getById);
+router.put("/:id", validateServiceUpdate, ServicesController.update);
+router.delete("/:id", ServicesController.delete);
 
 module.exports = router;

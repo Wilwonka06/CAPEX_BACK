@@ -1,83 +1,100 @@
-// services/servicioService.js
-const db = require("../models"); // importa el index.js de models
-const Servicio = db.Servicio; // modelo de servicios
+const Services = require('../models/Services');
+const { Op } = require('sequelize');
 
-// Crear un servicio
-const createServicio = async (data) => {
-  try {
-    const servicio = await Servicio.create({
-      nombre: data.nombre,
-      id_categoria_servicio: data.id_categoria_servicio,
-      descripcion: data.descripcion,
-      duracion: data.duracion,
-      precio: data.precio,
-      estado: data.estado || "Activo",
-      foto: data.foto
-    });
-    return servicio;
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Obtener todos los servicios
-const getAllServicios = async () => {
-  try {
-    return await Servicio.findAll();
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Obtener un servicio por ID
-const getServicioById = async (id_servicio) => {
-  try {
-    return await Servicio.findByPk(id_servicio);
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Actualizar un servicio
-const updateServicio = async (id_servicio, data) => {
-  try {
-    const servicio = await Servicio.findByPk(id_servicio);
-    if (!servicio) {
-      throw new Error("Servicio no encontrado");
+class ServicesService {
+  async createService(serviceData) {
+    try {
+      return await Services.create(serviceData);
+    } catch (error) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        throw new Error('A service with that name already exists');
+      }
+      throw error;
     }
-    await servicio.update({
-      nombre: data.nombre,
-      id_categoria_servicio: data.id_categoria_servicio,
-      descripcion: data.descripcion,
-      duracion: data.duracion,
-      precio: data.precio,
-      estado: data.estado,
-      foto: data.foto
+  }
+
+  async getAllServices() {
+    return await Services.findAll({
+      order: [['nombre', 'ASC']]
     });
-    return servicio;
-  } catch (error) {
-    throw error;
   }
-};
 
-// Eliminar un servicio
-const deleteServicio = async (id_servicio) => {
-  try {
-    const servicio = await Servicio.findByPk(id_servicio);
-    if (!servicio) {
-      throw new Error("Servicio no encontrado");
+  async getServiceById(id_servicio) {
+    return await Services.findByPk(id_servicio);
+  }
+
+  async getActiveServices() {
+    return await Services.findAll({
+      where: { estado: 'Activo' },
+      order: [['nombre', 'ASC']]
+    });
+  }
+
+  async getServicesByStatus(status) {
+    return await Services.findAll({
+      where: { estado: status },
+      order: [['nombre', 'ASC']]
+    });
+  }
+
+  async updateService(id_servicio, serviceData) {
+    const service = await Services.findByPk(id_servicio);
+    if (!service) {
+      throw new Error('Service not found');
     }
-    await servicio.destroy();
-    return { message: "Servicio eliminado correctamente" };
-  } catch (error) {
-    throw error;
-  }
-};
 
-module.exports = {
-  createServicio,
-  getAllServicios,
-  getServicioById,
-  updateServicio,
-  deleteServicio,
-};
+    try {
+      return await service.update(serviceData);
+    } catch (error) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        throw new Error('A service with that name already exists');
+      }
+      throw error;
+    }
+  }
+
+  async deleteService(id_servicio) {
+    const service = await Services.findByPk(id_servicio);
+    if (!service) {
+      throw new Error('Service not found');
+    }
+
+    await service.destroy();
+    return { message: 'Service deleted successfully' };
+  }
+
+  async searchServices(searchTerm) {
+    return await Service.findAll({
+      where: {
+        [Op.or]: [
+          { nombre: { [Op.like]: `%${searchTerm}%` } },
+          { descripcion: { [Op.like]: `%${searchTerm}%` } }
+        ]
+      },
+      order: [['nombre', 'ASC']]
+    });
+  }
+
+  async changeServiceStatus(id_servicio, newStatus) {
+    const service = await Services.findByPk(id_servicio);
+    if (!service) {
+      throw new Error('Service not found');
+    }
+
+    await service.update({ estado: newStatus });
+    return service;
+  }
+
+  async getServiceByName(nombre) {
+    return await Services.findOne({
+      where: { nombre }
+    });
+  }
+
+  async checkServiceExists(id_servicio) {
+    const service = await Services.findByPk(id_servicio);
+    return service !== null;
+  }
+}
+
+module.exports = new ServicesService();
