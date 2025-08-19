@@ -13,10 +13,19 @@ const TechnicalSheet = require('./models/TechnicalSheet');
 const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
 
+
+// Importar solo lo necesario
+const { ErrorMiddleware, commonMiddleware } = require('./middlewares');
+
+// Importar rutas
+const usersRoutes = require('./routes/UsersRoutes');
+app.use('/api/scheduling', require('./routes/SchedulingRoutes'));
+
 const app = express();
 
 // Conectar a la base de datos
 connectDB();
+
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
@@ -115,4 +124,4 @@ app.use((req, res) => {
   });
 });
 
-module.exports = app; 
+module.exports = app;
