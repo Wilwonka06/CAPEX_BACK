@@ -14,20 +14,15 @@ const Scheduling = sequelize.define('Scheduling', {
   },
   fecha: {
     type: DataTypes.DATEONLY,
-    allowNull: false,
-    validate: {
-      isDate: true
-    }
+    allowNull: false
   },
   hora_inicio: {
     type: DataTypes.TIME,
-    allowNull: false,
-    validate: {
-      is: /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/
-    }
+    allowNull: false
   },
   hora_fin: {
     type: DataTypes.TIME,
+
     allowNull: false,
     validate: {
       is: /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,

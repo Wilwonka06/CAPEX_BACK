@@ -18,11 +18,12 @@ const ProductCategory = require('./models/ProductCategory');
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
 
+
 const app = express();
+app.use(express.json());
 
 // Conectar a la base de datos
 connectDB();
-
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
