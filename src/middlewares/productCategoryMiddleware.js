@@ -1,5 +1,5 @@
-const { body, query, param } = require('express-validator');
-const { validateRequest } = require('./validationMiddleware');
+const { body, query } = require('express-validator');
+const ValidationMiddleware = require('./ValidationMiddleware');
 
 // Validaciones para crear categoría de producto
 const validateCreateCategoriaProducto = [
@@ -7,8 +7,16 @@ const validateCreateCategoriaProducto = [
     .trim()
     .notEmpty()
     .withMessage('El nombre de la categoría es requerido')
-    .isLength({ min: 2, max: 250 })
-    .withMessage('El nombre debe tener entre 2 y 250 caracteres'),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
+    .withMessage('El nombre solo puede contener letras y espacios'),
+  
+  body('descripcion')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('La descripción no puede exceder 500 caracteres'),
   
   body('estado')
     .optional()
@@ -16,7 +24,7 @@ const validateCreateCategoriaProducto = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para actualizar categoría de producto
@@ -26,8 +34,16 @@ const validateUpdateCategoriaProducto = [
     .trim()
     .notEmpty()
     .withMessage('El nombre de la categoría no puede estar vacío')
-    .isLength({ min: 2, max: 250 })
-    .withMessage('El nombre debe tener entre 2 y 250 caracteres'),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
+    .withMessage('El nombre solo puede contener letras y espacios'),
+  
+  body('descripcion')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('La descripción no puede exceder 500 caracteres'),
   
   body('estado')
     .optional()
@@ -35,7 +51,7 @@ const validateUpdateCategoriaProducto = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para búsqueda de categorías
@@ -47,7 +63,7 @@ const validateSearchCategoriaProducto = [
     .isLength({ min: 2 })
     .withMessage('El término de búsqueda debe tener al menos 2 caracteres'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 module.exports = {

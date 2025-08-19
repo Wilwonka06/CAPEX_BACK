@@ -1,13 +1,13 @@
 'use strict';
 
+/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up (queryInterface, Sequelize) {
     await queryInterface.createTable('Users', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
-        autoIncrement: true,
-        allowNull: false
+        autoIncrement: true
       },
       name: {
         type: Sequelize.STRING(100),
@@ -22,13 +22,12 @@ module.exports = {
         allowNull: false
       },
       phone: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING(20),
         allowNull: true
       },
       roleId: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 1
+        allowNull: false
       },
       email: {
         type: Sequelize.STRING(100),
@@ -40,28 +39,9 @@ module.exports = {
         allowNull: false
       }
     });
-
-    // Crear índices para mejorar performance
-    await queryInterface.addIndex('Users', ['email'], {
-      unique: true,
-      name: 'users_email_unique'
-    });
-
-    await queryInterface.addIndex('Users', ['documentType', 'documentNumber'], {
-      unique: true,
-      name: 'users_document_unique'
-    });
-
-    await queryInterface.addIndex('Users', ['roleId'], {
-      name: 'users_roleId_index'
-    });
-
-    await queryInterface.addIndex('Users', ['name'], {
-      name: 'users_name_index'
-    });
   },
 
-  async down(queryInterface, Sequelize) {
+  async down (queryInterface, Sequelize) {
     await queryInterface.dropTable('Users');
   }
 };

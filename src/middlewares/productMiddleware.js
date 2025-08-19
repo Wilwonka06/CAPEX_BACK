@@ -1,5 +1,5 @@
 const { body, query } = require('express-validator');
-const { validateRequest } = require('./validationMiddleware');
+const ValidationMiddleware = require('./ValidationMiddleware');
 
 // Validaciones para crear producto
 const validateCreateProducto = [
@@ -59,7 +59,7 @@ const validateCreateProducto = [
     .isLength({ max: 255 })
     .withMessage('El valor de la característica no puede exceder 255 caracteres'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para actualizar producto
@@ -104,7 +104,7 @@ const validateUpdateProducto = [
     .isURL()
     .withMessage('La URL de la foto debe ser una URL válida'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para búsqueda de productos
@@ -116,7 +116,7 @@ const validateSearchProducto = [
     .isLength({ min: 2 })
     .withMessage('El término de búsqueda debe tener al menos 2 caracteres'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para filtros de productos
@@ -141,7 +141,7 @@ const validateFilterProducto = [
     .isInt({ min: 0 })
     .withMessage('El stock mínimo debe ser un número entero no negativo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 module.exports = {

@@ -1,5 +1,5 @@
 const { body, query } = require('express-validator');
-const { validateRequest } = require('./validationMiddleware');
+const ValidationMiddleware = require('./ValidationMiddleware');
 
 // Validaciones para crear característica
 const validateCreateCaracteristica = [
@@ -12,7 +12,7 @@ const validateCreateCaracteristica = [
     .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
     .withMessage('El nombre solo puede contener letras y espacios'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para actualizar característica
@@ -26,7 +26,7 @@ const validateUpdateCaracteristica = [
     .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
     .withMessage('El nombre solo puede contener letras y espacios'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para búsqueda de características
@@ -38,7 +38,7 @@ const validateSearchCaracteristica = [
     .isLength({ min: 2 })
     .withMessage('El término de búsqueda debe tener al menos 2 caracteres'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 module.exports = {

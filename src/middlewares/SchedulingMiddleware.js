@@ -1,5 +1,8 @@
 // src/middlewares/SchedulingMiddleware.js
 
+const { body, query } = require('express-validator');
+const ValidationMiddleware = require('./ValidationMiddleware');
+
 /**
  * Middleware para validar datos de creación/actualización de Scheduling individual
  * Verifica que los campos obligatorios estén presentes y tengan formato válido

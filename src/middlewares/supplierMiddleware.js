@@ -1,5 +1,5 @@
 const { body, query, param } = require('express-validator');
-const { validateRequest } = require('./validationMiddleware');
+const ValidationMiddleware = require('./ValidationMiddleware');
 
 // Validaciones para crear proveedor
 const validateCreateProveedor = [
@@ -58,7 +58,7 @@ const validateCreateProveedor = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para actualizar proveedor
@@ -119,7 +119,7 @@ const validateUpdateProveedor = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para búsqueda de proveedores
@@ -131,17 +131,17 @@ const validateSearchProveedor = [
     .isLength({ min: 2 })
     .withMessage('El término de búsqueda debe tener al menos 2 caracteres'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para filtro por estado
 const validateEstadoProveedor = [
-  param('estado')
+  query('estado')
     .trim()
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 // Validaciones para filtros adicionales
@@ -158,7 +158,7 @@ const validateFilterProveedor = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  validateRequest
+  ValidationMiddleware.validate
 ];
 
 module.exports = {
