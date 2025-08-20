@@ -14,6 +14,88 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
+// Middleware to validate that paid services cannot be modified
+const validatePaidServiceModification = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Get the service detail to check its status
+    const serviceDetailResult = await ServiceDetailService.getServiceDetailById(id);
+    
+    if (!serviceDetailResult.success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service detail not found'
+      });
+    }
+    
+    const serviceDetail = serviceDetailResult.data;
+    
+    // Check if the service is in "Pagada" status
+    if (serviceDetail.status === 'Pagada') {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot modify, delete, or change status of a paid service. Paid services are locked for data integrity.',
+        error: 'PAID_SERVICE_LOCKED'
+      });
+    }
+    
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error validating service detail status',
+      error: error.message
+    });
+  }
+};
+
+// Middleware to validate that paid services cannot have their status changed
+const validatePaidServiceStatusChange = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    // Get the service detail to check its current status
+    const serviceDetailResult = await ServiceDetailService.getServiceDetailById(id);
+    
+    if (!serviceDetailResult.success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service detail not found'
+      });
+    }
+    
+    const serviceDetail = serviceDetailResult.data;
+    
+    // Check if the service is currently in "Pagada" status
+    if (serviceDetail.status === 'Pagada') {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot change the status of a paid service. Paid services are locked for data integrity.',
+        error: 'PAID_SERVICE_LOCKED'
+      });
+    }
+    
+    // Check if trying to change to "Pagada" status (this should be done through the convertToSale endpoint)
+    if (status === 'Pagada') {
+      return res.status(403).json({
+        success: false,
+        message: 'To convert a service to paid status, use the dedicated convert-to-sale endpoint.',
+        error: 'USE_CONVERT_TO_SALE_ENDPOINT'
+      });
+    }
+    
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error validating service detail status change',
+      error: error.message
+    });
+  }
+};
+
 // Validations for creating service detail
 const validateCreateServiceDetail = [
   body('id_employee')
@@ -181,88 +263,6 @@ const validateConvertToSale = [
   handleValidationErrors
 ];
 
-// Middleware to validate that paid services cannot be modified
-const validatePaidServiceModification = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    
-    // Get the service detail to check its status
-    const serviceDetailResult = await ServiceDetailService.getServiceDetailById(id);
-    
-    if (!serviceDetailResult.success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Service detail not found'
-      });
-    }
-    
-    const serviceDetail = serviceDetailResult.data;
-    
-    // Check if the service is in "Pagada" status
-    if (serviceDetail.status === 'Pagada') {
-      return res.status(403).json({
-        success: false,
-        message: 'Cannot modify, delete, or change status of a paid service. Paid services are locked for data integrity.',
-        error: 'PAID_SERVICE_LOCKED'
-      });
-    }
-    
-    next();
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error validating service detail status',
-      error: error.message
-    });
-  }
-};
-
-// Middleware to validate that paid services cannot have their status changed
-const validatePaidServiceStatusChange = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    
-    // Get the service detail to check its current status
-    const serviceDetailResult = await ServiceDetailService.getServiceDetailById(id);
-    
-    if (!serviceDetailResult.success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Service detail not found'
-      });
-    }
-    
-    const serviceDetail = serviceDetailResult.data;
-    
-    // Check if the service is currently in "Pagada" status
-    if (serviceDetail.status === 'Pagada') {
-      return res.status(403).json({
-        success: false,
-        message: 'Cannot change the status of a paid service. Paid services are locked for data integrity.',
-        error: 'PAID_SERVICE_LOCKED'
-      });
-    }
-    
-    // Check if trying to change to "Pagada" status (this should be done through the convertToSale endpoint)
-    if (status === 'Pagada') {
-      return res.status(403).json({
-        success: false,
-        message: 'To convert a service to paid status, use the dedicated convert-to-sale endpoint.',
-        error: 'USE_CONVERT_TO_SALE_ENDPOINT'
-      });
-    }
-    
-    next();
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error validating service detail status change',
-      error: error.message
-    });
-  }
-};
-
 module.exports = {
   validateCreateServiceDetail,
   validateUpdateServiceDetail,
@@ -276,4 +276,4 @@ module.exports = {
   validatePaidServiceModification,
   validatePaidServiceStatusChange,
   handleValidationErrors
-};
+}; 
