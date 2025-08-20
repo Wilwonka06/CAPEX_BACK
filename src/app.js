@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
+
 const productRoutes = require('./routes/ProductRoutes');
 const characteristicRoutes = require('./routes/CharacteristicRoutes');
 const supplierRoutes = require('./routes/SupplierRoutes');
@@ -81,7 +82,7 @@ Product.belongsTo(ProductCategory, {
   as: 'categoria'
 });
 
-// Middlewares
+const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -121,3 +122,4 @@ app.use((req, res) => {
 app.use(ErrorMiddleware.handleGeneralError);
 
 module.exports = app;
+
