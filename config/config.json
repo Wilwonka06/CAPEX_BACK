@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "1077David456",
+    "database": "capex",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "1077David456",
+    "database": "capex_test",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "1077David456",
+    "database": "capex",
+    "host": "localhost",
+    "dialect": "mysql"
+  }
+}
