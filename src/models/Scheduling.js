@@ -2,7 +2,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-const Scheduling = sequelize.define('Scheduling', {
+const Programacion = sequelize.define('Programacion', {
   id_programacion: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -22,7 +22,6 @@ const Scheduling = sequelize.define('Scheduling', {
   },
   hora_fin: {
     type: DataTypes.TIME,
-
     allowNull: false,
     validate: {
       is: /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
@@ -38,8 +37,8 @@ const Scheduling = sequelize.define('Scheduling', {
     allowNull: false
   },
   estado: {
-    type: DataTypes.ENUM('programado', 'en_curso', 'completado', 'cancelado'),
-    defaultValue: 'programado'
+    type: DataTypes.ENUM('Programado', 'En curso', 'Completado', 'Cancelado'),
+    defaultValue: 'Programado'
   },
   observaciones: {
     type: DataTypes.TEXT,
@@ -56,7 +55,6 @@ const Scheduling = sequelize.define('Scheduling', {
 }, {
   tableName: 'programaciones',
   timestamps: false,
-  underscored: true,
   indexes: [
     {
       unique: true,
@@ -65,4 +63,4 @@ const Scheduling = sequelize.define('Scheduling', {
   ]
 });
 
-module.exports = Scheduling;
+module.exports = Programacion;

@@ -3,38 +3,35 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('Users', {
-      id: {
+    await queryInterface.createTable('usuarios', {
+      id_usuario: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true
       },
-      name: {
+      nombre: {
         type: Sequelize.STRING(100),
         allowNull: false
       },
-      documentType: {
+      tipo_documento: {
+        type: Sequelize.ENUM('Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'),
+        allowNull: false
+      },
+      documento: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        unique: true
+      },
+      telefono: {
         type: Sequelize.STRING(20),
         allowNull: false
       },
-      documentNumber: {
-        type: Sequelize.STRING(20),
-        allowNull: false
-      },
-      phone: {
-        type: Sequelize.STRING(20),
-        allowNull: true
-      },
-      roleId: {
-        type: Sequelize.INTEGER,
-        allowNull: false
-      },
-      email: {
+      correo: {
         type: Sequelize.STRING(100),
         allowNull: false,
         unique: true
       },
-      password: {
+      contrasena: {
         type: Sequelize.STRING(100),
         allowNull: false
       }

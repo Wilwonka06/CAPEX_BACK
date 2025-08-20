@@ -7,6 +7,10 @@ const supplierRoutes = require('./routes/SupplierRoutes');
 const productCategoryRoutes = require('./routes/ProductCategoryRoutes');
 const usersRoutes = require('./routes/UsersRoutes');
 const schedulingRoutes = require('./routes/SchedulingRoutes');
+const employeeRoutes = require('./routes/EmployeeRoutes');
+const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
+const servicesRoutes = require('./routes/ServicesRoutes');
+
 
 // Importar modelos directamente
 const Product = require('./models/Product');
@@ -14,6 +18,7 @@ const Characteristic = require('./models/Characteristic');
 const TechnicalSheet = require('./models/TechnicalSheet');
 const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
+const Employee = require('./models/Employee');
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
@@ -92,21 +97,6 @@ app.use((req, res, next) => {
   }
 });
 
-// Ruta de prueba
-app.get('/', (req, res) => {
-  res.json({
-    message: 'API CAPEX Backend funcionando correctamente',
-    timestamp: new Date().toISOString(),
-    status: 'OK',
-    endpoints: {
-      productos: '/api/productos',
-      caracteristicas: '/api/caracteristicas',
-      proveedores: '/api/proveedores',
-      categorias_productos: '/api/categorias-productos'
-    }
-  });
-});
-
 // Rutas de la API
 app.use('/api/productos', productRoutes);
 app.use('/api/caracteristicas', characteristicRoutes);
@@ -114,6 +104,9 @@ app.use('/api/proveedores', supplierRoutes);
 app.use('/api/categorias-productos', productCategoryRoutes);
 app.use('/api/usuarios', usersRoutes);
 app.use('/api/scheduling', schedulingRoutes);
+app.use('/api/empleados', employeeRoutes);
+app.use('/api/categorias-servicios', serviceCategoryRoutes);
+app.use('/api/servicios', servicesRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   

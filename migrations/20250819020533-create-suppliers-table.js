@@ -18,29 +18,32 @@ module.exports = {
         allowNull: false,
         unique: true
       },
+      tipo_proveedor: {
+        type: Sequelize.CHAR(1),
+        allowNull: false,
+        defaultValue: 'N'
+      },
       direccion: {
-        type: Sequelize.TEXT,
+        type: Sequelize.STRING(255),
         allowNull: true
       },
       telefono: {
         type: Sequelize.STRING(20),
         allowNull: true
       },
-      email: {
-        type: Sequelize.STRING(100),
-        allowNull: true
+      correo: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+        unique: true
       },
-      contacto_principal: {
-        type: Sequelize.STRING(100),
+      contacto: {
+        type: Sequelize.STRING(255),
         allowNull: true
       },
       estado: {
-        type: Sequelize.ENUM('activo', 'inactivo'),
-        defaultValue: 'activo'
-      },
-      fecha_registro: {
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
+        type: Sequelize.STRING(10),
+        allowNull: false,
+        defaultValue: 'Activo'
       }
     });
   },

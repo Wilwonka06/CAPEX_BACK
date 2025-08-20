@@ -99,13 +99,23 @@ const createProducto = async (req, res) => {
       url_foto
     });
 
-    // Si se proporcionan características, agregarlas
+    // Si se proporcionan características, agregarlas o crearlas si no existen
     if (caracteristicas && Array.isArray(caracteristicas)) {
       for (const caracteristica of caracteristicas) {
-        if (caracteristica.id_caracteristica && caracteristica.valor) {
+        let idCaracteristica = caracteristica.id_caracteristica;
+        // Si no se proporciona id, buscar por nombre o crear
+        if (!idCaracteristica && caracteristica.nombre) {
+          let found = await Characteristic.findOne({ where: { nombre: caracteristica.nombre } });
+          if (!found) {
+            found = await Characteristic.create({ nombre: caracteristica.nombre });
+          }
+          idCaracteristica = found.id_caracteristica;
+        }
+        // Si tenemos id y valor, crear la ficha técnica
+        if (idCaracteristica && caracteristica.valor) {
           await TechnicalSheet.create({
             id_producto: newProducto.id_producto,
-            id_caracteristica: caracteristica.id_caracteristica,
+            id_caracteristica: idCaracteristica,
             valor: caracteristica.valor
           });
         }

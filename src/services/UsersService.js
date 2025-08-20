@@ -78,7 +78,7 @@ class UsersService {
       
       if (search) {
         whereClause[Op.or] = [
-          { name: { [Op.like]: `%${search}%` } },
+          { nombre: { [Op.like]: `%${search}%` } },
           { email: { [Op.like]: `%${search}%` } },
           { documentNumber: { [Op.like]: `%${search}%` } }
         ];
@@ -98,7 +98,7 @@ class UsersService {
         attributes: { exclude: ['password'] }, // Excluir password
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [['name', 'ASC']]
+  order: [['nombre', 'ASC']]
       });
 
       return {

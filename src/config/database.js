@@ -25,9 +25,7 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('Conexión a MySQL establecida correctamente.');
     
-    // Sincronizar modelos con la base de datos
-    await sequelize.sync({ alter: true });
-    console.log('Modelos sincronizados con la base de datos.');
+  // No sincronizar modelos automáticamente, usar solo migraciones
   } catch (error) {
     console.error('Error al conectar a MySQL:', error);
     process.exit(1);
