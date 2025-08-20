@@ -459,8 +459,14 @@ class ServiceDetailService {
         throw new Error('Service detail not found');
       }
 
+      // Check if already paid
+      if (serviceDetail.status === 'Pagada') {
+        throw new Error('Service detail is already paid and cannot be converted again');
+      }
+
+      // Only allow conversion from "En proceso" status
       if (serviceDetail.status !== 'En proceso') {
-        throw new Error('Service detail must be in "En proceso" status to convert to sale');
+        throw new Error('Service detail must be in "En proceso" status to convert to sale. Current status: ' + serviceDetail.status);
       }
 
       serviceDetail.status = 'Pagada';
@@ -471,7 +477,7 @@ class ServiceDetailService {
 
       return {
         success: true,
-        message: 'Service detail converted to sale successfully',
+        message: 'Service detail converted to sale successfully. This service is now locked and cannot be modified.',
         data: updatedServiceDetail.data
       };
     } catch (error) {

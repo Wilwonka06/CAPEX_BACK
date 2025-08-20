@@ -10,7 +10,9 @@ const {
   validateStatus,
   validateEmployeeId,
   validateDateRange,
-  validateConvertToSale
+  validateConvertToSale,
+  validatePaidServiceModification,
+  validatePaidServiceStatusChange
 } = require('../../middlewares/serviceDetails/ServiceDetailValidationMiddleware');
 const {
   authenticateToken,
@@ -46,6 +48,8 @@ router.post('/',
 router.put('/:id', 
   authenticateToken,
   requirePermission('update'),
+  validateServiceDetailId,
+  validatePaidServiceModification,
   validateUpdateServiceDetail,
   ServiceDetailController.updateServiceDetail
 );
@@ -54,7 +58,8 @@ router.put('/:id',
 router.delete('/:id', 
   authenticateToken,
   requirePermission('delete'),
-  validateDeleteServiceDetail,
+  validateServiceDetailId,
+  validatePaidServiceModification,
   ServiceDetailController.deleteServiceDetail
 );
 
@@ -64,6 +69,8 @@ router.delete('/:id',
 router.patch('/:id/status', 
   authenticateToken,
   requirePermission('update'),
+  validateServiceDetailId,
+  validatePaidServiceStatusChange,
   validateUpdateStatus,
   ServiceDetailController.updateServiceDetailStatus
 );
@@ -90,6 +97,7 @@ router.patch('/:id/iniciar',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.startService
 );
 
@@ -98,6 +106,7 @@ router.patch('/:id/completar',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.completeService
 );
 
@@ -115,6 +124,7 @@ router.patch('/:id/confirmar',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.confirmScheduledService
 );
 
@@ -123,6 +133,7 @@ router.patch('/:id/reprogramar',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.rescheduleService
 );
 
@@ -150,6 +161,7 @@ router.patch('/:id/cancelar-cliente',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.cancelByClient
 );
 
@@ -158,6 +170,7 @@ router.patch('/:id/no-asistio',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
+  validatePaidServiceStatusChange,
   ServiceDetailController.markAsNoShow
 );
 
