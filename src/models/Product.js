@@ -1,74 +1,54 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const Producto = sequelize.define('Producto', {
+const Product = sequelize.define('Product', {
   id_producto: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    field: 'id_producto'
+    autoIncrement: true
   },
   nombre: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     validate: {
       notEmpty: true,
-      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/
+      len: [1, 100]
     }
   },
-  id_categoria_producto: {
-    type: DataTypes.INTEGER,
+  descripcion: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
-  costo: {
-    type: DataTypes.DECIMAL(15, 2),
-    allowNull: true,
-    validate: {
-      min: 0.01,
-      max: 9999999.99
-    }
-  },
-  iva: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    validate: {
-      min: 0,
-      max: 40
-    }
-  },
-  precio_venta: {
-    type: DataTypes.DECIMAL(15, 2),
+  precio: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
-      min: 0.01,
-      max: 9999999.99
+      min: 0
     }
   },
   stock: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     defaultValue: 0,
     validate: {
       min: 0
     }
   },
-  fecha_registro: {
-    type: DataTypes.DATEONLY,
-    defaultValue: DataTypes.NOW
+  id_categoria_producto: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'categorias_productos',
+      key: 'id_categoria_producto'
+    }
   },
-  url_foto: {
-    type: DataTypes.STRING(255),
-    allowNull: true
+  estado: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
   tableName: 'productos',
-  timestamps: false,
-  indexes: [
-    {
-      unique: true,
-      fields: ['nombre']
-    }
-  ]
+  timestamps: false
 });
 
-module.exports = Producto;
+module.exports = Product;

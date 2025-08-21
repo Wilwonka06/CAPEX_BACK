@@ -1,8 +1,7 @@
-// src/models/Employee.js
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const Empleado = sequelize.define('Empleado', {
+const Employee = sequelize.define('Employee', {
   id_empleado: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -10,16 +9,27 @@ const Empleado = sequelize.define('Empleado', {
   },
   nombre: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 100]
+    }
   },
   apellido: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 100]
+    }
   },
-  correo: {
+  email: {
     type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true
+    unique: true,
+    validate: {
+      isEmail: true
+    }
   },
   telefono: {
     type: DataTypes.STRING(20),
@@ -30,13 +40,12 @@ const Empleado = sequelize.define('Empleado', {
     allowNull: true
   },
   estado: {
-    type: DataTypes.ENUM('Activo', 'Inactivo'),
-    allowNull: false,
-    defaultValue: 'Activo'
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
   tableName: 'empleados',
   timestamps: false
 });
 
-module.exports = Empleado;
+module.exports = Employee;

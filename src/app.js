@@ -1,16 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const productRoutes = require('./routes/ProductRoutes');
-const characteristicRoutes = require('./routes/CharacteristicRoutes');
-const supplierRoutes = require('./routes/SupplierRoutes');
-const productCategoryRoutes = require('./routes/ProductCategoryRoutes');
-const usersRoutes = require('./routes/UsersRoutes');
-const schedulingRoutes = require('./routes/SchedulingRoutes');
-const employeeRoutes = require('./routes/EmployeeRoutes');
-const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
-const servicesRoutes = require('./routes/ServicesRoutes');
 
+// Importar rutas
+const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
+const roleRoutes = require('./routes/roles/RoleRoutes');
+const clientRoutes = require('./routes/clients/ClienteRoutes');
 
 // Importar modelos directamente
 const Product = require('./models/Product');
@@ -20,15 +15,46 @@ const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
 const Employee = require('./models/Employee');
 
-// Importar middleware de errores directamente
-const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
+// Importar modelos de roles
+const Role = require('./models/roles/Role');
+const Permission = require('./models/roles/Permission');
+const Privilege = require('./models/roles/Privilege');
+const RolePermissionPrivilege = require('./models/roles/RolePermissionPrivilege');
 
+// Middleware de errores personalizado
+const handleGeneralError = (err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+};
+
+// Importar función de inicialización de roles
+const { initializeRoles } = require('./config/initRoles');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Conectar a la base de datos
 connectDB();
+
+// Inicializar roles por defecto
+initializeRoles();
+
+// Middleware para CORS (opcional)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
@@ -81,32 +107,10 @@ Product.belongsTo(ProductCategory, {
   as: 'categoria'
 });
 
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Middleware para CORS (opcional)
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
-
 // Rutas de la API
-app.use('/api/productos', productRoutes);
-app.use('/api/caracteristicas', characteristicRoutes);
-app.use('/api/proveedores', supplierRoutes);
-app.use('/api/categorias-productos', productCategoryRoutes);
-app.use('/api/usuarios', usersRoutes);
-app.use('/api/scheduling', schedulingRoutes);
-app.use('/api/empleados', employeeRoutes);
-app.use('/api/categorias-servicios', serviceCategoryRoutes);
-app.use('/api/servicios', servicesRoutes);
+app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/clients', clientRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
@@ -118,6 +122,6 @@ app.use((req, res) => {
 });
 
 // Middleware para manejar errores (debe ir al final)
-app.use(ErrorMiddleware.handleGeneralError);
+app.use(handleGeneralError);
 
 module.exports = app;
