@@ -1,41 +1,14 @@
-const { ServiceDetail, Employee, Service, ServiceClient, Client } = require('../../models/serviceDetails/Associations');
-const { Op } = require('sequelize');
+const ServiceDetail = require('../../models/serviceDetails/ServiceDetail');
+const { sequelize } = require('../../config/database');
 
 class ServiceDetailService {
-  // Get all service details with related information
+  // Get all service details
   static async getAllServiceDetails() {
     try {
-      const serviceDetails = await ServiceDetail.findAll({
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position', 'status']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'description', 'base_price', 'duration_minutes', 'category']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email', 'phone']
-              }]
-            }]
-          }
-        ],
-        order: [['id_service_detail', 'DESC']]
-      });
-
+      const serviceDetails = await ServiceDetail.findAll();
       return {
         success: true,
+        message: 'Service details obtained successfully',
         data: serviceDetails
       };
     } catch (error) {
@@ -43,43 +16,21 @@ class ServiceDetailService {
     }
   }
 
-  // Get service detail by ID with related information
+  // Get service detail by ID
   static async getServiceDetailById(id) {
     try {
-      const serviceDetail = await ServiceDetail.findByPk(id, {
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position', 'status']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'description', 'base_price', 'duration_minutes', 'category']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email', 'phone']
-              }]
-            }]
-          }
-        ]
-      });
-
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
       if (!serviceDetail) {
-        throw new Error('Service detail not found');
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
       }
 
       return {
         success: true,
+        message: 'Service detail obtained successfully',
         data: serviceDetail
       };
     } catch (error) {
@@ -87,57 +38,14 @@ class ServiceDetailService {
     }
   }
 
-  // Create new service detail
+  // Create service detail
   static async createServiceDetail(serviceDetailData) {
     try {
-      const {
-        id_employee,
-        id_service,
-        id_service_client,
-        unit_price,
-        quantity,
-        start_time,
-        end_time,
-        duration,
-        status
-      } = serviceDetailData;
-
-      // Validate related entities exist
-      const employee = await Employee.findByPk(id_employee);
-      if (!employee) {
-        throw new Error('Employee not found');
-      }
-
-      const service = await Service.findByPk(id_service);
-      if (!service) {
-        throw new Error('Service not found');
-      }
-
-      const serviceClient = await ServiceClient.findByPk(id_service_client);
-      if (!serviceClient) {
-        throw new Error('Service client not found');
-      }
-
-      // Create service detail
-      const newServiceDetail = await ServiceDetail.create({
-        id_employee,
-        id_service,
-        id_service_client,
-        unit_price,
-        quantity,
-        start_time,
-        end_time,
-        duration,
-        status: status || 'Agendada'
-      });
-
-      // Get created service detail with related information
-      const serviceDetailWithRelations = await this.getServiceDetailById(newServiceDetail.id_service_detail);
-
+      const newServiceDetail = await ServiceDetail.create(serviceDetailData);
       return {
         success: true,
         message: 'Service detail created successfully',
-        data: serviceDetailWithRelations.data
+        data: newServiceDetail
       };
     } catch (error) {
       throw new Error(`Error creating service detail: ${error.message}`);
@@ -148,31 +56,20 @@ class ServiceDetailService {
   static async updateServiceDetail(id, serviceDetailData) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
+      
       if (!serviceDetail) {
-        throw new Error('Service detail not found');
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
       }
 
-      // Update fields if provided
-      const fieldsToUpdate = [
-        'id_employee', 'id_service', 'id_service_client', 'unit_price',
-        'quantity', 'start_time', 'end_time', 'duration', 'status'
-      ];
-
-      for (const field of fieldsToUpdate) {
-        if (serviceDetailData[field] !== undefined) {
-          serviceDetail[field] = serviceDetailData[field];
-        }
-      }
-
-      await serviceDetail.save();
-
-      // Get updated service detail with related information
-      const updatedServiceDetail = await this.getServiceDetailById(id);
-
+      await serviceDetail.update(serviceDetailData);
+      
       return {
         success: true,
         message: 'Service detail updated successfully',
-        data: updatedServiceDetail.data
+        data: serviceDetail
       };
     } catch (error) {
       throw new Error(`Error updating service detail: ${error.message}`);
@@ -183,12 +80,16 @@ class ServiceDetailService {
   static async deleteServiceDetail(id) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
+      
       if (!serviceDetail) {
-        throw new Error('Service detail not found');
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
       }
 
       await serviceDetail.destroy();
-
+      
       return {
         success: true,
         message: 'Service detail deleted successfully'
@@ -199,32 +100,24 @@ class ServiceDetailService {
   }
 
   // Update service detail status
-  static async updateServiceDetailStatus(id, newStatus) {
+  static async updateServiceDetailStatus(id, status) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
+      
       if (!serviceDetail) {
-        throw new Error('Service detail not found');
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
       }
 
-      const validStatuses = [
-        'Agendada', 'Confirmada', 'Reprogramada', 'En proceso',
-        'Finalizada', 'Pagada', 'Cancelada por el cliente', 'No asistio'
-      ];
-
-      if (!validStatuses.includes(newStatus)) {
-        throw new Error('Invalid status');
-      }
-
-      serviceDetail.status = newStatus;
+      serviceDetail.status = status;
       await serviceDetail.save();
-
-      // Get updated service detail with related information
-      const updatedServiceDetail = await this.getServiceDetailById(id);
-
+      
       return {
         success: true,
         message: 'Service detail status updated successfully',
-        data: updatedServiceDetail.data
+        data: serviceDetail
       };
     } catch (error) {
       throw new Error(`Error updating service detail status: ${error.message}`);
@@ -235,37 +128,12 @@ class ServiceDetailService {
   static async getServiceDetailsByStatus(status) {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { status },
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'base_price', 'duration_minutes']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email']
-              }]
-            }]
-          }
-        ],
-        order: [['start_time', 'ASC']]
+        where: { status }
       });
-
+      
       return {
         success: true,
+        message: 'Service details obtained successfully',
         data: serviceDetails
       };
     } catch (error) {
@@ -273,177 +141,150 @@ class ServiceDetailService {
     }
   }
 
-  // Get service details by employee
-  static async getServiceDetailsByEmployee(employeeId) {
+  // Get order of service (services in "En proceso" status)
+  static async getOrderOfService() {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { id_employee: employeeId },
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'base_price', 'duration_minutes']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email']
-              }]
-            }]
-          }
-        ],
-        order: [['start_time', 'ASC']]
+        where: { status: 'En proceso' }
       });
-
+      
       return {
         success: true,
+        message: 'Order of service obtained successfully',
         data: serviceDetails
       };
     } catch (error) {
-      throw new Error(`Error getting service details by employee: ${error.message}`);
+      throw new Error(`Error getting order of service: ${error.message}`);
     }
   }
 
-  // Get service details by date range
-  static async getServiceDetailsByDateRange(startDate, endDate) {
-    try {
-      const serviceDetails = await ServiceDetail.findAll({
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'base_price', 'duration_minutes']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            where: {
-              service_date: {
-                [Op.between]: [startDate, endDate]
-              }
-            },
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email']
-              }]
-            }]
-          }
-        ],
-        order: [['start_time', 'ASC']]
-      });
-
-      return {
-        success: true,
-        data: serviceDetails
-      };
-    } catch (error) {
-      throw new Error(`Error getting service details by date range: ${error.message}`);
-    }
-  }
-
-  // Get service details statistics
-  static async getServiceDetailStats() {
-    try {
-      const totalServiceDetails = await ServiceDetail.count();
-      const statusCounts = await ServiceDetail.findAll({
-        attributes: [
-          'status',
-          [require('sequelize').fn('COUNT', require('sequelize').col('id_service_detail')), 'count']
-        ],
-        group: ['status']
-      });
-
-      const totalRevenue = await ServiceDetail.sum('unit_price', {
-        where: { status: 'Pagada' }
-      });
-
-      const pendingRevenue = await ServiceDetail.sum('unit_price', {
-        where: { 
-          status: {
-            [Op.in]: ['Agendada', 'Confirmada', 'En proceso', 'Finalizada']
-          }
-        }
-      });
-
-      return {
-        success: true,
-        data: {
-          total_service_details: totalServiceDetails,
-          status_distribution: statusCounts,
-          total_revenue: totalRevenue || 0,
-          pending_revenue: pendingRevenue || 0
-        }
-      };
-    } catch (error) {
-      throw new Error(`Error getting service detail statistics: ${error.message}`);
-    }
-  }
-
-  // Check if service detail exists
-  static async serviceDetailExists(id) {
+  // Start service (change status to "En proceso")
+  static async startService(id) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
-      return !!serviceDetail;
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'En proceso';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Service started successfully',
+        data: serviceDetail
+      };
     } catch (error) {
-      throw new Error(`Error checking service detail existence: ${error.message}`);
+      throw new Error(`Error starting service: ${error.message}`);
     }
   }
 
-  // Get service details that need to be converted to sales (status: "En proceso")
+  // Complete service (change status to "Finalizada")
+  static async completeService(id) {
+    try {
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'Finalizada';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Service completed successfully',
+        data: serviceDetail
+      };
+    } catch (error) {
+      throw new Error(`Error completing service: ${error.message}`);
+    }
+  }
+
+  // Get scheduled services
+  static async getScheduledServices() {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: { status: 'Agendada' }
+      });
+      
+      return {
+        success: true,
+        message: 'Scheduled services obtained successfully',
+        data: serviceDetails
+      };
+    } catch (error) {
+      throw new Error(`Error getting scheduled services: ${error.message}`);
+    }
+  }
+
+  // Confirm scheduled service
+  static async confirmScheduledService(id) {
+    try {
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'Confirmada';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Scheduled service confirmed successfully',
+        data: serviceDetail
+      };
+    } catch (error) {
+      throw new Error(`Error confirming scheduled service: ${error.message}`);
+    }
+  }
+
+  // Reschedule service
+  static async rescheduleService(id) {
+    try {
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'Reprogramada';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Service rescheduled successfully',
+        data: serviceDetail
+      };
+    } catch (error) {
+      throw new Error(`Error rescheduling service: ${error.message}`);
+    }
+  }
+
+  // Get service details for sales
   static async getServiceDetailsForSales() {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { status: 'En proceso' },
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: ['id_employee', 'name', 'email', 'phone', 'position']
-          },
-          {
-            model: Service,
-            as: 'service',
-            attributes: ['id_service', 'name', 'base_price', 'duration_minutes']
-          },
-          {
-            model: ServiceClient,
-            as: 'serviceClient',
-            include: [{
-              model: Client,
-              as: 'client',
-              include: [{
-                model: require('../../models/clients/Associations').User,
-                as: 'user',
-                attributes: ['id_user', 'name', 'email']
-              }]
-            }]
-          }
-        ],
-        order: [['start_time', 'ASC']]
+        where: { status: 'Finalizada' }
       });
-
+      
       return {
         success: true,
+        message: 'Service details for sales obtained successfully',
         data: serviceDetails
       };
     } catch (error) {
@@ -455,26 +296,37 @@ class ServiceDetailService {
   static async convertToSale(id) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
+      
       if (!serviceDetail) {
-        throw new Error('Service detail not found');
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
       }
 
       // Check if already paid
       if (serviceDetail.status === 'Pagada') {
-        throw new Error('Service detail is already paid and cannot be converted again');
+        return {
+          success: false,
+          message: 'Service detail is already paid and cannot be converted again',
+          error: 'ALREADY_PAID'
+        };
       }
 
       // Only allow conversion from "En proceso" status
       if (serviceDetail.status !== 'En proceso') {
-        throw new Error('Service detail must be in "En proceso" status to convert to sale. Current status: ' + serviceDetail.status);
+        return {
+          success: false,
+          message: `Service detail must be in "En proceso" status to convert to sale. Current status: ${serviceDetail.status}`,
+          error: 'INVALID_STATUS'
+        };
       }
 
       serviceDetail.status = 'Pagada';
       await serviceDetail.save();
-
-      // Get updated service detail with related information
+      
       const updatedServiceDetail = await this.getServiceDetailById(id);
-
+      
       return {
         success: true,
         message: 'Service detail converted to sale successfully. This service is now locked and cannot be modified.',
@@ -482,6 +334,115 @@ class ServiceDetailService {
       };
     } catch (error) {
       throw new Error(`Error converting service detail to sale: ${error.message}`);
+    }
+  }
+
+  // Cancel by client
+  static async cancelByClient(id) {
+    try {
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'Cancelada por el cliente';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Service cancelled by client successfully',
+        data: serviceDetail
+      };
+    } catch (error) {
+      throw new Error(`Error cancelling service by client: ${error.message}`);
+    }
+  }
+
+  // Mark as no show
+  static async markAsNoShow(id) {
+    try {
+      const serviceDetail = await ServiceDetail.findByPk(id);
+      
+      if (!serviceDetail) {
+        return {
+          success: false,
+          message: 'Service detail not found'
+        };
+      }
+
+      serviceDetail.status = 'No asistio';
+      await serviceDetail.save();
+      
+      return {
+        success: true,
+        message: 'Service marked as no show successfully',
+        data: serviceDetail
+      };
+    } catch (error) {
+      throw new Error(`Error marking service as no show: ${error.message}`);
+    }
+  }
+
+  // Get service details by employee
+  static async getServiceDetailsByEmployee(employeeId) {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: { id_employee: employeeId }
+      });
+      
+      return {
+        success: true,
+        message: 'Service details by employee obtained successfully',
+        data: serviceDetails
+      };
+    } catch (error) {
+      throw new Error(`Error getting service details by employee: ${error.message}`);
+    }
+  }
+
+  // Get service details by date range
+  static async getServiceDetailsByDateRange(startDate, endDate) {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: {
+          created_at: {
+            [sequelize.Op.between]: [startDate, endDate]
+          }
+        }
+      });
+      
+      return {
+        success: true,
+        message: 'Service details by date range obtained successfully',
+        data: serviceDetails
+      };
+    } catch (error) {
+      throw new Error(`Error getting service details by date range: ${error.message}`);
+    }
+  }
+
+  // Get service detail stats
+  static async getServiceDetailStats() {
+    try {
+      const stats = await ServiceDetail.findAll({
+        attributes: [
+          'status',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        group: ['status']
+      });
+      
+      return {
+        success: true,
+        message: 'Service detail stats obtained successfully',
+        data: stats
+      };
+    } catch (error) {
+      throw new Error(`Error getting service detail stats: ${error.message}`);
     }
   }
 }

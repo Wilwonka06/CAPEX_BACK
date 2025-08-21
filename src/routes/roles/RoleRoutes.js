@@ -5,21 +5,25 @@ const {
   validateCreateRole,
   validateUpdateRole,
   validateRoleId,
-  validateDeleteRole
+  validateDeleteRole,
+  validateRoleNameUnique,
+  validateRolePermissions
 } = require('../../middlewares/roles/RoleValidationMiddleware');
 const {
   authenticateToken,
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
 
-// GET /api/roles - Get all roles
+// ===== RUTAS BÁSICAS DE ROLES =====
+
+// GET /api/roles - Obtener todos los roles
 router.get('/', 
   authenticateToken,
   requirePermission('read'),
   RoleController.getAllRoles
 );
 
-// GET /api/roles/:id - Get role by ID
+// GET /api/roles/:id - Obtener rol por ID
 router.get('/:id', 
   authenticateToken,
   requirePermission('read'),
@@ -27,60 +31,49 @@ router.get('/:id',
   RoleController.getRoleById
 );
 
-// POST /api/roles - Create new role
+// POST /api/roles - Crear nuevo rol
 router.post('/', 
   authenticateToken,
   requirePermission('create'),
   validateCreateRole,
+  validateRoleNameUnique,
+  validateRolePermissions,
   RoleController.createRole
 );
 
-// PUT /api/roles/:id - Update role
+// PUT /api/roles/:id - Actualizar rol
 router.put('/:id', 
   authenticateToken,
   requirePermission('update'),
+  validateRoleId,
   validateUpdateRole,
+  validateRoleNameUnique,
   RoleController.updateRole
 );
 
-// DELETE /api/roles/:id - Delete role
+// DELETE /api/roles/:id - Eliminar rol
 router.delete('/:id', 
   authenticateToken,
   requirePermission('delete'),
+  validateRoleId,
   validateDeleteRole,
   RoleController.deleteRole
 );
 
-// GET /api/roles/:id/permissions - Get role permissions
-router.get('/:id/permissions', 
+// ===== RUTAS DE CONSULTA DE PERMISOS Y PRIVILEGIOS =====
+
+// GET /api/roles/permisos - Obtener todos los permisos
+router.get('/permisos/list', 
   authenticateToken,
   requirePermission('read'),
-  validateRoleId,
-  RoleController.getRolePermissions
+  RoleController.getAllPermissions
 );
 
-// GET /api/roles/:id/privileges - Get role privileges
-router.get('/:id/privileges', 
+// GET /api/roles/privilegios - Obtener todos los privilegios
+router.get('/privilegios/list', 
   authenticateToken,
   requirePermission('read'),
-  validateRoleId,
-  RoleController.getRolePrivileges
-);
-
-// GET /api/roles/:id/has-permission - Check if role has specific permission
-router.get('/:id/has-permission', 
-  authenticateToken,
-  requirePermission('read'),
-  validateRoleId,
-  RoleController.hasPermission
-);
-
-// GET /api/roles/:id/has-privilege - Check if role has specific privilege
-router.get('/:id/has-privilege', 
-  authenticateToken,
-  requirePermission('read'),
-  validateRoleId,
-  RoleController.hasPrivilege
+  RoleController.getAllPrivileges
 );
 
 module.exports = router;

@@ -6,24 +6,25 @@ const {
   validateUpdateClient,
   validateClientId,
   validateDeleteClient,
-  validateToggleClientStatus,
-  validateUserId
+  validateClientEmailUnique,
+  validateClientDocumentUnique,
+  hashPassword
 } = require('../../middlewares/clients/ClientValidationMiddleware');
 const {
   authenticateToken,
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
 
-// ===== RUTAS BÁSICAS DE CLIENTES =====
+// ===== BASIC CLIENT OPERATIONS =====
 
-// GET /api/clientes - Obtener todos los clientes
+// GET /api/clients - Obtener todos los clientes
 router.get('/', 
   authenticateToken,
   requirePermission('read'),
   ClientController.getAllClients
 );
 
-// GET /api/clientes/:id - Obtener cliente por ID
+// GET /api/clients/:id - Obtener cliente por ID
 router.get('/:id', 
   authenticateToken,
   requirePermission('read'),
@@ -31,75 +32,66 @@ router.get('/:id',
   ClientController.getClientById
 );
 
-// POST /api/clientes - Crear nuevo cliente
+// POST /api/clients - Crear nuevo cliente
 router.post('/', 
   authenticateToken,
   requirePermission('create'),
   validateCreateClient,
+  validateClientEmailUnique,
+  validateClientDocumentUnique,
+  hashPassword,
   ClientController.createClient
 );
 
-// PUT /api/clientes/:id - Actualizar cliente
+// PUT /api/clients/:id - Actualizar cliente
 router.put('/:id', 
   authenticateToken,
   requirePermission('update'),
+  validateClientId,
   validateUpdateClient,
+  validateClientEmailUnique,
+  validateClientDocumentUnique,
+  hashPassword,
   ClientController.updateClient
 );
 
-// DELETE /api/clientes/:id - Eliminar cliente
+// DELETE /api/clients/:id - Eliminar cliente
 router.delete('/:id', 
   authenticateToken,
   requirePermission('delete'),
+  validateClientId,
   validateDeleteClient,
   ClientController.deleteClient
 );
 
-// ===== RUTAS ESPECÍFICAS DE CLIENTES =====
+// ===== SPECIFIC CLIENT OPERATIONS =====
 
-// GET /api/clientes/usuario/:userId - Buscar cliente por ID de usuario
-router.get('/usuario/:userId', 
-  authenticateToken,
-  requirePermission('read'),
-  validateUserId,
-  ClientController.findClientByUserId
-);
-
-// GET /api/clientes/activos - Obtener clientes activos
-router.get('/activos/list', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getActiveClients
-);
-
-// GET /api/clientes/inactivos - Obtener clientes inactivos
-router.get('/inactivos/list', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getInactiveClients
-);
-
-// PATCH /api/clientes/:id/activate - Activar cliente
-router.patch('/:id/activate', 
-  authenticateToken,
-  requirePermission('update'),
-  validateToggleClientStatus,
-  ClientController.activateClient
-);
-
-// PATCH /api/clientes/:id/deactivate - Desactivar cliente
-router.patch('/:id/deactivate', 
-  authenticateToken,
-  requirePermission('update'),
-  validateToggleClientStatus,
-  ClientController.deactivateClient
-);
-
-// GET /api/clientes/stats - Obtener estadísticas de clientes
-router.get('/stats/overview', 
+// GET /api/clients/stats - Obtener estadísticas de clientes
+router.get('/stats', 
   authenticateToken,
   requirePermission('read'),
   ClientController.getClientStats
+);
+
+// GET /api/clients/search - Buscar clientes por criterios
+router.get('/search', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.searchClients
+);
+
+// GET /api/clients/email/:email - Obtener cliente por email
+router.get('/email/:email', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.getClientByEmail
+);
+
+// GET /api/clients/document/:documentNumber - Obtener cliente por número de documento
+router.get('/document/:documentNumber', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.getClientByDocument
 );
 
 module.exports = router;

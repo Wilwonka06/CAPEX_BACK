@@ -1,93 +1,204 @@
 const ClientService = require('../../services/clients/ClientService');
-const { asyncHandler } = require('../../middlewares/ErrorMiddleware');
 
 class ClientController {
-  // ===== BASIC CLIENT OPERATIONS =====
-  
   // Get all clients
-  static getAllClients = asyncHandler(async (req, res) => {
-    const result = await ClientService.getAllClients();
-    res.json(result);
-  });
-
-  // Get client by ID
-  static getClientById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await ClientService.getClientById(id);
-    res.json(result);
-  });
-
-  // Create new client
-  static createClient = asyncHandler(async (req, res) => {
-    const result = await ClientService.createClient(req.body);
-    res.status(201).json(result);
-  });
-
-  // Update client
-  static updateClient = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await ClientService.updateClient(id, req.body);
-    res.json(result);
-  });
-
-  // Delete client
-  static deleteClient = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await ClientService.deleteClient(id);
-    res.json(result);
-  });
-
-  // ===== SPECIFIC CLIENT OPERATIONS =====
-
-  // Find client by user ID
-  static findClientByUserId = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const client = await ClientService.findClientByUserId(userId);
-    
-    if (!client) {
-      return res.status(404).json({
+  static async getAllClients(req, res) {
+    try {
+      const result = await ClientService.getAllClients();
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: 'Client not found for this user'
+        message: 'Error interno del servidor',
+        error: error.message
       });
     }
+  }
 
-    res.json({
-      success: true,
-      data: client
-    });
-  });
+  // Get client by ID
+  static async getClientById(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await ClientService.getClientById(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 
-  // Get active clients
-  static getActiveClients = asyncHandler(async (req, res) => {
-    const result = await ClientService.getActiveClients();
-    res.json(result);
-  });
+  // Create new client
+  static async createClient(req, res) {
+    try {
+      const clientData = req.body;
+      const result = await ClientService.createClient(clientData);
+      
+      if (!result.success) {
+        let statusCode = 400;
+        
+        // Determine appropriate status code based on error type
+        if (result.error === 'EMAIL_EXISTS' || result.error === 'DOCUMENT_EXISTS') {
+          statusCode = 400;
+        } else {
+          statusCode = 500;
+        }
+        
+        return res.status(statusCode).json(result);
+      }
+      
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 
-  // Get inactive clients
-  static getInactiveClients = asyncHandler(async (req, res) => {
-    const result = await ClientService.getInactiveClients();
-    res.json(result);
-  });
+  // Update client
+  static async updateClient(req, res) {
+    try {
+      const { id } = req.params;
+      const clientData = req.body;
+      const result = await ClientService.updateClient(id, clientData);
+      
+      if (!result.success) {
+        let statusCode = 404;
+        
+        // Determine appropriate status code based on error type
+        if (result.error === 'EMAIL_EXISTS' || result.error === 'DOCUMENT_EXISTS') {
+          statusCode = 400;
+        } else if (result.error === 'CLIENT_NOT_FOUND') {
+          statusCode = 404;
+        } else {
+          statusCode = 500;
+        }
+        
+        return res.status(statusCode).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 
-  // Activate client
-  static activateClient = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await ClientService.activateClient(id);
-    res.json(result);
-  });
-
-  // Deactivate client
-  static deactivateClient = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await ClientService.deactivateClient(id);
-    res.json(result);
-  });
+  // Delete client
+  static async deleteClient(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await ClientService.deleteClient(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 
   // Get client statistics
-  static getClientStats = asyncHandler(async (req, res) => {
-    const result = await ClientService.getClientStats();
-    res.json(result);
-  });
+  static async getClientStats(req, res) {
+    try {
+      const result = await ClientService.getClientStats();
+      
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Search clients
+  static async searchClients(req, res) {
+    try {
+      const criteria = req.query;
+      const result = await ClientService.searchClients(criteria);
+      
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Get client by email
+  static async getClientByEmail(req, res) {
+    try {
+      const { email } = req.params;
+      const result = await ClientService.getClientByEmail(email);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Get client by document number
+  static async getClientByDocument(req, res) {
+    try {
+      const { documentNumber } = req.params;
+      const result = await ClientService.getClientByDocument(documentNumber);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = ClientController;

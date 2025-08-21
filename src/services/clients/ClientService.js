@@ -1,262 +1,301 @@
-const { Client, User } = require('../../models/clients/Associations');
+const Client = require('../../models/clients/Client');
+const { sequelize } = require('../../config/database');
 
 class ClientService {
-  // Get all clients with user information
+  // Get all clients
   static async getAllClients() {
     try {
       const clients = await Client.findAll({
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id_user', 'name', 'email', 'phone', 'registration_date', 'status']
-        }],
-        order: [['id_client', 'ASC']]
+        where: { status: true },
+        attributes: { exclude: ['password'] } // Exclude password from response
       });
 
       return {
         success: true,
+        message: 'Clientes obtenidos exitosamente',
         data: clients
       };
     } catch (error) {
-      throw new Error(`Error getting clients: ${error.message}`);
+      throw new Error(`Error al obtener clientes: ${error.message}`);
     }
   }
 
-  // Get client by ID with user information
+  // Get client by ID
   static async getClientById(id) {
     try {
       const client = await Client.findByPk(id, {
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id_user', 'name', 'email', 'phone', 'registration_date', 'status']
-        }]
+        attributes: { exclude: ['password'] } // Exclude password from response
       });
 
       if (!client) {
-        throw new Error('Client not found');
+        return {
+          success: false,
+          message: 'Cliente no encontrado'
+        };
       }
 
       return {
         success: true,
+        message: 'Cliente obtenido exitosamente',
         data: client
       };
     } catch (error) {
-      throw new Error(`Error getting client: ${error.message}`);
+      throw new Error(`Error al obtener cliente: ${error.message}`);
+    }
+  }
+
+  // Get client by email
+  static async getClientByEmail(email) {
+    try {
+      const client = await Client.findOne({
+        where: { email },
+        attributes: { exclude: ['password'] } // Exclude password from response
+      });
+
+      if (!client) {
+        return {
+          success: false,
+          message: 'Cliente no encontrado'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Cliente obtenido exitosamente',
+        data: client
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener cliente por email: ${error.message}`);
+    }
+  }
+
+  // Get client by document number
+  static async getClientByDocument(documentNumber) {
+    try {
+      const client = await Client.findOne({
+        where: { documentNumber },
+        attributes: { exclude: ['password'] } // Exclude password from response
+      });
+
+      if (!client) {
+        return {
+          success: false,
+          message: 'Cliente no encontrado'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Cliente obtenido exitosamente',
+        data: client
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener cliente por documento: ${error.message}`);
     }
   }
 
   // Create new client
   static async createClient(clientData) {
+    const transaction = await sequelize.transaction();
+    
     try {
-      const { id_user, address, status } = clientData;
+      const {
+        documentType,
+        documentNumber,
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        address,
+        status
+      } = clientData;
 
-      // Check if user exists
-      const user = await User.findByPk(id_user);
-      if (!user) {
-        throw new Error('Specified user does not exist');
+      // Check if email already exists
+      const existingEmail = await Client.findOne({ where: { email } });
+      if (existingEmail) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'El correo electrónico ya está registrado',
+          error: 'EMAIL_EXISTS'
+        };
       }
 
-      // Check if client already exists for this user
-      const existingClient = await Client.findOne({ where: { id_user } });
-      if (existingClient) {
-        throw new Error('Client already exists for this user');
+      // Check if document number already exists
+      const existingDocument = await Client.findOne({ where: { documentNumber } });
+      if (existingDocument) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'El número de documento ya está registrado',
+          error: 'DOCUMENT_EXISTS'
+        };
       }
 
-      // Create client
+      // Create the client
       const newClient = await Client.create({
-        id_user,
+        documentType,
+        documentNumber,
+        firstName,
+        lastName,
+        email,
+        phone,
+        password, // This should already be hashed by middleware
         address: address || null,
         status: status !== undefined ? status : true
-      });
+      }, { transaction });
 
-      // Get client with user information
-      const clientWithUser = await this.getClientById(newClient.id_client);
+      await transaction.commit();
+
+      // Get the created client without password
+      const createdClient = await this.getClientById(newClient.id_client);
 
       return {
         success: true,
-        message: 'Client created successfully',
-        data: clientWithUser.data
+        message: 'Cliente creado exitosamente',
+        data: createdClient.data
       };
     } catch (error) {
-      throw new Error(`Error creating client: ${error.message}`);
+      await transaction.rollback();
+      throw new Error(`Error al crear cliente: ${error.message}`);
     }
   }
 
   // Update client
   static async updateClient(id, clientData) {
+    const transaction = await sequelize.transaction();
+    
     try {
-      const { address, status } = clientData;
+      const {
+        documentType,
+        documentNumber,
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        address,
+        status
+      } = clientData;
 
       // Check if client exists
-      const client = await Client.findByPk(id);
-      if (!client) {
-        throw new Error('Client not found');
+      const existingClient = await Client.findByPk(id);
+      if (!existingClient) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'Cliente no encontrado',
+          error: 'CLIENT_NOT_FOUND'
+        };
       }
 
-      // Update fields if provided
-      if (address !== undefined) {
-        client.address = address;
-      }
-      if (status !== undefined) {
-        client.status = status;
+      // Check if new email already exists (if email is being updated)
+      if (email && email !== existingClient.email) {
+        const clientWithSameEmail = await Client.findOne({ 
+          where: { 
+            email,
+            id_client: { [sequelize.Op.ne]: id } // Exclude current client from check
+          } 
+        });
+        if (clientWithSameEmail) {
+          await transaction.rollback();
+          return {
+            success: false,
+            message: 'El correo electrónico ya está registrado',
+            error: 'EMAIL_EXISTS'
+          };
+        }
       }
 
-      await client.save();
+      // Check if new document number already exists (if document is being updated)
+      if (documentNumber && documentNumber !== existingClient.documentNumber) {
+        const clientWithSameDocument = await Client.findOne({ 
+          where: { 
+            documentNumber,
+            id_client: { [sequelize.Op.ne]: id } // Exclude current client from check
+          } 
+        });
+        if (clientWithSameDocument) {
+          await transaction.rollback();
+          return {
+            success: false,
+            message: 'El número de documento ya está registrado',
+            error: 'DOCUMENT_EXISTS'
+          };
+        }
+      }
 
-      // Get updated client with user information
+      // Update client data
+      const updateData = {};
+      if (documentType !== undefined) updateData.documentType = documentType;
+      if (documentNumber !== undefined) updateData.documentNumber = documentNumber;
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (email !== undefined) updateData.email = email;
+      if (phone !== undefined) updateData.phone = phone;
+      if (password !== undefined) updateData.password = password; // This should already be hashed by middleware
+      if (address !== undefined) updateData.address = address;
+      if (status !== undefined) updateData.status = status;
+
+      await existingClient.update(updateData, { transaction });
+
+      await transaction.commit();
+
+      // Get the updated client without password
       const updatedClient = await this.getClientById(id);
 
       return {
         success: true,
-        message: 'Client updated successfully',
+        message: 'Cliente actualizado exitosamente',
         data: updatedClient.data
       };
     } catch (error) {
-      throw new Error(`Error updating client: ${error.message}`);
+      await transaction.rollback();
+      throw new Error(`Error al actualizar cliente: ${error.message}`);
     }
   }
 
-  // Delete client
+  // Delete client (soft delete by setting status to false)
   static async deleteClient(id) {
+    const transaction = await sequelize.transaction();
+    
     try {
       const client = await Client.findByPk(id);
       if (!client) {
-        throw new Error('Client not found');
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'Cliente no encontrado',
+          error: 'CLIENT_NOT_FOUND'
+        };
       }
 
-      await client.destroy();
+      // Soft delete by setting status to false
+      await client.update({ status: false }, { transaction });
+
+      await transaction.commit();
 
       return {
         success: true,
-        message: 'Client deleted successfully'
+        message: 'Cliente eliminado exitosamente'
       };
     } catch (error) {
-      throw new Error(`Error deleting client: ${error.message}`);
-    }
-  }
-
-  // Check if client exists
-  static async clientExists(id) {
-    try {
-      const client = await Client.findByPk(id);
-      return !!client;
-    } catch (error) {
-      throw new Error(`Error checking client existence: ${error.message}`);
-    }
-  }
-
-  // Find client by user ID
-  static async findClientByUserId(userId) {
-    try {
-      const client = await Client.findOne({
-        where: { id_user: userId },
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id_user', 'name', 'email', 'phone', 'registration_date', 'status']
-        }]
-      });
-
-      return client;
-    } catch (error) {
-      throw new Error(`Error finding client by user ID: ${error.message}`);
-    }
-  }
-
-  // Get active clients
-  static async getActiveClients() {
-    try {
-      const clients = await Client.findAll({
-        where: { status: true },
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id_user', 'name', 'email', 'phone', 'registration_date', 'status']
-        }],
-        order: [['id_client', 'ASC']]
-      });
-
-      return {
-        success: true,
-        data: clients
-      };
-    } catch (error) {
-      throw new Error(`Error getting active clients: ${error.message}`);
-    }
-  }
-
-  // Get inactive clients
-  static async getInactiveClients() {
-    try {
-      const clients = await Client.findAll({
-        where: { status: false },
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id_user', 'name', 'email', 'phone', 'registration_date', 'status']
-        }],
-        order: [['id_client', 'ASC']]
-      });
-
-      return {
-        success: true,
-        data: clients
-      };
-    } catch (error) {
-      throw new Error(`Error getting inactive clients: ${error.message}`);
-    }
-  }
-
-  // Activate client
-  static async activateClient(id) {
-    try {
-      const client = await Client.findByPk(id);
-      if (!client) {
-        throw new Error('Client not found');
-      }
-
-      client.status = true;
-      await client.save();
-
-      return {
-        success: true,
-        message: 'Client activated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Error activating client: ${error.message}`);
-    }
-  }
-
-  // Deactivate client
-  static async deactivateClient(id) {
-    try {
-      const client = await Client.findByPk(id);
-      if (!client) {
-        throw new Error('Client not found');
-      }
-
-      client.status = false;
-      await client.save();
-
-      return {
-        success: true,
-        message: 'Client deactivated successfully'
-      };
-    } catch (error) {
-      throw new Error(`Error deactivating client: ${error.message}`);
+      await transaction.rollback();
+      throw new Error(`Error al eliminar cliente: ${error.message}`);
     }
   }
 
   // Get client statistics
   static async getClientStats() {
     try {
-      const totalClients = await Client.count();
+      const totalClients = await Client.count({ where: { status: true } });
       const activeClients = await Client.count({ where: { status: true } });
       const inactiveClients = await Client.count({ where: { status: false } });
 
       return {
         success: true,
+        message: 'Estadísticas de clientes obtenidas exitosamente',
         data: {
           total_clients: totalClients,
           active_clients: activeClients,
@@ -264,7 +303,47 @@ class ClientService {
         }
       };
     } catch (error) {
-      throw new Error(`Error getting client statistics: ${error.message}`);
+      throw new Error(`Error al obtener estadísticas de clientes: ${error.message}`);
+    }
+  }
+
+  // Search clients by criteria
+  static async searchClients(criteria) {
+    try {
+      const { searchTerm, documentType, status } = criteria;
+      
+      const whereClause = {};
+      
+      if (searchTerm) {
+        whereClause[sequelize.Op.or] = [
+          { firstName: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
+          { lastName: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
+          { email: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
+          { documentNumber: { [sequelize.Op.iLike]: `%${searchTerm}%` } }
+        ];
+      }
+      
+      if (documentType) {
+        whereClause.documentType = documentType;
+      }
+      
+      if (status !== undefined) {
+        whereClause.status = status;
+      }
+
+      const clients = await Client.findAll({
+        where: whereClause,
+        attributes: { exclude: ['password'] },
+        order: [['firstName', 'ASC']]
+      });
+
+      return {
+        success: true,
+        message: 'Búsqueda de clientes completada exitosamente',
+        data: clients
+      };
+    } catch (error) {
+      throw new Error(`Error al buscar clientes: ${error.message}`);
     }
   }
 }

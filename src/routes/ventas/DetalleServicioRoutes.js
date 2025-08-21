@@ -201,4 +201,4 @@ router.get('/stats/overview',
   ServiceDetailController.getServiceDetailStats
 );
 
-module.exports = router; 
+module.exports = router;
