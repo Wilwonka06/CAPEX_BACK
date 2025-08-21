@@ -1,12 +1,15 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../../config/database');
+const sequelize = require('../../config/database');
 
 const RolePermissionPrivilege = sequelize.define('RolePermissionPrivilege', {
-  id_rol: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
+    autoIncrement: true
+  },
+  id_rol: {
+    type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'id_rol',
     references: {
       model: 'roles',
       key: 'id_rol'
@@ -14,9 +17,7 @@ const RolePermissionPrivilege = sequelize.define('RolePermissionPrivilege', {
   },
   id_permiso: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
     allowNull: false,
-    field: 'id_permiso',
     references: {
       model: 'permisos',
       key: 'id_permiso'
@@ -24,9 +25,7 @@ const RolePermissionPrivilege = sequelize.define('RolePermissionPrivilege', {
   },
   id_privilegio: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
     allowNull: false,
-    field: 'id_privilegio',
     references: {
       model: 'privilegios',
       key: 'id_privilegio'
@@ -34,7 +33,13 @@ const RolePermissionPrivilege = sequelize.define('RolePermissionPrivilege', {
   }
 }, {
   tableName: 'roles_permisos_privilegios',
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      unique: true,
+      fields: ['id_rol', 'id_permiso', 'id_privilegio']
+    }
+  ]
 });
 
 module.exports = RolePermissionPrivilege;

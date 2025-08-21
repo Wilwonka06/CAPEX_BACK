@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-// Solo importamos las rutas que existen en la estructura actual
+
+// Importar rutas
 const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
 const clientRoutes = require('./routes/clients/ClienteRoutes');
@@ -35,12 +36,25 @@ const { initializeRoles } = require('./config/initRoles');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Conectar a la base de datos
 connectDB();
 
 // Inicializar roles por defecto
 initializeRoles();
+
+// Middleware para CORS (opcional)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
@@ -91,72 +105,6 @@ ProductCategory.hasMany(Product, {
 Product.belongsTo(ProductCategory, {
   foreignKey: 'id_categoria_producto',
   as: 'categoria'
-});
-
-// ===== ASOCIACIONES DE ROLES =====
-
-// Role tiene muchos Permission a través de RolePermissionPrivilege
-Role.belongsToMany(Permission, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_rol',
-  otherKey: 'id_permiso',
-  as: 'permisos'
-});
-
-// Permission pertenece a muchos Role a través de RolePermissionPrivilege
-Permission.belongsToMany(Role, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_permiso',
-  otherKey: 'id_rol',
-  as: 'roles'
-});
-
-// Role tiene muchos Privilege a través de RolePermissionPrivilege
-Role.belongsToMany(Privilege, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_rol',
-  otherKey: 'id_privilegio',
-  as: 'privilegios'
-});
-
-// Privilege pertenece a muchos Role a través de RolePermissionPrivilege
-Privilege.belongsToMany(Role, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_privilegio',
-  otherKey: 'id_rol',
-  as: 'roles'
-});
-
-// Permission tiene muchos Privilege a través de RolePermissionPrivilege
-Permission.belongsToMany(Privilege, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_permiso',
-  otherKey: 'id_privilegio',
-  as: 'privilegios'
-});
-
-// Privilege pertenece a muchos Permission a través de RolePermissionPrivilege
-Privilege.belongsToMany(Permission, {
-  through: RolePermissionPrivilege,
-  foreignKey: 'id_privilegio',
-  otherKey: 'id_permiso',
-  as: 'permisos'
-});
-
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Middleware para CORS (opcional)
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
 });
 
 // Rutas de la API
