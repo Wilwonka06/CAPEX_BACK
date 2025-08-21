@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Product = sequelize.define('Product', {
-  id_producto: {
+const Employee = sequelize.define('Employee', {
+  id_empleado: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
@@ -15,40 +15,37 @@ const Product = sequelize.define('Product', {
       len: [1, 100]
     }
   },
-  descripcion: {
-    type: DataTypes.TEXT,
+  apellido: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 100]
+    }
+  },
+  email: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  telefono: {
+    type: DataTypes.STRING(20),
     allowNull: true
   },
-  precio: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    validate: {
-      min: 0
-    }
-  },
-  stock: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0,
-    validate: {
-      min: 0
-    }
-  },
-  id_categoria_producto: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'categorias_productos',
-      key: 'id_categoria_producto'
-    }
+  cargo: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   },
   estado: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
 }, {
-  tableName: 'productos',
+  tableName: 'empleados',
   timestamps: false
 });
 
-module.exports = Product;
+module.exports = Employee;

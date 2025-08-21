@@ -8,6 +8,9 @@ API Backend para CAPEX construida con Node.js, Express, MySQL y Sequelize.
 - **Validaciones:** Express-validator para validación de datos
 - **Arquitectura:** MVC con separación de responsabilidades
 - **Relaciones:** Modelos relacionados con fichas técnicas
+- **Middleware:** Manejo global de errores y validaciones
+- **CORS:** Configurado para desarrollo
+- **Documentación:** API documentada con ejemplos
 
 ## 📋 Prerrequisitos
 
@@ -18,11 +21,22 @@ API Backend para CAPEX construida con Node.js, Express, MySQL y Sequelize.
 ## 🔧 Instalación
 
 ```bash
+# Clonar el repositorio
+git clone <url-del-repositorio>
+cd CAPEX_BACK
+
 # Instalar dependencias
 npm install
 
 # Configurar variables de entorno
 cp .env.example .env
+# Editar .env con tus credenciales de MySQL
+
+# Ejecutar migraciones
+npx sequelize-cli db:migrate
+
+# Ejecutar seeders (opcional)
+npx sequelize-cli db:seed:all
 
 # Ejecutar en desarrollo
 npm run dev
@@ -44,8 +58,10 @@ http://localhost:3000
 - **Características:** `/api/caracteristicas`
 - **Proveedores:** `/api/proveedores`
 - **Categorías:** `/api/categorias-productos`
+- **Usuarios:** `/api/usuarios`
+- **Agendamiento:** `/api/scheduling`
 
-## 📚 Endpoints de la API
+## 📚 Documentación de Endpoints
 
 ### Productos
 
@@ -80,9 +96,39 @@ http://localhost:3000
 | PUT | `/api/proveedores/:id` | Actualizar proveedor |
 | DELETE | `/api/proveedores/:id` | Eliminar proveedor |
 
-### Ejemplos de uso
+### Categorías de Productos
 
-#### Crear un producto con características
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/categorias-productos` | Obtener todas las categorías |
+| GET | `/api/categorias-productos/:id` | Obtener categoría por ID |
+| POST | `/api/categorias-productos` | Crear nueva categoría |
+| PUT | `/api/categorias-productos/:id` | Actualizar categoría |
+| DELETE | `/api/categorias-productos/:id` | Eliminar categoría |
+
+### Usuarios
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/usuarios` | Obtener todos los usuarios |
+| GET | `/api/usuarios/:id` | Obtener usuario por ID |
+| POST | `/api/usuarios` | Crear nuevo usuario |
+| PUT | `/api/usuarios/:id` | Actualizar usuario |
+| DELETE | `/api/usuarios/:id` | Eliminar usuario |
+
+### Agendamiento
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/scheduling` | Obtener todos los agendamientos |
+| GET | `/api/scheduling/:id` | Obtener agendamiento por ID |
+| POST | `/api/scheduling` | Crear nuevo agendamiento |
+| PUT | `/api/scheduling/:id` | Actualizar agendamiento |
+| DELETE | `/api/scheduling/:id` | Eliminar agendamiento |
+
+## 💡 Ejemplos de uso
+
+### Crear un producto con características
 ```bash
 curl -X POST http://localhost:3000/api/productos \
   -H "Content-Type: application/json" \
@@ -107,7 +153,7 @@ curl -X POST http://localhost:3000/api/productos \
   }'
 ```
 
-#### Crear un proveedor
+### Crear un proveedor
 ```bash
 curl -X POST http://localhost:3000/api/proveedores \
   -H "Content-Type: application/json" \
@@ -123,12 +169,24 @@ curl -X POST http://localhost:3000/api/proveedores \
   }'
 ```
 
-#### Crear una característica
+### Crear una característica
 ```bash
 curl -X POST http://localhost:3000/api/caracteristicas \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "Procesador"
+  }'
+```
+
+### Crear un usuario
+```bash
+curl -X POST http://localhost:3000/api/usuarios \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juan Pérez",
+    "email": "juan@ejemplo.com",
+    "password": "password123",
+    "rol": "admin"
   }'
 ```
 
@@ -174,6 +232,26 @@ curl -X POST http://localhost:3000/api/caracteristicas \
 | telefono | VARCHAR(20) | Teléfono |
 | estado | VARCHAR(10) | Activo o Inactivo |
 
+### Tabla: usuarios
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id_usuario | INT | ID único (auto-increment) |
+| nombre | VARCHAR(255) | Nombre del usuario |
+| email | VARCHAR(255) | Email (único) |
+| password | VARCHAR(255) | Contraseña encriptada |
+| rol | VARCHAR(50) | Rol del usuario |
+| fecha_registro | TIMESTAMP | Fecha de registro |
+
+### Tabla: scheduling
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id_scheduling | INT | ID único (auto-increment) |
+| titulo | VARCHAR(255) | Título del agendamiento |
+| descripcion | TEXT | Descripción |
+| fecha_inicio | DATETIME | Fecha y hora de inicio |
+| fecha_fin | DATETIME | Fecha y hora de fin |
+| estado | VARCHAR(50) | Estado del agendamiento |
+
 ## 📁 Estructura del proyecto
 
 ```
@@ -185,37 +263,68 @@ CAPEX_BACK/
 │   │   ├── productController.js     # Controladores de productos
 │   │   ├── characteristicController.js # Controladores de características
 │   │   ├── supplierController.js    # Controladores de proveedores
-│   │   └── productCategoryController.js # Controladores de categorías
+│   │   ├── productCategoryController.js # Controladores de categorías
+│   │   ├── UsersController.js       # Controladores de usuarios
+│   │   └── SchedulingController.js  # Controladores de agendamiento
 │   ├── models/
 │   │   ├── Product.js               # Modelo de producto
 │   │   ├── Characteristic.js        # Modelo de característica
 │   │   ├── TechnicalSheet.js        # Modelo de ficha técnica
 │   │   ├── Supplier.js              # Modelo de proveedor
-│   │   └── ProductCategory.js       # Modelo de categoría
+│   │   ├── ProductCategory.js       # Modelo de categoría
+│   │   ├── User.js                  # Modelo de usuario
+│   │   └── Scheduling.js            # Modelo de agendamiento
 │   ├── routes/
-│   │   ├── productRoutes.js         # Rutas de productos
-│   │   ├── characteristicRoutes.js  # Rutas de características
-│   │   ├── supplierRoutes.js        # Rutas de proveedores
-│   │   └── productCategoryRoutes.js # Rutas de categorías
+│   │   ├── ProductRoutes.js         # Rutas de productos
+│   │   ├── CharacteristicRoutes.js  # Rutas de características
+│   │   ├── SupplierRoutes.js        # Rutas de proveedores
+│   │   ├── ProductCategoryRoutes.js # Rutas de categorías
+│   │   ├── UsersRoutes.js           # Rutas de usuarios
+│   │   └── SchedulingRoutes.js      # Rutas de agendamiento
 │   ├── middlewares/
-│   │   ├── validationMiddleware.js  # Middleware de validación
+│   │   ├── ErrorMiddleware.js       # Middleware de errores
+│   │   ├── ValidationMiddleware.js  # Middleware de validación
 │   │   ├── productMiddleware.js     # Validaciones de productos
 │   │   ├── characteristicMiddleware.js # Validaciones de características
 │   │   ├── supplierMiddleware.js    # Validaciones de proveedores
-│   │   └── productCategoryMiddleware.js # Validaciones de categorías
+│   │   ├── productCategoryMiddleware.js # Validaciones de categorías
+│   │   ├── UsersMiddleware.js       # Validaciones de usuarios
+│   │   └── SchedulingMiddleware.js  # Validaciones de agendamiento
 │   ├── services/
 │   │   ├── productService.js        # Lógica de negocio de productos
 │   │   ├── characteristicService.js # Lógica de negocio de características
 │   │   ├── supplierService.js       # Lógica de negocio de proveedores
-│   │   └── productCategoryService.js # Lógica de negocio de categorías
+│   │   ├── productCategoryService.js # Lógica de negocio de categorías
+│   │   ├── UsersService.js          # Lógica de negocio de usuarios
+│   │   └── SchedulingService.js     # Lógica de negocio de agendamiento
 │   ├── app.js                      # Configuración de Express
 │   └── server.js                   # Punto de entrada
-├── .env                            # Variables de entorno
+├── migrations/                     # Migraciones de Sequelize
+├── seeders/                       # Seeders de Sequelize
+├── config/                        # Configuración adicional
+├── .env                           # Variables de entorno
+├── .env.example                   # Ejemplo de variables de entorno
 ├── package.json
 └── README.md
 ```
 
-## 🔧 Configuración adicional
+## 🔧 Configuración
+
+### Variables de entorno (.env)
+```env
+# Puerto del servidor
+PORT=3000
+
+# Configuración de MySQL
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=capex_db
+DB_USER=root
+DB_PASSWORD=tu_password
+
+# Configuración de Sequelize
+NODE_ENV=development
+```
 
 ### Cambiar el puerto
 Modifica la variable `PORT` en el archivo `.env`
@@ -228,12 +337,34 @@ Para ver las consultas SQL en la consola, cambia `logging: false` a `logging: co
 
 ## 🛠️ Desarrollo
 
+### Comandos útiles
+```bash
+# Ejecutar en modo desarrollo con nodemon
+npm run dev
+
+# Ejecutar migraciones
+npx sequelize-cli db:migrate
+
+# Revertir migración
+npx sequelize-cli db:migrate:undo
+
+# Ejecutar seeders
+npx sequelize-cli db:seed:all
+
+# Crear nueva migración
+npx sequelize-cli migration:generate --name nombre-migracion
+
+# Crear nuevo seeder
+npx sequelize-cli seed:generate --name nombre-seeder
+```
+
 ### Agregar nuevos modelos
 1. Crea el modelo en `src/models/`
 2. Crea el controlador en `src/controllers/`
 3. Crea las rutas en `src/routes/`
 4. Registra las rutas en `src/app.js`
-5. Define las relaciones en `src/models/index.js`
+5. Define las relaciones en `src/app.js`
+6. Crea la migración correspondiente
 
 ### Validaciones implementadas
 
@@ -253,6 +384,11 @@ Para ver las consultas SQL en la consola, cambia `logging: false` a `logging: co
 #### Características
 - Nombre único y no vacío
 
+#### Usuarios
+- Email único y formato válido
+- Contraseña con mínimo 6 caracteres
+- Rol válido
+
 ## 📝 Notas importantes
 
 - **Seguridad**: En producción, implementa autenticación y autorización
@@ -260,6 +396,23 @@ Para ver las consultas SQL en la consola, cambia `logging: false` a `logging: co
 - **Errores**: Maneja todos los errores apropiadamente
 - **Logs**: Implementa un sistema de logging para producción
 - **Relaciones**: Las fichas técnicas se eliminan automáticamente al eliminar un producto
+- **Base de datos**: Asegúrate de crear la base de datos antes de ejecutar las migraciones
+
+## 🐛 Solución de problemas
+
+### Error de conexión a MySQL
+- Verifica que MySQL esté corriendo
+- Confirma las credenciales en `.env`
+- Asegúrate de que la base de datos exista
+
+### Error de módulo no encontrado
+- Ejecuta `npm install` para instalar dependencias
+- Verifica que los nombres de archivos coincidan con las importaciones
+
+### Error de migración
+- Verifica que la base de datos exista
+- Confirma que las credenciales sean correctas
+- Revisa los logs de error para más detalles
 
 ## 🤝 Contribuir
 

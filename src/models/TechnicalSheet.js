@@ -1,39 +1,39 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const FichaTecnica = sequelize.define('FichaTecnica', {
+const TechnicalSheet = sequelize.define('TechnicalSheet', {
   id_ficha_tecnica: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    field: 'id_ficha_tecnica'
+    autoIncrement: true
   },
   id_producto: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'id_producto'
+    references: {
+      model: 'productos',
+      key: 'id_producto'
+    }
   },
   id_caracteristica: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'id_caracteristica'
+    references: {
+      model: 'caracteristicas',
+      key: 'id_caracteristica'
+    }
   },
   valor: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  estado: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
   tableName: 'fichas_tecnicas',
-  timestamps: false,
-  indexes: [
-    {
-      unique: true,
-      fields: ['id_producto', 'id_caracteristica']
-    }
-  ]
+  timestamps: false
 });
 
-module.exports = FichaTecnica;
+module.exports = TechnicalSheet;

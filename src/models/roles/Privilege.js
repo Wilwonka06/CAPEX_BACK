@@ -1,18 +1,19 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const sequelize = require('../../config/database');
 
-const ProductCategory = sequelize.define('ProductCategory', {
-  id_categoria_producto: {
+const Privilege = sequelize.define('Privilege', {
+  id_privilegio: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
   nombre: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(50),
     allowNull: false,
+    unique: true,
     validate: {
       notEmpty: true,
-      len: [1, 100]
+      len: [1, 50]
     }
   },
   descripcion: {
@@ -24,8 +25,8 @@ const ProductCategory = sequelize.define('ProductCategory', {
     defaultValue: true
   }
 }, {
-  tableName: 'categorias_productos',
+  tableName: 'privilegios',
   timestamps: false
 });
 
-module.exports = ProductCategory;
+module.exports = Privilege;
