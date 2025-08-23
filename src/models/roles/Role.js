@@ -8,18 +8,18 @@ const Role = sequelize.define('Role', {
     autoIncrement: true,
     field: 'id_rol'
   },
-  nombre_rol: {
-    type: DataTypes.STRING(80),
+  nombre: {
+    type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
-    field: 'nombre_rol',
+    field: 'nombre',
     validate: {
       notEmpty: {
         msg: 'El nombre del rol no puede estar vacío'
       },
       len: {
-        args: [1, 80],
-        msg: 'El nombre del rol debe tener entre 1 y 80 caracteres'
+        args: [1, 50],
+        msg: 'El nombre del rol debe tener entre 1 y 50 caracteres'
       }
     }
   },
@@ -27,12 +27,6 @@ const Role = sequelize.define('Role', {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'descripcion'
-  },
-  estado_rol: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: true,
-    field: 'estado_rol'
   }
 }, {
   tableName: 'roles',

@@ -14,6 +14,23 @@ const {
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
 
+// ===== RUTAS DE CONSULTA DE PERMISOS Y PRIVILEGIOS =====
+// IMPORTANTE: Estas rutas deben ir ANTES de /:id para evitar conflictos
+
+// GET /api/roles/permisos - Obtener todos los permisos
+router.get('/permisos', 
+  authenticateToken,
+  requirePermission('read'),
+  RoleController.getAllPermissions
+);
+
+// GET /api/roles/privilegios - Obtener todos los privilegios
+router.get('/privilegios', 
+  authenticateToken,
+  requirePermission('read'),
+  RoleController.getAllPrivileges
+);
+
 // ===== RUTAS BÁSICAS DE ROLES =====
 
 // GET /api/roles - Obtener todos los roles
@@ -58,22 +75,6 @@ router.delete('/:id',
   validateRoleId,
   validateDeleteRole,
   RoleController.deleteRole
-);
-
-// ===== RUTAS DE CONSULTA DE PERMISOS Y PRIVILEGIOS =====
-
-// GET /api/roles/permisos - Obtener todos los permisos
-router.get('/permisos/list', 
-  authenticateToken,
-  requirePermission('read'),
-  RoleController.getAllPermissions
-);
-
-// GET /api/roles/privilegios - Obtener todos los privilegios
-router.get('/privilegios/list', 
-  authenticateToken,
-  requirePermission('read'),
-  RoleController.getAllPrivileges
 );
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../../config/database');
+const { sequelize } = require('../../config/database');
 
 const Privilege = sequelize.define('Privilege', {
   id_privilegio: {
@@ -8,21 +8,13 @@ const Privilege = sequelize.define('Privilege', {
     autoIncrement: true
   },
   nombre: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
     validate: {
       notEmpty: true,
-      len: [1, 50]
+      len: [1, 100]
     }
-  },
-  descripcion: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  estado: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
   }
 }, {
   tableName: 'privilegios',

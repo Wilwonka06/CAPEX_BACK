@@ -16,10 +16,10 @@ const handleValidationErrors = (req, res, next) => {
 
 // Validations for creating role
 const validateCreateRole = [
-  body('nombre_rol')
+  body('nombre')
     .trim()
-    .isLength({ min: 1, max: 80 })
-    .withMessage('El nombre del rol debe tener entre 1 y 80 caracteres')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('El nombre del rol debe tener entre 1 y 50 caracteres')
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
     .withMessage('El nombre del rol solo puede contener letras y espacios'),
   
@@ -27,11 +27,6 @@ const validateCreateRole = [
     .optional()
     .isLength({ max: 500 })
     .withMessage('La descripción no puede exceder 500 caracteres'),
-  
-  body('estado_rol')
-    .optional()
-    .isBoolean()
-    .withMessage('El estado del rol debe ser un valor booleano'),
   
   body('permisos_privilegios')
     .isArray({ min: 1 })
@@ -54,11 +49,11 @@ const validateUpdateRole = [
     .isInt({ min: 1 })
     .withMessage('ID del rol debe ser un entero positivo'),
   
-  body('nombre_rol')
+  body('nombre')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 80 })
-    .withMessage('El nombre del rol debe tener entre 1 y 80 caracteres')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('El nombre del rol debe tener entre 1 y 50 caracteres')
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
     .withMessage('El nombre del rol solo puede contener letras y espacios'),
   
@@ -66,11 +61,6 @@ const validateUpdateRole = [
     .optional()
     .isLength({ max: 500 })
     .withMessage('La descripción no puede exceder 500 caracteres'),
-  
-  body('estado_rol')
-    .optional()
-    .isBoolean()
-    .withMessage('El estado del rol debe ser un valor booleano'),
   
   body('permisos_privilegios')
     .optional()
@@ -111,15 +101,15 @@ const validateDeleteRole = [
 // Middleware to check if role name already exists
 const validateRoleNameUnique = async (req, res, next) => {
   try {
-    const { nombre_rol } = req.body;
+    const { nombre } = req.body;
     const { id } = req.params; // For updates
     
-    if (!nombre_rol) {
+    if (!nombre) {
       return next();
     }
     
     // Check if role name already exists
-    const existingRole = await RoleService.getRoleByName(nombre_rol);
+    const existingRole = await RoleService.getRoleByName(nombre);
     
     if (existingRole.success) {
       // If updating, check if it's the same role

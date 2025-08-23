@@ -38,19 +38,16 @@ const initializeRoles = async () => {
       // Create default roles
       const defaultRoles = [
         { 
-          nombre_rol: 'Administrador',
-          descripcion: 'Rol con acceso completo al sistema',
-          estado_rol: true
+          nombre: 'Administrador',
+          descripcion: 'Rol con acceso completo al sistema'
         },
         { 
-          nombre_rol: 'Empleado',
-          descripcion: 'Rol con acceso limitado para operaciones diarias',
-          estado_rol: true
+          nombre: 'Empleado',
+          descripcion: 'Rol con acceso limitado para operaciones diarias'
         },
         { 
-          nombre_rol: 'Cliente',
-          descripcion: 'Rol para clientes del sistema',
-          estado_rol: true
+          nombre: 'Cliente',
+          descripcion: 'Rol para clientes del sistema'
         }
       ];
 
@@ -58,9 +55,9 @@ const initializeRoles = async () => {
       console.log('✅ Roles por defecto creados exitosamente: Administrador, Empleado, Cliente');
 
       // Get created roles
-      const adminRole = await Role.findOne({ where: { nombre_rol: 'Administrador' } });
-      const employeeRole = await Role.findOne({ where: { nombre_rol: 'Empleado' } });
-      const clientRole = await Role.findOne({ where: { nombre_rol: 'Cliente' } });
+      const adminRole = await Role.findOne({ where: { nombre: 'Administrador' } });
+      const employeeRole = await Role.findOne({ where: { nombre: 'Empleado' } });
+      const clientRole = await Role.findOne({ where: { nombre: 'Cliente' } });
 
       // Get all permissions and privileges
       const allPermissions = await Permission.findAll();

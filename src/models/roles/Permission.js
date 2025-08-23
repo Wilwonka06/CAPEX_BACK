@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../../config/database');
+const { sequelize } = require('../../config/database');
 
 const Permission = sequelize.define('Permission', {
   id_permiso: {
@@ -15,14 +15,6 @@ const Permission = sequelize.define('Permission', {
       notEmpty: true,
       len: [1, 50]
     }
-  },
-  descripcion: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  estado: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
   }
 }, {
   tableName: 'permisos',

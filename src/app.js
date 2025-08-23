@@ -15,11 +15,8 @@ const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
 const Employee = require('./models/Employee');
 
-// Importar modelos de roles
-const Role = require('./models/roles/Role');
-const Permission = require('./models/roles/Permission');
-const Privilege = require('./models/roles/Privilege');
-const RolePermissionPrivilege = require('./models/roles/RolePermissionPrivilege');
+// Importar modelos de roles con asociaciones
+const { Role, Permission, Privilege, RolePermissionPrivilege } = require('./models/roles');
 
 // Middleware de errores personalizado
 const handleGeneralError = (err, req, res, next) => {

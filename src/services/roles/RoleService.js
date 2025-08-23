@@ -1,7 +1,4 @@
-const Role = require('../../models/roles/Role');
-const Permission = require('../../models/roles/Permission');
-const Privilege = require('../../models/roles/Privilege');
-const RolePermissionPrivilege = require('../../models/roles/RolePermissionPrivilege');
+const { Role, Permission, Privilege, RolePermissionPrivilege } = require('../../models/roles');
 const { sequelize } = require('../../config/database');
 
 class RoleService {
@@ -9,7 +6,7 @@ class RoleService {
   static async getAllRoles() {
     try {
       const roles = await Role.findAll({
-        where: { estado_rol: true },
+        order: [['id_rol', 'ASC']],
         include: [
           {
             model: Permission,
@@ -18,22 +15,45 @@ class RoleService {
               attributes: []
             },
             as: 'permisos'
-          },
-          {
-            model: Privilege,
-            through: {
-              model: RolePermissionPrivilege,
-              attributes: []
-            },
-            as: 'privilegios'
           }
         ]
       });
 
+      // Procesar cada rol para obtener solo los privilegios específicos
+      const processedRoles = await Promise.all(roles.map(async (role) => {
+        const roleData = role.toJSON();
+        
+        // Obtener los permisos con sus privilegios específicos
+        const permisosConPrivilegios = await Promise.all(roleData.permisos.map(async (permiso) => {
+          const privilegios = await RolePermissionPrivilege.findAll({
+            where: {
+              id_rol: role.id_rol,
+              id_permiso: permiso.id_permiso
+            },
+            include: [
+              {
+                model: Privilege,
+                as: 'privilegio'
+              }
+            ]
+          });
+
+          return {
+            ...permiso,
+            privilegios: privilegios.map(rpp => rpp.privilegio)
+          };
+        }));
+
+        return {
+          ...roleData,
+          permisos: permisosConPrivilegios
+        };
+      }));
+
       return {
         success: true,
         message: 'Roles obtenidos exitosamente',
-        data: roles
+        data: processedRoles
       };
     } catch (error) {
       throw new Error(`Error al obtener roles: ${error.message}`);
@@ -52,14 +72,6 @@ class RoleService {
               attributes: []
             },
             as: 'permisos'
-          },
-          {
-            model: Privilege,
-            through: {
-              model: RolePermissionPrivilege,
-              attributes: []
-            },
-            as: 'privilegios'
           }
         ]
       });
@@ -71,10 +83,37 @@ class RoleService {
         };
       }
 
+      // Obtener los permisos con sus privilegios específicos
+      const roleData = role.toJSON();
+      const permisosConPrivilegios = await Promise.all(roleData.permisos.map(async (permiso) => {
+        const privilegios = await RolePermissionPrivilege.findAll({
+          where: {
+            id_rol: id,
+            id_permiso: permiso.id_permiso
+          },
+          include: [
+            {
+              model: Privilege,
+              as: 'privilegio'
+            }
+          ]
+        });
+
+        return {
+          ...permiso,
+          privilegios: privilegios.map(rpp => rpp.privilegio)
+        };
+      }));
+
+      const processedRole = {
+        ...roleData,
+        permisos: permisosConPrivilegios
+      };
+
       return {
         success: true,
         message: 'Rol obtenido exitosamente',
-        data: role
+        data: processedRole
       };
     } catch (error) {
       throw new Error(`Error al obtener rol: ${error.message}`);
@@ -82,10 +121,10 @@ class RoleService {
   }
 
   // Get role by name
-  static async getRoleByName(nombre_rol) {
+  static async getRoleByName(nombre) {
     try {
       const role = await Role.findOne({
-        where: { nombre_rol },
+        where: { nombre },
         include: [
           {
             model: Permission,
@@ -94,14 +133,6 @@ class RoleService {
               attributes: []
             },
             as: 'permisos'
-          },
-          {
-            model: Privilege,
-            through: {
-              model: RolePermissionPrivilege,
-              attributes: []
-            },
-            as: 'privilegios'
           }
         ]
       });
@@ -113,10 +144,37 @@ class RoleService {
         };
       }
 
+      // Obtener los permisos con sus privilegios específicos
+      const roleData = role.toJSON();
+      const permisosConPrivilegios = await Promise.all(roleData.permisos.map(async (permiso) => {
+        const privilegios = await RolePermissionPrivilege.findAll({
+          where: {
+            id_rol: role.id_rol,
+            id_permiso: permiso.id_permiso
+          },
+          include: [
+            {
+              model: Privilege,
+              as: 'privilegio'
+            }
+          ]
+        });
+
+        return {
+          ...permiso,
+          privilegios: privilegios.map(rpp => rpp.privilegio)
+        };
+      }));
+
+      const processedRole = {
+        ...roleData,
+        permisos: permisosConPrivilegios
+      };
+
       return {
         success: true,
         message: 'Rol obtenido exitosamente',
-        data: role
+        data: processedRole
       };
     } catch (error) {
       throw new Error(`Error al obtener rol por nombre: ${error.message}`);
@@ -128,10 +186,10 @@ class RoleService {
     const transaction = await sequelize.transaction();
     
     try {
-      const { nombre_rol, descripcion, estado_rol, permisos_privilegios } = roleData;
+      const { nombre, descripcion, permisos_privilegios } = roleData;
 
       // Check if role name already exists
-      const existingRole = await Role.findOne({ where: { nombre_rol } });
+      const existingRole = await Role.findOne({ where: { nombre } });
       if (existingRole) {
         await transaction.rollback();
         return {
@@ -153,9 +211,8 @@ class RoleService {
 
       // Create the role
       const newRole = await Role.create({
-        nombre_rol,
-        descripcion: descripcion || null,
-        estado_rol: estado_rol !== undefined ? estado_rol : true
+        nombre,
+        descripcion: descripcion || null
       }, { transaction });
 
       // Create permission+privilege associations
@@ -188,7 +245,7 @@ class RoleService {
     const transaction = await sequelize.transaction();
     
     try {
-      const { nombre_rol, descripcion, estado_rol, permisos_privilegios } = roleData;
+      const { nombre, descripcion, permisos_privilegios } = roleData;
 
       // Check if role exists
       const existingRole = await Role.findByPk(id);
@@ -202,10 +259,10 @@ class RoleService {
       }
 
       // Check if new name already exists (if name is being updated)
-      if (nombre_rol && nombre_rol !== existingRole.nombre_rol) {
+      if (nombre && nombre !== existingRole.nombre) {
         const roleWithSameName = await Role.findOne({ 
           where: { 
-            nombre_rol,
+            nombre,
             id_rol: { [sequelize.Op.ne]: id } // Exclude current role from check
           } 
         });
@@ -221,9 +278,8 @@ class RoleService {
 
       // Update role data
       const updateData = {};
-      if (nombre_rol !== undefined) updateData.nombre_rol = nombre_rol;
+      if (nombre !== undefined) updateData.nombre = nombre;
       if (descripcion !== undefined) updateData.descripcion = descripcion;
-      if (estado_rol !== undefined) updateData.estado_rol = estado_rol;
 
       await existingRole.update(updateData, { transaction });
 
@@ -283,7 +339,7 @@ class RoleService {
     }
   }
 
-  // Delete role (soft delete by setting estado_rol to false)
+  // Delete role (hard delete since we don't have estado_rol)
   static async deleteRole(id) {
     const transaction = await sequelize.transaction();
     
@@ -297,8 +353,14 @@ class RoleService {
         };
       }
 
-      // Soft delete by setting estado_rol to false
-      await role.update({ estado_rol: false }, { transaction });
+      // Delete associated permissions and privileges first
+      await RolePermissionPrivilege.destroy({
+        where: { id_rol: id },
+        transaction
+      });
+
+      // Delete the role
+      await role.destroy({ transaction });
 
       await transaction.commit();
 
@@ -315,7 +377,9 @@ class RoleService {
   // Get all permissions
   static async getAllPermissions() {
     try {
-      const permissions = await Permission.findAll();
+      const permissions = await Permission.findAll({
+        order: [['id_permiso', 'ASC']]
+      });
       return {
         success: true,
         message: 'Permisos obtenidos exitosamente',
@@ -329,7 +393,9 @@ class RoleService {
   // Get all privileges
   static async getAllPrivileges() {
     try {
-      const privileges = await Privilege.findAll();
+      const privileges = await Privilege.findAll({
+        order: [['id_privilegio', 'ASC']]
+      });
       return {
         success: true,
         message: 'Privilegios obtenidos exitosamente',
