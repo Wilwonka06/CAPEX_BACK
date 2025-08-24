@@ -5,29 +5,38 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
     "db:seed:undo": "sequelize-cli db:seed:undo:all",
     "db:reset": "npm run db:migrate:undo && npm run db:migrate && npm run db:seed"
-
   },
-  "keywords": ["api", "mysql", "sequelize", "express", "nodejs", "capex"],
+  "keywords": [
+    "api",
+    "mysql",
+    "sequelize",
+    "express",
+    "nodejs",
+    "capex"
+  ],
   "author": "",
   "license": "ISC",
   "description": "API Backend para CAPEX con MySQL y Sequelize",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.3",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3"
   },
   "devDependencies": {
     "jest": "^30.0.5",
-    "nodemon": "^3.1.10",
-    "sequelize-cli": "^6.6.3"
+    "nodemon": "^3.1.10"
+    
   }
 }

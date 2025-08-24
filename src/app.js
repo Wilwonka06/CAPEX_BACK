@@ -10,6 +10,10 @@ const schedulingRoutes = require('./routes/SchedulingRoutes');
 const employeeRoutes = require('./routes/EmployeeRoutes');
 const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
 const servicesRoutes = require('./routes/ServicesRoutes');
+const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
+const roleRoutes = require('./routes/roles/RoleRoutes');
+const clientRoutes = require('./routes/clients/ClienteRoutes');
+
 
 
 // Importar modelos directamente
@@ -19,16 +23,19 @@ const TechnicalSheet = require('./models/TechnicalSheet');
 const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
 const Employee = require('./models/Employee');
+const { Role, Permission, Privilege, RolePermissionPrivilege } = require('./models/roles');
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
 
-
+// Importar función de inicialización de roles
+const { initializeRoles } = require('./config/initRoles');
 const app = express();
 app.use(express.json());
 
 // Conectar a la base de datos
 connectDB();
+initializeRoles();
 
 // Definir relaciones entre modelos
 // Un producto puede tener muchas fichas técnicas
@@ -107,6 +114,9 @@ app.use('/api/scheduling', schedulingRoutes);
 app.use('/api/empleados', employeeRoutes);
 app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
+app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/clients', clientRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
