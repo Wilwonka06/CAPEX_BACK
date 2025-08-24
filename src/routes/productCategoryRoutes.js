@@ -17,7 +17,7 @@ const {
 
 // Rutas para categorías de productos
 router.get('/', getAllCategorias);
-router.get('/search', validateSearchCategoriaProducto, searchCategorias);
+router.get('/search/', validateSearchCategoriaProducto, searchCategorias);
 router.get('/estado/:estado', getCategoriasByEstado);
 router.get('/:id', getCategoriaById);
 router.post('/', validateCreateCategoriaProducto, createCategoria);

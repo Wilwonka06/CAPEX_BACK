@@ -15,7 +15,7 @@ const {
 
 // Rutas para productos
 router.get('/', getAllProductos);
-router.get('/search', searchProductos);
+router.get('/search/', searchProductos);
 router.get('/:id', getProductoById);
 router.post('/', validateCreateProducto, createProducto);
 router.put('/:id', validateUpdateProducto, updateProducto);
