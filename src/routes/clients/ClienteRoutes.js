@@ -15,16 +15,38 @@ const {
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
 
-// ===== BASIC CLIENT OPERATIONS =====
+// ===== SPECIFIC CLIENT OPERATIONS PRIMERO =====
+router.get('/stats', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.getClientStats
+);
 
-// GET /api/clients - Obtener todos los clientes
+router.get('/search', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.searchClients
+);
+
+router.get('/email/:email', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.getClientByEmail
+);
+
+router.get('/document/:documentNumber', 
+  authenticateToken,
+  requirePermission('read'),
+  ClientController.getClientByDocument
+);
+
+// ===== BASIC CLIENT OPERATIONS DESPUÉS =====
 router.get('/', 
   authenticateToken,
   requirePermission('read'),
   ClientController.getAllClients
 );
 
-// GET /api/clients/:id - Obtener cliente por ID
 router.get('/:id', 
   authenticateToken,
   requirePermission('read'),
@@ -64,34 +86,7 @@ router.delete('/:id',
   ClientController.deleteClient
 );
 
-// ===== SPECIFIC CLIENT OPERATIONS =====
 
-// GET /api/clients/stats - Obtener estadísticas de clientes
-router.get('/stats', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientStats
-);
 
-// GET /api/clients/search - Buscar clientes por criterios
-router.get('/search', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.searchClients
-);
-
-// GET /api/clients/email/:email - Obtener cliente por email
-router.get('/email/:email', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByEmail
-);
-
-// GET /api/clients/document/:documentNumber - Obtener cliente por número de documento
-router.get('/document/:documentNumber', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByDocument
-);
 
 module.exports = router;

@@ -1,13 +1,18 @@
 const Client = require('../../models/clients/Client');
+const Usuario = require('../../models/User');
 const { sequelize } = require('../../config/database');
 
 class ClientService {
-  // Get all clients
+  // Get all clients with user data
   static async getAllClients() {
     try {
       const clients = await Client.findAll({
-        where: { status: true },
-        attributes: { exclude: ['password'] } // Exclude password from response
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          attributes: { exclude: ['contrasena'] }
+        }],
+        where: { estado: true }
       });
 
       return {
@@ -24,7 +29,11 @@ class ClientService {
   static async getClientById(id) {
     try {
       const client = await Client.findByPk(id, {
-        attributes: { exclude: ['password'] } // Exclude password from response
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          attributes: { exclude: ['contrasena'] }
+        }]
       });
 
       if (!client) {
@@ -48,8 +57,12 @@ class ClientService {
   static async getClientByEmail(email) {
     try {
       const client = await Client.findOne({
-        where: { email },
-        attributes: { exclude: ['password'] } // Exclude password from response
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          where: { correo: email },
+          attributes: { exclude: ['contrasena'] }
+        }]
       });
 
       if (!client) {
@@ -73,8 +86,12 @@ class ClientService {
   static async getClientByDocument(documentNumber) {
     try {
       const client = await Client.findOne({
-        where: { documentNumber },
-        attributes: { exclude: ['password'] } // Exclude password from response
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          where: { documento: documentNumber },
+          attributes: { exclude: ['contrasena'] }
+        }]
       });
 
       if (!client) {
@@ -111,45 +128,30 @@ class ClientService {
         status
       } = clientData;
 
-      // Check if email already exists
-      const existingEmail = await Client.findOne({ where: { email } });
-      if (existingEmail) {
-        await transaction.rollback();
-        return {
-          success: false,
-          message: 'El correo electrónico ya está registrado',
-          error: 'EMAIL_EXISTS'
-        };
-      }
+      // Mapear los campos del request a los campos del modelo Usuario
+      const nombre_completo = `${firstName} ${lastName}`;
+      
+      // Create user first
+      const newUser = await Usuario.create({
+        nombre: nombre_completo,
+        tipo_documento: documentType,
+        documento: documentNumber,
+        correo: email,
+        telefono: phone,
+        contrasena: password // Ya viene hasheado del middleware
+      }, { transaction });
 
-      // Check if document number already exists
-      const existingDocument = await Client.findOne({ where: { documentNumber } });
-      if (existingDocument) {
-        await transaction.rollback();
-        return {
-          success: false,
-          message: 'El número de documento ya está registrado',
-          error: 'DOCUMENT_EXISTS'
-        };
-      }
-
-      // Create the client
+      // Then create client
       const newClient = await Client.create({
-        documentType,
-        documentNumber,
-        firstName,
-        lastName,
-        email,
-        phone,
-        password, // This should already be hashed by middleware
-        address: address || null,
-        status: status !== undefined ? status : true
+        id_usuario: newUser.id_usuario,
+        direccion: address || null,
+        estado: status !== undefined ? status : true
       }, { transaction });
 
       await transaction.commit();
 
-      // Get the created client without password
-      const createdClient = await this.getClientById(newClient.id_client);
+      // Get the complete client data
+      const createdClient = await this.getClientById(newClient.id_cliente);
 
       return {
         success: true,
@@ -158,6 +160,25 @@ class ClientService {
       };
     } catch (error) {
       await transaction.rollback();
+      
+      // Handle specific database errors
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        if (error.fields.correo) {
+          return {
+            success: false,
+            message: 'El correo electrónico ya está registrado',
+            error: 'EMAIL_EXISTS'
+          };
+        }
+        if (error.fields.documento) {
+          return {
+            success: false,
+            message: 'El número de documento ya está registrado',
+            error: 'DOCUMENT_EXISTS'
+          };
+        }
+      }
+      
       throw new Error(`Error al crear cliente: ${error.message}`);
     }
   }
@@ -179,8 +200,14 @@ class ClientService {
         status
       } = clientData;
 
-      // Check if client exists
-      const existingClient = await Client.findByPk(id);
+      // Find the client with user data
+      const existingClient = await Client.findByPk(id, {
+        include: [{
+          model: Usuario,
+          as: 'usuario'
+        }]
+      });
+
       if (!existingClient) {
         await transaction.rollback();
         return {
@@ -190,59 +217,31 @@ class ClientService {
         };
       }
 
-      // Check if new email already exists (if email is being updated)
-      if (email && email !== existingClient.email) {
-        const clientWithSameEmail = await Client.findOne({ 
-          where: { 
-            email,
-            id_client: { [sequelize.Op.ne]: id } // Exclude current client from check
-          } 
-        });
-        if (clientWithSameEmail) {
-          await transaction.rollback();
-          return {
-            success: false,
-            message: 'El correo electrónico ya está registrado',
-            error: 'EMAIL_EXISTS'
-          };
-        }
+      // Update user data if provided
+      const userUpdateData = {};
+      if (firstName && lastName) userUpdateData.nombre = `${firstName} ${lastName}`;
+      if (documentType) userUpdateData.tipo_documento = documentType;
+      if (documentNumber) userUpdateData.documento = documentNumber;
+      if (email) userUpdateData.correo = email;
+      if (phone) userUpdateData.telefono = phone;
+      if (password) userUpdateData.contrasena = password;
+
+      if (Object.keys(userUpdateData).length > 0) {
+        await existingClient.usuario.update(userUpdateData, { transaction });
       }
 
-      // Check if new document number already exists (if document is being updated)
-      if (documentNumber && documentNumber !== existingClient.documentNumber) {
-        const clientWithSameDocument = await Client.findOne({ 
-          where: { 
-            documentNumber,
-            id_client: { [sequelize.Op.ne]: id } // Exclude current client from check
-          } 
-        });
-        if (clientWithSameDocument) {
-          await transaction.rollback();
-          return {
-            success: false,
-            message: 'El número de documento ya está registrado',
-            error: 'DOCUMENT_EXISTS'
-          };
-        }
+      // Update client-specific data
+      const clientUpdateData = {};
+      if (address !== undefined) clientUpdateData.direccion = address;
+      if (status !== undefined) clientUpdateData.estado = status;
+
+      if (Object.keys(clientUpdateData).length > 0) {
+        await existingClient.update(clientUpdateData, { transaction });
       }
-
-      // Update client data
-      const updateData = {};
-      if (documentType !== undefined) updateData.documentType = documentType;
-      if (documentNumber !== undefined) updateData.documentNumber = documentNumber;
-      if (firstName !== undefined) updateData.firstName = firstName;
-      if (lastName !== undefined) updateData.lastName = lastName;
-      if (email !== undefined) updateData.email = email;
-      if (phone !== undefined) updateData.phone = phone;
-      if (password !== undefined) updateData.password = password; // This should already be hashed by middleware
-      if (address !== undefined) updateData.address = address;
-      if (status !== undefined) updateData.status = status;
-
-      await existingClient.update(updateData, { transaction });
 
       await transaction.commit();
 
-      // Get the updated client without password
+      // Get the updated client
       const updatedClient = await this.getClientById(id);
 
       return {
@@ -252,11 +251,30 @@ class ClientService {
       };
     } catch (error) {
       await transaction.rollback();
+      
+      // Handle specific database errors
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        if (error.fields.correo) {
+          return {
+            success: false,
+            message: 'El correo electrónico ya está registrado',
+            error: 'EMAIL_EXISTS'
+          };
+        }
+        if (error.fields.documento) {
+          return {
+            success: false,
+            message: 'El número de documento ya está registrado',
+            error: 'DOCUMENT_EXISTS'
+          };
+        }
+      }
+      
       throw new Error(`Error al actualizar cliente: ${error.message}`);
     }
   }
 
-  // Delete client (soft delete by setting status to false)
+  // Delete client (soft delete)
   static async deleteClient(id) {
     const transaction = await sequelize.transaction();
     
@@ -271,8 +289,8 @@ class ClientService {
         };
       }
 
-      // Soft delete by setting status to false
-      await client.update({ status: false }, { transaction });
+      // Soft delete by setting estado to false
+      await client.update({ estado: false }, { transaction });
 
       await transaction.commit();
 
@@ -289,9 +307,9 @@ class ClientService {
   // Get client statistics
   static async getClientStats() {
     try {
-      const totalClients = await Client.count({ where: { status: true } });
-      const activeClients = await Client.count({ where: { status: true } });
-      const inactiveClients = await Client.count({ where: { status: false } });
+      const totalClients = await Client.count();
+      const activeClients = await Client.count({ where: { estado: true } });
+      const inactiveClients = await Client.count({ where: { estado: false } });
 
       return {
         success: true,
@@ -307,34 +325,39 @@ class ClientService {
     }
   }
 
-  // Search clients by criteria
+  // Search clients
   static async searchClients(criteria) {
     try {
       const { searchTerm, documentType, status } = criteria;
       
       const whereClause = {};
+      const userWhereClause = {};
       
       if (searchTerm) {
-        whereClause[sequelize.Op.or] = [
-          { firstName: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
-          { lastName: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
-          { email: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
-          { documentNumber: { [sequelize.Op.iLike]: `%${searchTerm}%` } }
+        userWhereClause[sequelize.Op.or] = [
+          { nombre: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
+          { correo: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
+          { documento: { [sequelize.Op.iLike]: `%${searchTerm}%` } }
         ];
       }
       
       if (documentType) {
-        whereClause.documentType = documentType;
+        userWhereClause.tipo_documento = documentType;
       }
       
       if (status !== undefined) {
-        whereClause.status = status;
+        whereClause.estado = status;
       }
 
       const clients = await Client.findAll({
         where: whereClause,
-        attributes: { exclude: ['password'] },
-        order: [['firstName', 'ASC']]
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          where: userWhereClause,
+          attributes: { exclude: ['contrasena'] }
+        }],
+        order: [[{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
       });
 
       return {

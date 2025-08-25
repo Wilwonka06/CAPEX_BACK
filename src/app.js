@@ -23,6 +23,8 @@ const TechnicalSheet = require('./models/TechnicalSheet');
 const Supplier = require('./models/Supplier');
 const ProductCategory = require('./models/ProductCategory');
 const Employee = require('./models/Employee');
+const User = require('./models/User');
+const Client = require('./models/clients/Client');
 const { Role, Permission, Privilege, RolePermissionPrivilege } = require('./models/roles');
 
 // Importar middleware de errores directamente
@@ -38,6 +40,18 @@ connectDB();
 initializeRoles();
 
 // Definir relaciones entre modelos
+
+// Establecer relación Usuario-Cliente
+User.hasOne(Client, {
+  foreignKey: 'id_usuario',
+  as: 'cliente'
+});
+
+Client.belongsTo(User, {
+  foreignKey: 'id_usuario',
+  as: 'usuario'
+});
+
 // Un producto puede tener muchas fichas técnicas
 Product.hasMany(TechnicalSheet, {
   foreignKey: 'id_producto',

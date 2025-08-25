@@ -312,7 +312,7 @@ const validateClientEmailUnique = async (req, res, next) => {
     
     if (existingClient.success) {
       // If updating, check if it's the same client
-      if (id && existingClient.data.id_client === parseInt(id)) {
+      if (id && existingClient.data.id_cliente === parseInt(id)) {
         return next();
       }
       
@@ -348,7 +348,7 @@ const validateClientDocumentUnique = async (req, res, next) => {
     
     if (existingClient.success) {
       // If updating, check if it's the same client
-      if (id && existingClient.data.id_client === parseInt(id)) {
+      if (id && existingClient.data.id_cliente === parseInt(id)) {
         return next();
       }
       
