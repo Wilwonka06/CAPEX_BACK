@@ -19,18 +19,18 @@ class UsersService {
     try {
       // Validar que el email no exista
       const existingUser = await User.findOne({
-        where: { email: userData.email }
+        where: { correo: userData.correo }
       });
 
       if (existingUser) {
-        throw new Error('El email ya está registrado');
+        throw new Error('El correo ya está registrado');
       }
 
       // Validar que el documento no exista
       const existingDocument = await User.findOne({
         where: { 
-          documentType: userData.documentType,
-          documentNumber: userData.documentNumber
+          tipo_documento: userData.tipo_documento,
+          documento: userData.documento
         }
       });
 
@@ -48,7 +48,7 @@ class UsersService {
       const newUser = await User.create(userData);
       
       // Retornar usuario sin password
-      const { password, ...userWithoutPassword } = newUser.toJSON();
+      const { contrasena, ...userWithoutPassword } = newUser.toJSON();
       return userWithoutPassword;
 
     } catch (error) {
@@ -68,7 +68,7 @@ class UsersService {
         limit = 10,
         search = '',
         roleId = null,
-        documentType = null
+        tipo_documento = null
       } = options;
 
       const offset = (page - 1) * limit;
@@ -79,8 +79,8 @@ class UsersService {
       if (search) {
         whereClause[Op.or] = [
           { nombre: { [Op.like]: `%${search}%` } },
-          { email: { [Op.like]: `%${search}%` } },
-          { documentNumber: { [Op.like]: `%${search}%` } }
+          { correo: { [Op.like]: `%${search}%` } },
+          { documento: { [Op.like]: `%${search}%` } }
         ];
       }
 
@@ -88,14 +88,14 @@ class UsersService {
         whereClause.roleId = roleId;
       }
 
-      if (documentType) {
-        whereClause.documentType = documentType;
+      if (tipo_documento) {
+        whereClause.tipo_documento = tipo_documento;
       }
 
       // Ejecutar consulta con paginación
       const { count, rows } = await User.findAndCountAll({
         where: whereClause,
-        attributes: { exclude: ['password'] }, // Excluir password
+        attributes: { exclude: ['contrasena'] }, // Excluir password
         limit: parseInt(limit),
         offset: parseInt(offset),
   order: [['nombre', 'ASC']]
@@ -126,7 +126,7 @@ class UsersService {
   static async getUserById(userId) {
     try {
       const user = await User.findByPk(userId, {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!user) {
@@ -141,15 +141,15 @@ class UsersService {
   }
 
   /**
-   * Obtener un usuario por email
-   * @param {string} email - Email del usuario
+   * Obtener un usuario por correo
+   * @param {string} correo - correo del usuario
    * @returns {Promise<Object>} Usuario encontrado
    */
-  static async getUserByEmail(email) {
+  static async getUserByEmail(correo) {
     try {
       const user = await User.findOne({
-        where: { email },
-        attributes: { exclude: ['password'] }
+        where: { correo },
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!user) {
@@ -165,18 +165,18 @@ class UsersService {
 
   /**
    * Obtener un usuario por documento
-   * @param {string} documentType - Tipo de documento
-   * @param {string} documentNumber - Número de documento
+   * @param {string} tipo_documento - Tipo de documento
+   * @param {string} documento - Número de documento
    * @returns {Promise<Object>} Usuario encontrado
    */
-  static async getUserByDocument(documentType, documentNumber) {
+  static async getUserByDocument(tipo_documento, documento) {
     try {
       const user = await User.findOne({
         where: { 
-          documentType,
-          documentNumber
+          tipo_documento,
+          documento
         },
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!user) {
@@ -204,11 +204,11 @@ class UsersService {
         throw new Error('Usuario no encontrado');
       }
 
-      // Si se está actualizando el email, verificar que no exista
-      if (updateData.email && updateData.email !== existingUser.email) {
+      // Si se está actualizando el correo, verificar que no exista
+      if (updateData.correo && updateData.correo !== existingUser.correo) {
         const emailExists = await User.findOne({
           where: { 
-            email: updateData.email,
+            correo: updateData.correo,
             id: { [Op.ne]: userId } // Excluir el usuario actual
           }
         });
@@ -219,11 +219,11 @@ class UsersService {
       }
 
       // Si se está actualizando el documento, verificar que no exista
-      if (updateData.documentType && updateData.documentNumber) {
+      if (updateData.tipo_documento && updateData.documento) {
         const documentExists = await User.findOne({
           where: { 
-            documentType: updateData.documentType,
-            documentNumber: updateData.documentNumber,
+            tipo_documento: updateData.tipo_documento,
+            documento: updateData.documento,
             id: { [Op.ne]: userId } // Excluir el usuario actual
           }
         });
@@ -240,7 +240,7 @@ class UsersService {
 
       // Obtener el usuario actualizado
       const updatedUser = await User.findByPk(userId, {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['contrasena'] }
       });
 
       return updatedUser;
@@ -291,7 +291,7 @@ class UsersService {
 
       // Actualizar la contraseña
       await User.update(
-        { password: newPassword },
+        { contrasena: newPassword },
         { where: { id: userId } }
       );
 
@@ -343,10 +343,10 @@ class UsersService {
       // Contar por tipo de documento
       const documentTypeStats = await User.findAll({
         attributes: [
-          'documentType',
+          'tipo_documento',
           [sequelize.fn('COUNT', sequelize.col('id')), 'count']
         ],
-        group: ['documentType']
+        group: ['tipo_documento']
       });
 
       // Contar por rol

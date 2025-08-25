@@ -15,7 +15,7 @@ class UsersController {
       const userData = req.body;
       
       // Validar campos requeridos (roleId es opcional por ahora)
-      const requiredFields = ['name', 'documentType', 'documentNumber', 'email', 'password'];
+      const requiredFields = ['nombre', 'tipo_documento', 'documento', 'correo', 'contrasena'];
       const missingFields = requiredFields.filter(field => !userData[field]);
       
       if (missingFields.length > 0) {
@@ -51,14 +51,14 @@ class UsersController {
    */
   static async getAllUsers(req, res) {
     try {
-      const { page, limit, search, roleId, documentType } = req.query;
+      const { page, limit, search, roleId, tipo_documento } = req.query;
       
       const options = {
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 10,
         search: search || '',
         roleId: roleId ? parseInt(roleId) : null,
-        documentType: documentType || null
+        tipo_documento: tipo_documento || null
       };
 
       const result = await UsersService.getAllUsers(options);
@@ -123,22 +123,22 @@ class UsersController {
   }
 
   /**
-   * Obtener un usuario por email
-   * GET /api/users/email/:email
+   * Obtener un usuario por correo
+   * GET /api/users/correo/:correo
    */
   static async getUserByEmail(req, res) {
     try {
-      const { email } = req.params;
+      const { correo } = req.params;
       
-      if (!email) {
+      if (!correo) {
         return res.status(400).json({
           success: false,
-          message: 'Email requerido',
+          message: 'El correo requerido',
           timestamp: new Date().toISOString()
         });
       }
 
-      const user = await UsersService.getUserByEmail(email);
+      const user = await UsersService.getUserByEmail(correo);
       
       res.json({
         success: true,
@@ -166,13 +166,13 @@ class UsersController {
 
   /**
    * Obtener un usuario por documento
-   * GET /api/users/document/:documentType/:documentNumber
+   * GET /api/users/document/:tipo_documento/:documento
    */
   static async getUserByDocument(req, res) {
     try {
-      const { documentType, documentNumber } = req.params;
+      const { tipo_documento, documento } = req.params;
       
-      if (!documentType || !documentNumber) {
+      if (!tipo_documento || !documento) {
         return res.status(400).json({
           success: false,
           message: 'Tipo y número de documento requeridos',
@@ -180,7 +180,7 @@ class UsersController {
         });
       }
 
-      const user = await UsersService.getUserByDocument(documentType, documentNumber);
+      const user = await UsersService.getUserByDocument(tipo_documento, documento);
       
       res.json({
         success: true,
@@ -225,7 +225,7 @@ class UsersController {
 
       // No permitir actualizar campos sensibles
       delete updateData.id;
-      delete updateData.password; // La contraseña se cambia con endpoint específico
+      delete updateData.contrasena; // La contraseña se cambia con endpoint específico
 
       const updatedUser = await UsersService.updateUser(userId, updateData);
       
@@ -296,7 +296,7 @@ class UsersController {
 
   /**
    * Cambiar contraseña de un usuario
-   * PATCH /api/users/:id/password
+   * PATCH /api/users/:id/contrasena
    */
   static async changePassword(req, res) {
     try {
