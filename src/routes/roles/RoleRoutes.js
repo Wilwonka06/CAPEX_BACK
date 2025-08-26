@@ -6,6 +6,7 @@ const {
   validateUpdateRole,
   validateRoleId,
   validateDeleteRole,
+  validateRoleStateChange,
   validateRoleNameUnique,
   validateRolePermissions
 } = require('../../middlewares/roles/RoleValidationMiddleware');
@@ -29,6 +30,13 @@ router.get('/privilegios',
   authenticateToken,
   requirePermission('read'),
   RoleController.getAllPrivileges
+);
+
+// GET /api/roles/all - Obtener todos los roles (incluyendo inactivos)
+router.get('/all', 
+  authenticateToken,
+  requirePermission('read'),
+  RoleController.getAllRolesWithInactive
 );
 
 // ===== RUTAS BÁSICAS DE ROLES =====
@@ -75,6 +83,33 @@ router.delete('/:id',
   validateRoleId,
   validateDeleteRole,
   RoleController.deleteRole
+);
+
+// DELETE /api/roles/:id/permanent - Eliminar rol permanentemente
+router.delete('/:id/permanent', 
+  authenticateToken,
+  requirePermission('delete'),
+  validateRoleId,
+  validateDeleteRole,
+  RoleController.hardDeleteRole
+);
+
+// PATCH /api/roles/:id/activate - Activar rol
+router.patch('/:id/activate', 
+  authenticateToken,
+  requirePermission('update'),
+  validateRoleId,
+  validateRoleStateChange,
+  RoleController.activateRole
+);
+
+// PATCH /api/roles/:id/deactivate - Desactivar rol
+router.patch('/:id/deactivate', 
+  authenticateToken,
+  requirePermission('update'),
+  validateRoleId,
+  validateRoleStateChange,
+  RoleController.deactivateRole
 );
 
 module.exports = router;

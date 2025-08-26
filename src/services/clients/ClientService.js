@@ -160,24 +160,7 @@ class ClientService {
       };
     } catch (error) {
       await transaction.rollback();
-      
-      // Handle specific database errors
-      if (error.name === 'SequelizeUniqueConstraintError') {
-        if (error.fields.correo) {
-          return {
-            success: false,
-            message: 'El correo electrónico ya está registrado',
-            error: 'EMAIL_EXISTS'
-          };
-        }
-        if (error.fields.documento) {
-          return {
-            success: false,
-            message: 'El número de documento ya está registrado',
-            error: 'DOCUMENT_EXISTS'
-          };
-        }
-      }
+    }
       
       throw new Error(`Error al crear cliente: ${error.message}`);
     }
@@ -219,12 +202,8 @@ class ClientService {
 
       // Update user data if provided
       const userUpdateData = {};
-      if (firstName && lastName) userUpdateData.nombre = `${firstName} ${lastName}`;
-      if (documentType) userUpdateData.tipo_documento = documentType;
-      if (documentNumber) userUpdateData.documento = documentNumber;
-      if (email) userUpdateData.correo = email;
-      if (phone) userUpdateData.telefono = phone;
-      if (password) userUpdateData.contrasena = password;
+      if (direccion !== undefined) updateData.direccion = direccion;
+      if (estado !== undefined) updateData.estado = estado;
 
       if (Object.keys(userUpdateData).length > 0) {
         await existingClient.usuario.update(userUpdateData, { transaction });
@@ -240,14 +219,10 @@ class ClientService {
       }
 
       await transaction.commit();
-
-      // Get the updated client
-      const updatedClient = await this.getClientById(id);
-
       return {
         success: true,
         message: 'Cliente actualizado exitosamente',
-        data: updatedClient.data
+        data: existingClient,
       };
     } catch (error) {
       await transaction.rollback();
@@ -269,7 +244,6 @@ class ClientService {
           };
         }
       }
-      
       throw new Error(`Error al actualizar cliente: ${error.message}`);
     }
   }
@@ -279,7 +253,7 @@ class ClientService {
     const transaction = await sequelize.transaction();
     
     try {
-      const client = await Client.findByPk(id);
+      const client = await Client.findByPk(id, { transaction });      
       if (!client) {
         await transaction.rollback();
         return {
@@ -326,39 +300,24 @@ class ClientService {
   }
 
   // Search clients
-  static async searchClients(criteria) {
+static async searchClients(criteria) {
     try {
-      const { searchTerm, documentType, status } = criteria;
-      
+      const { estado } = criteria;
       const whereClause = {};
-      const userWhereClause = {};
       
-      if (searchTerm) {
-        userWhereClause[sequelize.Op.or] = [
-          { nombre: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
-          { correo: { [sequelize.Op.iLike]: `%${searchTerm}%` } },
-          { documento: { [sequelize.Op.iLike]: `%${searchTerm}%` } }
-        ];
-      }
+      if (estado !== undefined) {
+        whereClause.estado = estado;
+      }      
       
-      if (documentType) {
-        userWhereClause.tipo_documento = documentType;
-      }
-      
-      if (status !== undefined) {
-        whereClause.estado = status;
-      }
-
       const clients = await Client.findAll({
         where: whereClause,
         include: [{
           model: Usuario,
           as: 'usuario',
           where: userWhereClause,
-          attributes: { exclude: ['contrasena'] }
         }],
-        order: [[{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
-      });
+      order: [['id_cliente', 'ASC']]
+    });
 
       return {
         success: true,
@@ -367,6 +326,25 @@ class ClientService {
       };
     } catch (error) {
       throw new Error(`Error al buscar clientes: ${error.message}`);
+    }
+  }
+
+    // Create user and client in one transaction (prepared for future integration)
+  static async createUserAndClient(userData, clientData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // TODO: When User model is available, implement this logic:
+      // 1. Create user in usuarios table
+      // 2. Assign 'Cliente' role in usuarios_roles table
+      // 3. Create client record in clientes table
+      
+      // For now, this is a placeholder that will be implemented later
+      throw new Error('Función createUserAndClient no implementada aún. Los modelos de usuario deben ser proporcionados primero.');
+      
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Error al crear usuario y cliente: ${error.message}`);
     }
   }
 }
