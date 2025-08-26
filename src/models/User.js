@@ -48,10 +48,22 @@ const Usuario = sequelize.define('Usuario', {
     validate: {
       is: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/
     }
+  },
+  roleId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 1, // Rol por defecto
+    references: {
+      model: 'roles',
+      key: 'id_rol'
+    }
   }
 }, {
   tableName: 'usuarios',
   timestamps: false
 });
 
-module.exports = Usuario;
+// Exportar tanto Usuario como User para mantener compatibilidad
+module.exports = { Usuario };
+module.exports.Usuario = Usuario;
+module.exports.User = Usuario;

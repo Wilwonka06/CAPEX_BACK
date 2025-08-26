@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const { Op } = require('sequelize');
+const { Usuario } = require('../models/User');
+const { Op, sequelize } = require('sequelize');
 
 /**
  * Servicio para gestión de usuarios
@@ -18,7 +18,7 @@ class UsersService {
   static async createUser(userData) {
     try {
       // Validar que el email no exista
-      const existingUser = await User.findOne({
+      const existingUser = await Usuario.findOne({
         where: { correo: userData.correo }
       });
 
@@ -27,7 +27,7 @@ class UsersService {
       }
 
       // Validar que el documento no exista
-      const existingDocument = await User.findOne({
+      const existingDocument = await Usuario.findOne({
         where: { 
           tipo_documento: userData.tipo_documento,
           documento: userData.documento
@@ -45,7 +45,7 @@ class UsersService {
       }
 
       // Crear el usuario
-      const newUser = await User.create(userData);
+      const newUser = await Usuario.create(userData);
       
       // Retornar usuario sin password
       const { contrasena, ...userWithoutPassword } = newUser.toJSON();
@@ -93,12 +93,12 @@ class UsersService {
       }
 
       // Ejecutar consulta con paginación
-      const { count, rows } = await User.findAndCountAll({
+      const { count, rows } = await Usuario.findAndCountAll({
         where: whereClause,
         attributes: { exclude: ['contrasena'] }, // Excluir password
         limit: parseInt(limit),
         offset: parseInt(offset),
-  order: [['nombre', 'ASC']]
+        order: [['nombre', 'ASC']]
       });
 
       return {
@@ -125,7 +125,7 @@ class UsersService {
    */
   static async getUserById(userId) {
     try {
-      const user = await User.findByPk(userId, {
+      const user = await Usuario.findByPk(userId, {
         attributes: { exclude: ['contrasena'] }
       });
 
@@ -147,7 +147,7 @@ class UsersService {
    */
   static async getUserByEmail(correo) {
     try {
-      const user = await User.findOne({
+      const user = await Usuario.findOne({
         where: { correo },
         attributes: { exclude: ['contrasena'] }
       });
@@ -171,7 +171,7 @@ class UsersService {
    */
   static async getUserByDocument(tipo_documento, documento) {
     try {
-      const user = await User.findOne({
+      const user = await Usuario.findOne({
         where: { 
           tipo_documento,
           documento
@@ -199,17 +199,17 @@ class UsersService {
   static async updateUser(userId, updateData) {
     try {
       // Verificar que el usuario existe
-      const existingUser = await User.findByPk(userId);
+      const existingUser = await Usuario.findByPk(userId);
       if (!existingUser) {
         throw new Error('Usuario no encontrado');
       }
 
       // Si se está actualizando el correo, verificar que no exista
       if (updateData.correo && updateData.correo !== existingUser.correo) {
-        const emailExists = await User.findOne({
+        const emailExists = await Usuario.findOne({
           where: { 
             correo: updateData.correo,
-            id: { [Op.ne]: userId } // Excluir el usuario actual
+            id_usuario: { [Op.ne]: userId } // Excluir el usuario actual
           }
         });
 
@@ -220,11 +220,11 @@ class UsersService {
 
       // Si se está actualizando el documento, verificar que no exista
       if (updateData.tipo_documento && updateData.documento) {
-        const documentExists = await User.findOne({
+        const documentExists = await Usuario.findOne({
           where: { 
             tipo_documento: updateData.tipo_documento,
             documento: updateData.documento,
-            id: { [Op.ne]: userId } // Excluir el usuario actual
+            id_usuario: { [Op.ne]: userId } // Excluir el usuario actual
           }
         });
 
@@ -234,12 +234,12 @@ class UsersService {
       }
 
       // Actualizar el usuario
-      await User.update(updateData, {
-        where: { id: userId }
+      await Usuario.update(updateData, {
+        where: { id_usuario: userId }
       });
 
       // Obtener el usuario actualizado
-      const updatedUser = await User.findByPk(userId, {
+      const updatedUser = await Usuario.findByPk(userId, {
         attributes: { exclude: ['contrasena'] }
       });
 
@@ -258,14 +258,14 @@ class UsersService {
   static async deleteUser(userId) {
     try {
       // Verificar que el usuario existe
-      const existingUser = await User.findByPk(userId);
+      const existingUser = await Usuario.findByPk(userId);
       if (!existingUser) {
         throw new Error('Usuario no encontrado');
       }
 
       // Eliminar el usuario
-      await User.destroy({
-        where: { id: userId }
+      await Usuario.destroy({
+        where: { id_usuario: userId }
       });
 
       return true;
@@ -284,15 +284,15 @@ class UsersService {
   static async changePassword(userId, newPassword) {
     try {
       // Verificar que el usuario existe
-      const existingUser = await User.findByPk(userId);
+      const existingUser = await Usuario.findByPk(userId);
       if (!existingUser) {
         throw new Error('Usuario no encontrado');
       }
 
       // Actualizar la contraseña
-      await User.update(
+      await Usuario.update(
         { contrasena: newPassword },
-        { where: { id: userId } }
+        { where: { id_usuario: userId } }
       );
 
       return true;
@@ -309,7 +309,7 @@ class UsersService {
    */
   static async userExists(userId) {
     try {
-      const user = await User.findByPk(userId);
+      const user = await Usuario.findByPk(userId);
       return !!user;
     } catch (error) {
       return false;
@@ -323,7 +323,7 @@ class UsersService {
    */
   static async countUsersByRole(roleId) {
     try {
-      const count = await User.count({
+      const count = await Usuario.count({
         where: { roleId }
       });
       return count;
@@ -338,22 +338,22 @@ class UsersService {
    */
   static async getUserStats() {
     try {
-      const totalUsers = await User.count();
+      const totalUsers = await Usuario.count();
       
       // Contar por tipo de documento
-      const documentTypeStats = await User.findAll({
+      const documentTypeStats = await Usuario.findAll({
         attributes: [
           'tipo_documento',
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+          [sequelize.fn('COUNT', sequelize.col('id_usuario')), 'count']
         ],
         group: ['tipo_documento']
       });
 
       // Contar por rol
-      const roleStats = await User.findAll({
+      const roleStats = await Usuario.findAll({
         attributes: [
           'roleId',
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+          [sequelize.fn('COUNT', sequelize.col('id_usuario')), 'count']
         ],
         group: ['roleId']
       });

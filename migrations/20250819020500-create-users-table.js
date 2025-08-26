@@ -34,11 +34,22 @@ module.exports = {
       contrasena: {
         type: Sequelize.STRING(100),
         allowNull: false
+      },
+      roleId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: 1,
+        references: {
+          model: 'roles',
+          key: 'id_rol'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       }
     });
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('Users');
+    await queryInterface.dropTable('usuarios');
   }
 };

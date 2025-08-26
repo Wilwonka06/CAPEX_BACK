@@ -13,20 +13,6 @@ class UsersController {
   static async createUser(req, res) {
     try {
       const userData = req.body;
-      
-      // Validar campos requeridos (roleId es opcional por ahora)
-      const requiredFields = ['nombre', 'tipo_documento', 'documento', 'correo', 'contrasena'];
-      const missingFields = requiredFields.filter(field => !userData[field]);
-      
-      if (missingFields.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Campos requeridos faltantes',
-          missingFields,
-          timestamp: new Date().toISOString()
-        });
-      }
-
       const newUser = await UsersService.createUser(userData);
       
       res.status(201).json({
@@ -87,15 +73,6 @@ class UsersController {
   static async getUserById(req, res) {
     try {
       const userId = parseInt(req.params.id);
-      
-      if (isNaN(userId) || userId <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de usuario inválido',
-          timestamp: new Date().toISOString()
-        });
-      }
-
       const user = await UsersService.getUserById(userId);
       
       res.json({
@@ -124,21 +101,21 @@ class UsersController {
 
   /**
    * Obtener un usuario por correo
-   * GET /api/users/correo/:correo
+   * GET /api/users/email/:email
    */
   static async getUserByEmail(req, res) {
     try {
-      const { correo } = req.params;
+      const { email } = req.params;
       
-      if (!correo) {
+      if (!email) {
         return res.status(400).json({
           success: false,
-          message: 'El correo requerido',
+          message: 'El correo es requerido',
           timestamp: new Date().toISOString()
         });
       }
 
-      const user = await UsersService.getUserByEmail(correo);
+      const user = await UsersService.getUserByEmail(email);
       
       res.json({
         success: true,
