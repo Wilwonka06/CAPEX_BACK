@@ -5,10 +5,9 @@ const {
   validateCreateClient,
   validateUpdateClient,
   validateClientId,
+  validateUserId,
   validateDeleteClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword
+  validateCreateUserAndClient
 } = require('../../middlewares/clients/ClientValidationMiddleware');
 const {
   authenticateToken,
@@ -28,18 +27,6 @@ router.get('/search',
   ClientController.searchClients
 );
 
-router.get('/email/:email', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByEmail
-);
-
-router.get('/document/:documentNumber', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByDocument
-);
-
 // ===== BASIC CLIENT OPERATIONS DESPUÉS =====
 router.get('/', 
   authenticateToken,
@@ -54,15 +41,28 @@ router.get('/:id',
   ClientController.getClientById
 );
 
+// GET /api/clients/user/:userId - Obtener cliente por ID de usuario
+router.get('/user/:userId', 
+  authenticateToken,
+  requirePermission('read'),
+  validateUserId,
+  ClientController.getClientByUserId
+);
+
 // POST /api/clients - Crear nuevo cliente
 router.post('/', 
   authenticateToken,
   requirePermission('create'),
   validateCreateClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword,
   ClientController.createClient
+);
+
+// POST /api/clients/user-client - Crear usuario y cliente en una transacción (para uso futuro)
+router.post('/user-client', 
+  authenticateToken,
+  requirePermission('create'),
+  validateCreateUserAndClient,
+  ClientController.createUserAndClient
 );
 
 // PUT /api/clients/:id - Actualizar cliente
@@ -71,9 +71,6 @@ router.put('/:id',
   requirePermission('update'),
   validateClientId,
   validateUpdateClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword,
   ClientController.updateClient
 );
 

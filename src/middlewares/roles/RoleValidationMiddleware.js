@@ -27,7 +27,12 @@ const validateCreateRole = [
     .optional()
     .isLength({ max: 500 })
     .withMessage('La descripción no puede exceder 500 caracteres'),
-  
+
+  body('estado')
+    .optional()
+    .isBoolean()
+    .withMessage('El estado del rol debe ser un valor booleano'),
+
   body('permisos_privilegios')
     .isArray({ min: 1 })
     .withMessage('Debe proporcionar al menos un permiso+privilegio'),
@@ -62,6 +67,11 @@ const validateUpdateRole = [
     .isLength({ max: 500 })
     .withMessage('La descripción no puede exceder 500 caracteres'),
   
+  body('estado')
+    .optional()
+    .isBoolean()
+    .withMessage('El estado del rol debe ser un valor booleano'),
+  
   body('permisos_privilegios')
     .optional()
     .isArray({ min: 1 })
@@ -91,6 +101,15 @@ const validateRoleId = [
 
 // Validations for deleting role
 const validateDeleteRole = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID del rol debe ser un entero positivo'),
+  
+  handleValidationErrors
+];
+
+// Validations for activating/deactivating role
+const validateRoleStateChange = [
   param('id')
     .isInt({ min: 1 })
     .withMessage('ID del rol debe ser un entero positivo'),
@@ -173,6 +192,7 @@ module.exports = {
   validateUpdateRole,
   validateRoleId,
   validateDeleteRole,
+  validateRoleStateChange,
   validateRoleNameUnique,
   validateRolePermissions,
   handleValidationErrors

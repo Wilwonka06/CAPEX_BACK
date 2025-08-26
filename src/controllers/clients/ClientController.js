@@ -39,6 +39,25 @@ class ClientController {
       });
     }
   }
+  // Get client by user ID
+  static async getClientByUserId(req, res) {
+    try {
+      const { userId } = req.params;
+      const result = await ClientService.getClientByUserId(userId);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
 
   // Create new client
   static async createClient(req, res) {
@@ -50,13 +69,33 @@ class ClientController {
         let statusCode = 400;
         
         // Determine appropriate status code based on error type
-        if (result.error === 'EMAIL_EXISTS' || result.error === 'DOCUMENT_EXISTS') {
+        if (result.error === 'CLIENT_EXISTS') {
           statusCode = 400;
         } else {
           statusCode = 500;
         }
         
         return res.status(statusCode).json(result);
+      }
+      
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+   // Create user and client in one transaction (for future use)
+  static async createUserAndClient(req, res) {
+    try {
+      const { userData, clientData } = req.body;
+      const result = await ClientService.createUserAndClient(userData, clientData);
+      
+      if (!result.success) {
+        return res.status(400).json(result);
       }
       
       res.status(201).json(result);
@@ -80,9 +119,8 @@ class ClientController {
         let statusCode = 404;
         
         // Determine appropriate status code based on error type
-        if (result.error === 'EMAIL_EXISTS' || result.error === 'DOCUMENT_EXISTS') {
-          statusCode = 400;
-        } else if (result.error === 'CLIENT_NOT_FOUND') {
+        statusCode = 404;
+        if (result.error === 'CLIENT_NOT_FOUND') {
           statusCode = 404;
         } else {
           statusCode = 500;
@@ -148,26 +186,6 @@ class ClientController {
       
       if (!result.success) {
         return res.status(500).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Get client by email
-  static async getClientByEmail(req, res) {
-    try {
-      const { email } = req.params;
-      const result = await ClientService.getClientByEmail(email);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
       }
       
       res.status(200).json(result);
