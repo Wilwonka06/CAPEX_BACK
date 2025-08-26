@@ -27,6 +27,12 @@ const Role = sequelize.define('Role', {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'descripcion'
+  },
+  estado_rol: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: 'estado_rol'
   }
 }, {
   tableName: 'roles',

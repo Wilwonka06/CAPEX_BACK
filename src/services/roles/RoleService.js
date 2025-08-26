@@ -2,10 +2,13 @@ const { Role, Permission, Privilege, RolePermissionPrivilege } = require('../../
 const { sequelize } = require('../../config/database');
 
 class RoleService {
-  // Get all roles
-  static async getAllRoles() {
+  // Get all roles (only active by default)
+  static async getAllRoles(includeInactive = false) {
     try {
+      const whereClause = includeInactive ? {} : { estado_rol: true };
+      
       const roles = await Role.findAll({
+        where: whereClause,
         order: [['id_rol', 'ASC']],
         include: [
           {
@@ -58,6 +61,11 @@ class RoleService {
     } catch (error) {
       throw new Error(`Error al obtener roles: ${error.message}`);
     }
+  }
+
+  // Get all roles including inactive
+  static async getAllRolesWithInactive() {
+    return this.getAllRoles(true);
   }
 
   // Get role by ID
@@ -186,7 +194,7 @@ class RoleService {
     const transaction = await sequelize.transaction();
     
     try {
-      const { nombre, descripcion, permisos_privilegios } = roleData;
+      const { nombre, descripcion, estado_rol, permisos_privilegios } = roleData;
 
       // Check if role name already exists
       const existingRole = await Role.findOne({ where: { nombre } });
@@ -212,7 +220,8 @@ class RoleService {
       // Create the role
       const newRole = await Role.create({
         nombre,
-        descripcion: descripcion || null
+        descripcion: descripcion || null,
+        estado_rol: estado_rol !== undefined ? estado_rol : true
       }, { transaction });
 
       // Create permission+privilege associations
@@ -245,7 +254,7 @@ class RoleService {
     const transaction = await sequelize.transaction();
     
     try {
-      const { nombre, descripcion, permisos_privilegios } = roleData;
+      const { nombre, descripcion, estado_rol, permisos_privilegios } = roleData;
 
       // Check if role exists
       const existingRole = await Role.findByPk(id);
@@ -280,6 +289,7 @@ class RoleService {
       const updateData = {};
       if (nombre !== undefined) updateData.nombre = nombre;
       if (descripcion !== undefined) updateData.descripcion = descripcion;
+      if (estado_rol !== undefined) updateData.estado_rol = estado_rol;
 
       await existingRole.update(updateData, { transaction });
 
@@ -339,8 +349,37 @@ class RoleService {
     }
   }
 
-  // Delete role (hard delete since we don't have estado_rol)
+  // Delete role (soft delete by setting estado_rol to false)
   static async deleteRole(id) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const role = await Role.findByPk(id);
+      if (!role) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'Rol no encontrado'
+        };
+      }
+
+      // Soft delete by setting estado_rol to false
+      await role.update({ estado_rol: false }, { transaction });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: 'Rol eliminado exitosamente'
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Error al eliminar rol: ${error.message}`);
+    }
+  }
+
+  // Hard delete role (permanent deletion)
+  static async hardDeleteRole(id) {
     const transaction = await sequelize.transaction();
     
     try {
@@ -366,11 +405,67 @@ class RoleService {
 
       return {
         success: true,
-        message: 'Rol eliminado exitosamente'
+        message: 'Rol eliminado permanentemente'
       };
     } catch (error) {
       await transaction.rollback();
-      throw new Error(`Error al eliminar rol: ${error.message}`);
+      throw new Error(`Error al eliminar rol permanentemente: ${error.message}`);
+    }
+  }
+
+  // Activate role
+  static async activateRole(id) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const role = await Role.findByPk(id);
+      if (!role) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'Rol no encontrado'
+        };
+      }
+
+      await role.update({ estado_rol: true }, { transaction });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: 'Rol activado exitosamente'
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Error al activar rol: ${error.message}`);
+    }
+  }
+
+  // Deactivate role
+  static async deactivateRole(id) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const role = await Role.findByPk(id);
+      if (!role) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'Rol no encontrado'
+        };
+      }
+
+      await role.update({ estado_rol: false }, { transaction });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: 'Rol desactivado exitosamente'
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Error al desactivar rol: ${error.message}`);
     }
   }
 

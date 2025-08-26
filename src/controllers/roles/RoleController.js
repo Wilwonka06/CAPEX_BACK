@@ -1,10 +1,29 @@
 const RoleService = require('../../services/roles/RoleService');
 
 class RoleController {
-  // Get all roles
+  // Get all roles (active only by default)
   static async getAllRoles(req, res) {
     try {
       const result = await RoleService.getAllRoles();
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Get all roles including inactive
+  static async getAllRolesWithInactive(req, res) {
+    try {
+      const result = await RoleService.getAllRolesWithInactive();
       
       if (!result.success) {
         return res.status(404).json(result);
@@ -95,11 +114,71 @@ class RoleController {
     }
   }
 
-  // Delete role
+  // Delete role (soft delete)
   static async deleteRole(req, res) {
     try {
       const { id } = req.params;
       const result = await RoleService.deleteRole(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Hard delete role (permanent deletion)
+  static async hardDeleteRole(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await RoleService.hardDeleteRole(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Activate role
+  static async activateRole(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await RoleService.activateRole(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Deactivate role
+  static async deactivateRole(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await RoleService.deactivateRole(id);
       
       if (!result.success) {
         return res.status(404).json(result);

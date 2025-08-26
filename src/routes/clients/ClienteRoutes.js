@@ -5,10 +5,9 @@ const {
   validateCreateClient,
   validateUpdateClient,
   validateClientId,
+  validateUserId,
   validateDeleteClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword
+  validateCreateUserAndClient
 } = require('../../middlewares/clients/ClientValidationMiddleware');
 const {
   authenticateToken,
@@ -32,15 +31,28 @@ router.get('/:id',
   ClientController.getClientById
 );
 
-// POST /api/clients - Crear nuevo cliente
+// GET /api/clients/user/:userId - Obtener cliente por ID de usuario
+router.get('/user/:userId', 
+  authenticateToken,
+  requirePermission('read'),
+  validateUserId,
+  ClientController.getClientByUserId
+);
+
+// POST /api/clients - Crear nuevo cliente (requiere id_usuario)
 router.post('/', 
   authenticateToken,
   requirePermission('create'),
   validateCreateClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword,
   ClientController.createClient
+);
+
+// POST /api/clients/user-client - Crear usuario y cliente en una transacción (para uso futuro)
+router.post('/user-client', 
+  authenticateToken,
+  requirePermission('create'),
+  validateCreateUserAndClient,
+  ClientController.createUserAndClient
 );
 
 // PUT /api/clients/:id - Actualizar cliente
@@ -49,9 +61,6 @@ router.put('/:id',
   requirePermission('update'),
   validateClientId,
   validateUpdateClient,
-  validateClientEmailUnique,
-  validateClientDocumentUnique,
-  hashPassword,
   ClientController.updateClient
 );
 
@@ -64,7 +73,7 @@ router.delete('/:id',
   ClientController.deleteClient
 );
 
-// ===== SPECIFIC CLIENT OPERATIONS =====
+// ===== STATISTICS AND SEARCH =====
 
 // GET /api/clients/stats - Obtener estadísticas de clientes
 router.get('/stats', 
@@ -78,20 +87,6 @@ router.get('/search',
   authenticateToken,
   requirePermission('read'),
   ClientController.searchClients
-);
-
-// GET /api/clients/email/:email - Obtener cliente por email
-router.get('/email/:email', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByEmail
-);
-
-// GET /api/clients/document/:documentNumber - Obtener cliente por número de documento
-router.get('/document/:documentNumber', 
-  authenticateToken,
-  requirePermission('read'),
-  ClientController.getClientByDocument
 );
 
 module.exports = router;

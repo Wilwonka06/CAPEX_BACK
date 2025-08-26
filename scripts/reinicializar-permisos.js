@@ -45,27 +45,27 @@ const reinicializarPermisos = async () => {
     console.log('\n👥 Creando roles...');
     const roles = await Role.bulkCreate([
       { 
-        nombre_rol: 'Administrador',
+        nombre: 'Administrador',
         descripcion: 'Rol con acceso completo al sistema',
         estado_rol: true
       },
       { 
-        nombre_rol: 'Empleado',
+        nombre: 'Empleado',
         descripcion: 'Rol con acceso limitado para operaciones diarias',
         estado_rol: true
       },
       { 
-        nombre_rol: 'Cliente',
+        nombre: 'Cliente',
         descripcion: 'Rol para clientes del sistema',
         estado_rol: true
       }
     ]);
-    console.log('  ✅ Roles creados:', roles.map(r => r.nombre_rol).join(', '));
+    console.log('  ✅ Roles creados:', roles.map(r => r.nombre).join(', '));
 
     // 5. Obtener referencias
-    const adminRole = roles.find(r => r.nombre_rol === 'Administrador');
-    const employeeRole = roles.find(r => r.nombre_rol === 'Empleado');
-    const clientRole = roles.find(r => r.nombre_rol === 'Cliente');
+    const adminRole = roles.find(r => r.nombre === 'Administrador');
+    const employeeRole = roles.find(r => r.nombre === 'Empleado');
+    const clientRole = roles.find(r => r.nombre === 'Cliente');
 
     const comprasPermission = permisos.find(p => p.nombre === 'Compras');
     const serviciosPermission = permisos.find(p => p.nombre === 'Servicios');

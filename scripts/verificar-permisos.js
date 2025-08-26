@@ -32,14 +32,14 @@ const verificarPermisos = async () => {
     });
     
     roles.forEach(rol => {
-      console.log(`  ✅ ID: ${rol.id_rol} | Nombre: ${rol.nombre_rol} | Estado: ${rol.estado_rol ? 'Activo' : 'Inactivo'}`);
+      console.log(`  ✅ ID: ${rol.id_rol} | Nombre: ${rol.nombre} | Estado: ${rol.estado_rol ? 'Activo' : 'Inactivo'}`);
     });
 
     // 4. Verificar combinaciones de permisos y privilegios
     console.log('\n🔗 COMBINACIONES DE PERMISOS Y PRIVILEGIOS:');
     
     for (const rol of roles) {
-      console.log(`\n🎯 ROL: ${rol.nombre_rol} (ID: ${rol.id_rol})`);
+      console.log(`\n🎯 ROL: ${rol.nombre} (ID: ${rol.id_rol}) - Estado: ${rol.estado_rol ? 'Activo' : 'Inactivo'}`);
       
       const combinaciones = await RolePermissionPrivilege.findAll({
         where: { id_rol: rol.id_rol },
@@ -86,10 +86,12 @@ const verificarPermisos = async () => {
     const totalPrivilegios = privilegios.length;
     const totalRoles = roles.length;
     const totalCombinaciones = await RolePermissionPrivilege.count();
+    const rolesActivos = roles.filter(r => r.estado_rol).length;
+    const rolesInactivos = roles.filter(r => !r.estado_rol).length;
 
     console.log(`  📋 Total Permisos: ${totalPermisos}`);
     console.log(`  🔧 Total Privilegios: ${totalPrivilegios}`);
-    console.log(`  👥 Total Roles: ${totalRoles}`);
+    console.log(`  👥 Total Roles: ${totalRoles} (${rolesActivos} activos, ${rolesInactivos} inactivos)`);
     console.log(`  🔗 Total Combinaciones: ${totalCombinaciones}`);
     console.log(`  📈 Combinaciones posibles: ${totalPermisos * totalPrivilegios * totalRoles}`);
 
@@ -103,9 +105,9 @@ const verificarPermisos = async () => {
       });
       
       if (count === 0) {
-        console.log(`  ⚠️  ADVERTENCIA: El rol "${rol.nombre_rol}" no tiene combinaciones asignadas`);
+        console.log(`  ⚠️  ADVERTENCIA: El rol "${rol.nombre}" no tiene combinaciones asignadas`);
       } else {
-        console.log(`  ✅ El rol "${rol.nombre_rol}" tiene ${count} combinaciones`);
+        console.log(`  ✅ El rol "${rol.nombre}" tiene ${count} combinaciones`);
       }
     }
 
