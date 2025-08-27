@@ -23,6 +23,16 @@ class UsersController {
       });
 
     } catch (error) {
+      // Manejar específicamente errores relacionados con roles
+      if (error.message.includes('rol') || error.message.includes('roleId')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          errorType: 'ROLE_VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       res.status(400).json({
         success: false,
         message: error.message,
@@ -32,28 +42,49 @@ class UsersController {
   }
 
   /**
-   * Obtener todos los usuarios con paginación
+   * Obtener todos los usuarios con paginación y búsqueda avanzada
    * GET /api/users
    */
   static async getAllUsers(req, res) {
     try {
-      const { page, limit, search, roleId, tipo_documento } = req.query;
+      const { 
+        page, 
+        limit, 
+        search, 
+        roleId, 
+        tipo_documento,
+        nombre,
+        correo,
+        documento,
+        telefono
+      } = req.query;
       
-      const options = {
+      const filters = {
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 10,
         search: search || '',
         roleId: roleId ? parseInt(roleId) : null,
-        tipo_documento: tipo_documento || null
+        tipo_documento: tipo_documento || null,
+        nombre: nombre || '',
+        correo: correo || '',
+        documento: documento || '',
+        telefono: telefono || ''
       };
 
-      const result = await UsersService.getAllUsers(options);
+      const result = await UsersService.searchUsers(filters);
+      
+      // Determinar el mensaje de respuesta
+      let responseMessage = 'Usuarios obtenidos exitosamente';
+      if (result.message) {
+        responseMessage = result.message;
+      }
       
       res.json({
         success: true,
-        message: 'Usuarios obtenidos exitosamente',
+        message: responseMessage,
         data: result.users,
         pagination: result.pagination,
+        filters: result.filters,
         timestamp: new Date().toISOString()
       });
 
@@ -99,89 +130,7 @@ class UsersController {
     }
   }
 
-  /**
-   * Obtener un usuario por correo
-   * GET /api/users/email/:email
-   */
-  static async getUserByEmail(req, res) {
-    try {
-      const { email } = req.params;
-      
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: 'El correo es requerido',
-          timestamp: new Date().toISOString()
-        });
-      }
 
-      const user = await UsersService.getUserByEmail(email);
-      
-      res.json({
-        success: true,
-        message: 'Usuario encontrado exitosamente',
-        data: user,
-        timestamp: new Date().toISOString()
-      });
-
-    } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        return res.status(404).json({
-          success: false,
-          message: error.message,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        message: error.message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }
-
-  /**
-   * Obtener un usuario por documento
-   * GET /api/users/document/:tipo_documento/:documento
-   */
-  static async getUserByDocument(req, res) {
-    try {
-      const { tipo_documento, documento } = req.params;
-      
-      if (!tipo_documento || !documento) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tipo y número de documento requeridos',
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      const user = await UsersService.getUserByDocument(tipo_documento, documento);
-      
-      res.json({
-        success: true,
-        message: 'Usuario encontrado exitosamente',
-        data: user,
-        timestamp: new Date().toISOString()
-      });
-
-    } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        return res.status(404).json({
-          success: false,
-          message: error.message,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      res.status(500).json({
-        success: false,
-        message: error.message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }
 
   /**
    * Actualizar un usuario
@@ -218,6 +167,16 @@ class UsersController {
         return res.status(404).json({
           success: false,
           message: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Manejar específicamente errores relacionados con roles
+      if (error.message.includes('rol') || error.message.includes('roleId')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          errorType: 'ROLE_VALIDATION_ERROR',
           timestamp: new Date().toISOString()
         });
       }
@@ -340,6 +299,97 @@ class UsersController {
       res.status(500).json({
         success: false,
         message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
+   * Búsqueda avanzada de usuarios
+   * GET /api/users/search
+   */
+  static async searchUsers(req, res) {
+    try {
+      const { 
+        page, 
+        limit, 
+        search, 
+        roleId, 
+        tipo_documento,
+        nombre,
+        correo,
+        documento,
+        telefono
+      } = req.query;
+      
+      const filters = {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        search: search || '',
+        roleId: roleId ? parseInt(roleId) : null,
+        tipo_documento: tipo_documento || null,
+        nombre: nombre || '',
+        correo: correo || '',
+        documento: documento || '',
+        telefono: telefono || ''
+      };
+
+      const result = await UsersService.searchUsers(filters);
+      
+      // Determinar el mensaje de respuesta
+      let responseMessage = 'Búsqueda de usuarios completada exitosamente';
+      if (result.message) {
+        responseMessage = result.message;
+      }
+      
+      res.json({
+        success: true,
+        message: responseMessage,
+        data: result.users,
+        pagination: result.pagination,
+        filters: result.filters,
+        searchInfo: {
+          totalResults: result.pagination.total,
+          searchTerm: search || 'Todos los campos',
+          appliedFilters: Object.keys(filters).filter(key => filters[key] && key !== 'page' && key !== 'limit')
+        },
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
+   * Obtener roles disponibles para asignar a usuarios
+   * GET /api/users/available-roles
+   */
+  static async getAvailableRoles(req, res) {
+    try {
+      const { Role } = require('../models/roles');
+      
+      const roles = await Role.findAll({
+        where: { estado: true },
+        attributes: ['id_rol', 'nombre', 'descripcion'],
+        order: [['nombre', 'ASC']]
+      });
+      
+      res.json({
+        success: true,
+        message: 'Roles disponibles obtenidos exitosamente',
+        data: roles,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: `Error al obtener roles disponibles: ${error.message}`,
         timestamp: new Date().toISOString()
       });
     }

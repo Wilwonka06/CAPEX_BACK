@@ -15,6 +15,17 @@ function setupAssociations() {
 
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
   
+  // Relación directa entre Usuario y Role (para el campo roleId)
+  Usuario.belongsTo(Role, {
+    foreignKey: 'roleId',
+    as: 'rol'
+  });
+
+  Role.hasMany(Usuario, {
+    foreignKey: 'roleId',
+    as: 'usuariosDirectos'
+  });
+  
   // Relación muchos a muchos entre Usuario y Role a través de UserRole
   Usuario.belongsToMany(Role, {
     through: UserRole,
