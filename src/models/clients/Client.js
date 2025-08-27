@@ -13,12 +13,23 @@ const Client = sequelize.define('Client', {
     allowNull: false
   },
   direccion: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING(200),
     allowNull: true
   },
   estado: {
     type: DataTypes.BOOLEAN,
-    allowNull: true
+    allowNull: false,
+    defaultValue: true
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'clientes',

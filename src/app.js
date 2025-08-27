@@ -63,7 +63,7 @@ app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
 app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/clients', clientRoutes);
+app.use('/api/clientes', clientRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
 
 // Middleware para manejar rutas no encontradas

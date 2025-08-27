@@ -14,6 +14,7 @@ const {
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
 
+
 // ===== SPECIFIC CLIENT OPERATIONS PRIMERO =====
 router.get('/stats', 
   authenticateToken,
