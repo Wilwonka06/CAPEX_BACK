@@ -1,5 +1,5 @@
 const Client = require('../../models/clients/Client');
-const Usuario = require('../../models/User');
+const { Usuario } = require('../../models/User');
 const { sequelize } = require('../../config/database');
 
 class ClientService {
@@ -50,6 +50,35 @@ class ClientService {
       };
     } catch (error) {
       throw new Error(`Error al obtener cliente: ${error.message}`);
+    }
+  }
+
+  // Get client by user ID
+  static async getClientByUserId(userId) {
+    try {
+      const client = await Client.findOne({
+        where: { id_usuario: userId },
+        include: [{
+          model: Usuario,
+          as: 'usuario',
+          attributes: { exclude: ['contrasena'] }
+        }]
+      });
+
+      if (!client) {
+        return {
+          success: false,
+          message: 'Cliente no encontrado'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Cliente obtenido exitosamente',
+        data: client
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener cliente por ID de usuario: ${error.message}`);
     }
   }
 
@@ -117,35 +146,35 @@ class ClientService {
     
     try {
       const {
-        documentType,
-        documentNumber,
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        address,
-        status
+        tipo_documento,
+        documento,
+        primer_nombre,
+        apellido,
+        correo,
+        telefono,
+        contrasena,
+        direccion,
+        estado
       } = clientData;
 
       // Mapear los campos del request a los campos del modelo Usuario
-      const nombre_completo = `${firstName} ${lastName}`;
+      const nombre_completo = `${primer_nombre} ${apellido}`;
       
       // Create user first
       const newUser = await Usuario.create({
         nombre: nombre_completo,
-        tipo_documento: documentType,
-        documento: documentNumber,
-        correo: email,
-        telefono: phone,
-        contrasena: password // Ya viene hasheado del middleware
+        tipo_documento: tipo_documento,
+        documento: documento,
+        correo: correo,
+        telefono: telefono,
+        contrasena: contrasena
       }, { transaction });
 
       // Then create client
       const newClient = await Client.create({
         id_usuario: newUser.id_usuario,
-        direccion: address || null,
-        estado: status !== undefined ? status : true
+        direccion: direccion || null,
+        estado: estado !== undefined ? estado : true
       }, { transaction });
 
       await transaction.commit();
@@ -160,7 +189,23 @@ class ClientService {
       };
     } catch (error) {
       await transaction.rollback();
-    }
+      
+      // Manejar errores específicos de validación
+      if (error.name === 'SequelizeValidationError') {
+        const validationErrors = error.errors.map(err => `${err.path}: ${err.message}`).join(', ');
+        throw new Error(`Error de validación: ${validationErrors}`);
+      }
+      
+      // Manejar errores de restricción única
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        if (error.fields && error.fields.correo) {
+          throw new Error('El correo electrónico ya está registrado');
+        }
+        if (error.fields && error.fields.documento) {
+          throw new Error('El número de documento ya está registrado');
+        }
+        throw new Error('Ya existe un registro con estos datos');
+      }
       
       throw new Error(`Error al crear cliente: ${error.message}`);
     }
@@ -172,15 +217,15 @@ class ClientService {
     
     try {
       const {
-        documentType,
-        documentNumber,
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        address,
-        status
+        tipo_documento,
+        documento,
+        primer_nombre,
+        apellido,
+        correo,
+        telefono,
+        contrasena,
+        direccion,
+        estado
       } = clientData;
 
       // Find the client with user data
@@ -202,8 +247,15 @@ class ClientService {
 
       // Update user data if provided
       const userUpdateData = {};
-      if (direccion !== undefined) updateData.direccion = direccion;
-      if (estado !== undefined) updateData.estado = estado;
+      if (primer_nombre !== undefined || apellido !== undefined) {
+        const nombre_completo = `${primer_nombre || existingClient.usuario.nombre.split(' ')[0]} ${apellido || existingClient.usuario.nombre.split(' ')[1] || ''}`;
+        userUpdateData.nombre = nombre_completo.trim();
+      }
+      if (tipo_documento !== undefined) userUpdateData.tipo_documento = tipo_documento;
+      if (documento !== undefined) userUpdateData.documento = documento;
+      if (correo !== undefined) userUpdateData.correo = correo;
+      if (telefono !== undefined) userUpdateData.telefono = telefono;
+      if (contrasena !== undefined) userUpdateData.contrasena = contrasena;
 
       if (Object.keys(userUpdateData).length > 0) {
         await existingClient.usuario.update(userUpdateData, { transaction });
@@ -211,32 +263,36 @@ class ClientService {
 
       // Update client-specific data
       const clientUpdateData = {};
-      if (address !== undefined) clientUpdateData.direccion = address;
-      if (status !== undefined) clientUpdateData.estado = status;
+      if (direccion !== undefined) clientUpdateData.direccion = direccion;
+      if (estado !== undefined) clientUpdateData.estado = estado;
 
       if (Object.keys(clientUpdateData).length > 0) {
         await existingClient.update(clientUpdateData, { transaction });
       }
 
       await transaction.commit();
+      
+      // Get updated client data
+      const updatedClient = await this.getClientById(id);
+      
       return {
         success: true,
         message: 'Cliente actualizado exitosamente',
-        data: existingClient,
+        data: updatedClient.data
       };
     } catch (error) {
       await transaction.rollback();
       
       // Handle specific database errors
       if (error.name === 'SequelizeUniqueConstraintError') {
-        if (error.fields.correo) {
+        if (error.fields && error.fields.correo) {
           return {
             success: false,
             message: 'El correo electrónico ya está registrado',
             error: 'EMAIL_EXISTS'
           };
         }
-        if (error.fields.documento) {
+        if (error.fields && error.fields.documento) {
           return {
             success: false,
             message: 'El número de documento ya está registrado',
@@ -300,24 +356,38 @@ class ClientService {
   }
 
   // Search clients
-static async searchClients(criteria) {
+  static async searchClients(criteria) {
     try {
-      const { estado } = criteria;
+      const { estado, nombre, correo, documento } = criteria;
       const whereClause = {};
+      const userWhereClause = {};
       
       if (estado !== undefined) {
         whereClause.estado = estado;
-      }      
+      }
+      
+      if (nombre) {
+        userWhereClause.nombre = { [sequelize.Op.like]: `%${nombre}%` };
+      }
+      
+      if (correo) {
+        userWhereClause.correo = { [sequelize.Op.like]: `%${correo}%` };
+      }
+      
+      if (documento) {
+        userWhereClause.documento = { [sequelize.Op.like]: `%${documento}%` };
+      }
       
       const clients = await Client.findAll({
         where: whereClause,
         include: [{
           model: Usuario,
           as: 'usuario',
-          where: userWhereClause,
+          where: Object.keys(userWhereClause).length > 0 ? userWhereClause : undefined,
+          attributes: { exclude: ['contrasena'] }
         }],
-      order: [['id_cliente', 'ASC']]
-    });
+        order: [['id_cliente', 'ASC']]
+      });
 
       return {
         success: true,
@@ -329,7 +399,7 @@ static async searchClients(criteria) {
     }
   }
 
-    // Create user and client in one transaction (prepared for future integration)
+  // Create user and client in one transaction (prepared for future integration)
   static async createUserAndClient(userData, clientData) {
     const transaction = await sequelize.transaction();
     

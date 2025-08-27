@@ -124,6 +124,20 @@ class ResponseMiddleware {
   }
 
   /**
+   * Método estático para enviar errores desde middlewares
+   */
+  static sendError(res, statusCode, message, errorCode = 'ERROR') {
+    const response = {
+      success: false,
+      message,
+      error: errorCode,
+      timestamp: new Date().toISOString()
+    };
+
+    return res.status(statusCode).json(response);
+  }
+
+  /**
    * Middleware para agregar headers de respuesta estándar
    * @param {Request} req - Objeto de solicitud Express
    * @param {Response} res - Objeto de respuesta Express

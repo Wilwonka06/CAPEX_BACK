@@ -1,14 +1,19 @@
 const { Sequelize } = require('sequelize');
+const config = require('../../config/config.json');
+
+// Obtener configuración según el entorno
+const env = process.env.NODE_ENV || 'development';
+const dbConfig = config[env];
 
 // Configuración de la base de datos
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'capex_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
   {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    dialect: process.env.DB_DIALECT || 'mysql',
+    host: dbConfig.host,
+    port: dbConfig.port || 3306,
+    dialect: dbConfig.dialect,
     logging: false, // Cambiar a console.log para ver las consultas SQL
     pool: {
       max: 5,

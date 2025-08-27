@@ -134,7 +134,7 @@ class RoleController {
     }
   }
 
-  / Hard delete role (permanent deletion)
+  // Hard delete role (permanent deletion)
   static async hardDeleteRole(req, res) {
     try {
       const { id } = req.params;

@@ -13,98 +13,31 @@ const servicesRoutes = require('./routes/ServicesRoutes');
 const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
 const clientRoutes = require('./routes/clients/ClienteRoutes');
-
-
-
-// Importar modelos directamente
-const Product = require('./models/Product');
-const Characteristic = require('./models/Characteristic');
-const TechnicalSheet = require('./models/TechnicalSheet');
-const Supplier = require('./models/Supplier');
-const ProductCategory = require('./models/ProductCategory');
-const Employee = require('./models/Employee');
-const User = require('./models/User');
-const Client = require('./models/clients/Client');
-const { Role, Permission, Privilege, RolePermissionPrivilege } = require('./models/roles');
+const userRoleRoutes = require('./routes/UserRoleRoutes');
 
 // Importar middleware de errores directamente
-const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
+const ErrorMiddleware = require('./middlewares/errorMiddleware');
 
 // Importar función de inicialización de roles
 const { initializeRoles } = require('./config/initRoles');
+
+// Importar función de configuración de asociaciones
+const { setupAssociations } = require('./config/associations');
+
 const app = express();
+
+// Middlewares de parsing (DEBEN IR PRIMERO)
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Conectar a la base de datos
 connectDB();
+
+// Configurar asociaciones entre modelos (después de conectar a la BD)
+setupAssociations();
+
+// Inicializar roles después de definir todas las asociaciones
 initializeRoles();
-
-// Definir relaciones entre modelos
-
-// Establecer relación Usuario-Cliente
-User.hasOne(Client, {
-  foreignKey: 'id_usuario',
-  as: 'cliente'
-});
-
-Client.belongsTo(User, {
-  foreignKey: 'id_usuario',
-  as: 'usuario'
-});
-
-// Un producto puede tener muchas fichas técnicas
-Product.hasMany(TechnicalSheet, {
-  foreignKey: 'id_producto',
-  as: 'fichasTecnicas'
-});
-
-// Una ficha técnica pertenece a un producto
-TechnicalSheet.belongsTo(Product, {
-  foreignKey: 'id_producto',
-  as: 'producto'
-});
-
-// Una característica puede estar en muchas fichas técnicas
-Characteristic.hasMany(TechnicalSheet, {
-  foreignKey: 'id_caracteristica',
-  as: 'fichasTecnicas'
-});
-
-// Una ficha técnica pertenece a una característica
-TechnicalSheet.belongsTo(Characteristic, {
-  foreignKey: 'id_caracteristica',
-  as: 'caracteristica'
-});
-
-// Relación muchos a muchos entre Product y Characteristic a través de TechnicalSheet
-Product.belongsToMany(Characteristic, {
-  through: TechnicalSheet,
-  foreignKey: 'id_producto',
-  otherKey: 'id_caracteristica',
-  as: 'caracteristicas'
-});
-
-Characteristic.belongsToMany(Product, {
-  through: TechnicalSheet,
-  foreignKey: 'id_caracteristica',
-  otherKey: 'id_producto',
-  as: 'productos'
-});
-
-// Relación entre ProductCategory y Product
-ProductCategory.hasMany(Product, {
-  foreignKey: 'id_categoria_producto',
-  as: 'productos'
-});
-
-Product.belongsTo(ProductCategory, {
-  foreignKey: 'id_categoria_producto',
-  as: 'categoria'
-});
-
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Middleware para CORS (opcional)
 app.use((req, res, next) => {
@@ -130,7 +63,8 @@ app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
 app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/clients', clientRoutes);
+app.use('/api/clientes', clientRoutes);
+app.use('/api/usuario-roles', userRoleRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
