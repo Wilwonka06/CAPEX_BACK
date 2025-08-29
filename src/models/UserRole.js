@@ -8,7 +8,7 @@ const UserRole = sequelize.define('UserRole', {
     allowNull: false,
     references: {
       model: 'usuarios',
-      key: 'id_usuario'
+      key: 'id'
     }
   },
   id_rol: {
@@ -26,13 +26,24 @@ const UserRole = sequelize.define('UserRole', {
     defaultValue: DataTypes.NOW
   },
   estado: {
-    type: DataTypes.ENUM('Activo', 'Inactivo'),
+    type: DataTypes.ENUM('activo', 'inactivo'),
     allowNull: false,
-    defaultValue: 'Activo'
+    defaultValue: 'activo'
   }
 }, {
   tableName: 'usuarios_roles',
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      fields: ['id_usuario']
+    },
+    {
+      fields: ['id_rol']
+    },
+    {
+      fields: ['estado']
+    }
+  ]
 });
 
 module.exports = UserRole;

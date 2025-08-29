@@ -1,74 +1,81 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const Producto = sequelize.define('Producto', {
-  id_producto: {
+const Product = sequelize.define('Product', {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     field: 'id_producto'
   },
   nombre: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     validate: {
       notEmpty: true,
-      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/
+      len: [1, 100]
     }
   },
-  id_categoria_producto: {
-    type: DataTypes.INTEGER,
+  descripcion: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
-  costo: {
-    type: DataTypes.DECIMAL(15, 2),
-    allowNull: true,
-    validate: {
-      min: 0.01,
-      max: 9999999.99
-    }
-  },
-  iva: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    validate: {
-      min: 0,
-      max: 40
-    }
-  },
-  precio_venta: {
-    type: DataTypes.DECIMAL(15, 2),
+  precio: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
-      min: 0.01,
-      max: 9999999.99
+      min: 0
     }
   },
   stock: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     defaultValue: 0,
     validate: {
       min: 0
     }
   },
-  fecha_registro: {
-    type: DataTypes.DATEONLY,
+  categoria_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'id_categoria_producto',
+    references: {
+      model: 'categorias_productos',
+      key: 'id_categoria_producto'
+    }
+  },
+  activo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
     defaultValue: DataTypes.NOW
   },
-  url_foto: {
-    type: DataTypes.STRING(255),
-    allowNull: true
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'productos',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
   indexes: [
     {
       unique: true,
       fields: ['nombre']
+    },
+    {
+      fields: ['categoria_id']
+    },
+    {
+      fields: ['activo']
     }
   ]
 });
 
-module.exports = Producto;
+module.exports = Product;

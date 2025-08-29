@@ -6,6 +6,12 @@ const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
+const Service = require('../models/Service');
+const ServiceCategory = require('../models/ServiceCategory');
+const Employee = require('../models/Employee');
+const Scheduling = require('../models/Scheduling');
+const ServiceDetail = require('../models/serviceDetails/ServiceDetail');
+const Supplier = require('../models/Supplier');
 
 /**
  * Configurar todas las asociaciones entre modelos
@@ -79,52 +85,113 @@ function setupAssociations() {
   
   // Un producto puede tener muchas fichas técnicas
   Product.hasMany(TechnicalSheet, {
-    foreignKey: 'id_producto',
+    foreignKey: 'producto_id',
     as: 'fichasTecnicas'
   });
 
   // Una ficha técnica pertenece a un producto
   TechnicalSheet.belongsTo(Product, {
-    foreignKey: 'id_producto',
+    foreignKey: 'producto_id',
     as: 'producto'
   });
 
   // Una característica puede estar en muchas fichas técnicas
   Characteristic.hasMany(TechnicalSheet, {
-    foreignKey: 'id_caracteristica',
+    foreignKey: 'caracteristica_id',
     as: 'fichasTecnicas'
   });
 
   // Una ficha técnica pertenece a una característica
   TechnicalSheet.belongsTo(Characteristic, {
-    foreignKey: 'id_caracteristica',
+    foreignKey: 'caracteristica_id',
     as: 'caracteristica'
   });
 
   // Relación muchos a muchos entre Product y Characteristic a través de TechnicalSheet
   Product.belongsToMany(Characteristic, {
     through: TechnicalSheet,
-    foreignKey: 'id_producto',
-    otherKey: 'id_caracteristica',
+    foreignKey: 'producto_id',
+    otherKey: 'caracteristica_id',
     as: 'caracteristicas'
   });
 
   Characteristic.belongsToMany(Product, {
     through: TechnicalSheet,
-    foreignKey: 'id_caracteristica',
-    otherKey: 'id_producto',
+    foreignKey: 'caracteristica_id',
+    otherKey: 'producto_id',
     as: 'productos'
   });
 
   // Relación entre ProductCategory y Product
   ProductCategory.hasMany(Product, {
-    foreignKey: 'id_categoria_producto',
+    foreignKey: 'categoria_id',
     as: 'productos'
   });
 
   Product.belongsTo(ProductCategory, {
-    foreignKey: 'id_categoria_producto',
+    foreignKey: 'categoria_id',
     as: 'categoria'
+  });
+
+  // ===== ASOCIACIONES SERVICIOS =====
+  
+  // Relación entre ServiceCategory y Service
+  ServiceCategory.hasMany(Service, {
+    foreignKey: 'categoria_id',
+    as: 'servicios'
+  });
+
+  Service.belongsTo(ServiceCategory, {
+    foreignKey: 'categoria_id',
+    as: 'categoria'
+  });
+
+  // ===== ASOCIACIONES EMPLEADOS =====
+  
+  // Un empleado puede tener muchas programaciones
+  Employee.hasMany(Scheduling, {
+    foreignKey: 'empleado_id',
+    as: 'programaciones'
+  });
+
+  Scheduling.belongsTo(Employee, {
+    foreignKey: 'empleado_id',
+    as: 'empleado'
+  });
+
+  // Un empleado puede tener muchos detalles de servicio
+  Employee.hasMany(ServiceDetail, {
+    foreignKey: 'empleado_id',
+    as: 'detallesServicio'
+  });
+
+  ServiceDetail.belongsTo(Employee, {
+    foreignKey: 'empleado_id',
+    as: 'empleado'
+  });
+
+  // ===== ASOCIACIONES DETALLES DE SERVICIO =====
+  
+  // Un servicio puede estar en muchos detalles de servicio
+  Service.hasMany(ServiceDetail, {
+    foreignKey: 'servicio_id',
+    as: 'detallesServicio'
+  });
+
+  ServiceDetail.belongsTo(Service, {
+    foreignKey: 'servicio_id',
+    as: 'servicio'
+  });
+
+  // Un cliente puede tener muchos detalles de servicio
+  Client.hasMany(ServiceDetail, {
+    foreignKey: 'cliente_id',
+    as: 'detallesServicio'
+  });
+
+  ServiceDetail.belongsTo(Client, {
+    foreignKey: 'cliente_id',
+    as: 'cliente'
   });
 
   console.log('✅ Asociaciones configuradas correctamente');

@@ -1,28 +1,26 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const productRoutes = require('./routes/ProductRoutes');
+const setupAssociations = require('./config/associations');
+const initializeRoles = require('./config/initRoles');
+
+// Importar rutas
+const productRoutes = require('./routes/productRoutes');
 const characteristicRoutes = require('./routes/CharacteristicRoutes');
-const supplierRoutes = require('./routes/supplierRoutes');
+const supplierRoutes = require('./routes/SupplierRoutes');
 const productCategoryRoutes = require('./routes/productCategoryRoutes');
 const usersRoutes = require('./routes/UsersRoutes');
 const schedulingRoutes = require('./routes/SchedulingRoutes');
 const employeeRoutes = require('./routes/EmployeeRoutes');
 const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
 const servicesRoutes = require('./routes/ServicesRoutes');
-const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
-const clientRoutes = require('./routes/clients/ClienteRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
+const clientRoutes = require('./routes/clients/ClientRoutes');
+const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 
-// Importar middleware de errores directamente
-const ErrorMiddleware = require('./middlewares/errorMiddleware');
-
-// Importar función de inicialización de roles
-const { initializeRoles } = require('./config/initRoles');
-
-// Importar función de configuración de asociaciones
-const { setupAssociations } = require('./config/associations');
+// Importar middleware de errores
+const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
 
 const app = express();
 
@@ -33,10 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 // Conectar a la base de datos
 connectDB();
 
-// Configurar asociaciones entre modelos (después de conectar a la BD)
-setupAssociations();
-
-// Inicializar roles después de definir todas las asociaciones
+// Inicializar roles por defecto
 initializeRoles();
 
 // Middleware para CORS (opcional)
@@ -51,6 +46,9 @@ app.use((req, res, next) => {
   }
 });
 
+// Configurar asociaciones entre modelos (después de conectar a la BD)
+setupAssociations();
+
 // Rutas de la API
 app.use('/api/productos', productRoutes);
 app.use('/api/caracteristicas', characteristicRoutes);
@@ -61,10 +59,10 @@ app.use('/api/scheduling', schedulingRoutes);
 app.use('/api/empleados', employeeRoutes);
 app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
-app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/user-roles', userRoleRoutes);
 app.use('/api/clientes', clientRoutes);
-app.use('/api/usuario-roles', userRoleRoutes);
+app.use('/api/detalles-servicio', serviceDetailRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   

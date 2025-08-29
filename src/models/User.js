@@ -1,67 +1,114 @@
 // src/models/User.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const bcrypt = require('bcryptjs');
 
 const Usuario = sequelize.define('Usuario', {
-  id_usuario: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  nombre: {
+  name: {
     type: DataTypes.STRING(100),
     allowNull: false,
     validate: {
-      is: /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/
+      notEmpty: true,
+      len: [2, 100]
     }
   },
-  tipo_documento: {
-    type: DataTypes.ENUM('Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'),
-    allowNull: false
+  documentType: {
+    type: DataTypes.ENUM('CC', 'CE', 'TI', 'PP', 'NIT'),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      isIn: [['CC', 'CE', 'TI', 'PP', 'NIT']]
+    }
   },
-  documento: {
+  documentNumber: {
     type: DataTypes.STRING(20),
     allowNull: false,
     unique: true,
     validate: {
-      is: /^[A-Za-z0-9]+$/
+      notEmpty: true,
+      len: [5, 20]
     }
   },
-  telefono: {
-    type: DataTypes.STRING(20),
+  phone: {
+    type: DataTypes.STRING(15),
     allowNull: false,
     validate: {
-      is: /^\+[0-9]{7,15}$/
+      notEmpty: true,
+      len: [7, 15]
     }
   },
-  correo: {
+  email: {
     type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
     validate: {
-      isEmail: true
+      notEmpty: true,
+      isEmail: true,
+      len: [5, 100]
     }
   },
-  contrasena: {
-    type: DataTypes.STRING(100),
+  password: {
+    type: DataTypes.STRING(255),
     allowNull: false,
     validate: {
-      is: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/
+      notEmpty: true,
+      len: [6, 255]
     }
   },
   roleId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    defaultValue: 1, // Rol por defecto
     references: {
       model: 'roles',
       key: 'id_rol'
     }
+  },
+  status: {
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    defaultValue: 'activo',
+    allowNull: false
   }
 }, {
   tableName: 'usuarios',
-  timestamps: false
+  timestamps: true,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  indexes: [
+    {
+      unique: true,
+      fields: ['documentNumber']
+    },
+    {
+      unique: true,
+      fields: ['email']
+    },
+    {
+      fields: ['status']
+    }
+  ],
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    }
+  }
 });
+
+// Método para comparar contraseñas
+Usuario.prototype.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 // Exportar tanto Usuario como User para mantener compatibilidad
 module.exports = { Usuario };

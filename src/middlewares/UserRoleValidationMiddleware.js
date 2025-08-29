@@ -1,100 +1,148 @@
-const { Role } = require('../models/roles');
+const { body, param, validationResult } = require('express-validator');
 const ResponseMiddleware = require('./ResponseMiddleware');
 
-/**
- * Middleware para validar roles en peticiones de usuarios
- */
 class UserRoleValidationMiddleware {
+  // Validación para obtener rol de usuario por ID
+  static validateGetById = [
+    param('id').isInt().withMessage('El ID debe ser un número entero'),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return ResponseMiddleware.error(res, 'Error de validación', errors.array(), 400);
+      }
+      next();
+    }
+  ];
 
-  /**
-   * Validar que un roleId existe antes de crear o actualizar un usuario
-   */
-  static async validateRoleId(req, res, next) {
+  // Validación para crear rol de usuario
+  static validateCreate = [
+    body('id_usuario')
+      .isInt().withMessage('El ID de usuario debe ser un número entero'),
+    body('id_rol')
+      .isInt().withMessage('El ID de rol debe ser un número entero'),
+    body('fecha_asignacion')
+      .optional()
+      .isISO8601().withMessage('La fecha de asignación debe tener un formato válido'),
+    body('activo')
+      .optional()
+      .isBoolean().withMessage('El campo activo debe ser un booleano'),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return ResponseMiddleware.error(res, 'Error de validación', errors.array(), 400);
+      }
+      next();
+    }
+  ];
+
+  // Validación para actualizar rol de usuario
+  static validateUpdate = [
+    param('id').isInt().withMessage('El ID debe ser un número entero'),
+    body('id_usuario')
+      .optional()
+      .isInt().withMessage('El ID de usuario debe ser un número entero'),
+    body('id_rol')
+      .optional()
+      .isInt().withMessage('El ID de rol debe ser un número entero'),
+    body('fecha_asignacion')
+      .optional()
+      .isISO8601().withMessage('La fecha de asignación debe tener un formato válido'),
+    body('activo')
+      .optional()
+      .isBoolean().withMessage('El campo activo debe ser un booleano'),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return ResponseMiddleware.error(res, 'Error de validación', errors.array(), 400);
+      }
+      next();
+    }
+  ];
+
+  // Validación para eliminar rol de usuario
+  static validateDelete = [
+    param('id').isInt().withMessage('El ID debe ser un número entero'),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return ResponseMiddleware.error(res, 'Error de validación', errors.array(), 400);
+      }
+      next();
+    }
+  ];
+
+  // Middleware para verificar que el usuario existe
+  static checkUserExists = async (req, res, next) => {
     try {
-      const { roleId } = req.body;
+      const { id_usuario } = req.body;
 
-      // Si no se proporciona roleId, continuar (se asignará el por defecto)
-      if (!roleId) {
+      if (!id_usuario) {
         return next();
       }
 
-      // Validar que el roleId sea un número válido
-      if (isNaN(roleId) || roleId <= 0) {
-        return ResponseMiddleware.sendError(res, 400, 'El ID del rol debe ser un número válido mayor a 0', 'ROLE_VALIDATION_ERROR');
+      const { Usuario } = require('../models/User');
+      const user = await Usuario.findByPk(id_usuario);
+      
+      if (!user) {
+        return ResponseMiddleware.error(res, 'El usuario especificado no existe', null, 400);
       }
 
-      // Verificar que el rol existe en la base de datos
-      const roleExists = await Role.findByPk(roleId);
-      if (!roleExists) {
-        return ResponseMiddleware.sendError(res, 400, `El rol con ID ${roleId} no existe en el sistema. Por favor, verifique el ID del rol e intente nuevamente.`, 'ROLE_VALIDATION_ERROR');
-      }
-
-      // Si el rol existe, continuar
       next();
-
     } catch (error) {
-      return ResponseMiddleware.sendError(res, 500, `Error al validar el rol: ${error.message}`, 'INTERNAL_ERROR');
+      return ResponseMiddleware.error(res, 'Error al verificar usuario', error, 500);
     }
-  }
+  };
 
-  /**
-   * Validar que un roleId existe en parámetros de consulta
-   */
-  static async validateRoleIdInQuery(req, res, next) {
+  // Middleware para verificar que el rol existe
+  static checkRoleExists = async (req, res, next) => {
     try {
-      const { roleId } = req.query;
+      const { id_rol } = req.body;
 
-      // Si no se proporciona roleId, continuar
-      if (!roleId) {
+      if (!id_rol) {
         return next();
       }
 
-      // Validar que el roleId sea un número válido
-      if (isNaN(roleId) || roleId <= 0) {
-        return ResponseMiddleware.sendError(res, 400, 'El ID del rol debe ser un número válido mayor a 0', 'ROLE_VALIDATION_ERROR');
+      const { Role } = require('../models/roles');
+      const role = await Role.findByPk(id_rol);
+      
+      if (!role) {
+        return ResponseMiddleware.error(res, 'El rol especificado no existe', null, 400);
       }
 
-      // Verificar que el rol existe en la base de datos
-      const roleExists = await Role.findByPk(roleId);
-      if (!roleExists) {
-        return ResponseMiddleware.sendError(res, 400, `El rol con ID ${roleId} no existe en el sistema. Por favor, verifique el ID del rol e intente nuevamente.`, 'ROLE_VALIDATION_ERROR');
-      }
-
-      // Si el rol existe, continuar
       next();
-
     } catch (error) {
-      return ResponseMiddleware.sendError(res, 500, `Error al validar el rol: ${error.message}`, 'INTERNAL_ERROR');
+      return ResponseMiddleware.error(res, 'Error al verificar rol', error, 500);
     }
-  }
+  };
 
-  /**
-   * Obtener información del rol para incluir en la respuesta
-   */
-  static async getRoleInfo(req, res, next) {
+  // Middleware para verificar asignación única
+  static checkUniqueAssignment = async (req, res, next) => {
     try {
-      const { roleId } = req.body;
+      const { id_usuario, id_rol } = req.body;
+      const { id } = req.params;
 
-      if (!roleId) {
+      if (!id_usuario || !id_rol) {
         return next();
       }
 
-      const role = await Role.findByPk(roleId);
-      if (role) {
-        req.roleInfo = {
-          id: role.id_rol,
-          nombre: role.nombre,
-          descripcion: role.descripcion
-        };
+      const UserRole = require('../models/UserRole');
+      const whereClause = { id_usuario, id_rol };
+      
+      if (id) {
+        whereClause.id = { [require('sequelize').Op.ne]: id };
+      }
+
+      const existingAssignment = await UserRole.findOne({ where: whereClause });
+      
+      if (existingAssignment) {
+        return ResponseMiddleware.error(res, 'El usuario ya tiene asignado este rol', null, 409);
       }
 
       next();
-
     } catch (error) {
-      // Si hay error al obtener info del rol, continuar sin ella
-      next();
+      return ResponseMiddleware.error(res, 'Error al verificar asignación única', error, 500);
     }
-  }
+  };
 }
 
 module.exports = UserRoleValidationMiddleware;

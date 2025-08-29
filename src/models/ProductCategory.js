@@ -1,37 +1,54 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const CategoriaProducto = sequelize.define('CategoriaProducto', {
-  id_categoria_producto: {
+const ProductCategory = sequelize.define('ProductCategory', {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     field: 'id_categoria_producto'
   },
   nombre: {
-    type: DataTypes.STRING(250),
+    type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     validate: {
-      notEmpty: true
+      notEmpty: true,
+      len: [1, 100]
     }
   },
+  descripcion: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   estado: {
-    type: DataTypes.STRING(10),
-    defaultValue: 'Activo',
-    validate: {
-      isIn: [['Activo', 'Inactivo']]
-    }
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    allowNull: false,
+    defaultValue: 'activo'
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'categorias_productos',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
   indexes: [
     {
       unique: true,
       fields: ['nombre']
+    },
+    {
+      fields: ['estado']
     }
   ]
 });
 
-module.exports = CategoriaProducto;
+module.exports = ProductCategory;

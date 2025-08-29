@@ -1,39 +1,66 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const FichaTecnica = sequelize.define('FichaTecnica', {
-  id_ficha_tecnica: {
+const TechnicalSheet = sequelize.define('TechnicalSheet', {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     field: 'id_ficha_tecnica'
   },
-  id_producto: {
+  producto_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'id_producto'
+    field: 'id_producto',
+    references: {
+      model: 'productos',
+      key: 'id_producto'
+    }
   },
-  id_caracteristica: {
+  caracteristica_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'id_caracteristica'
+    field: 'id_caracteristica',
+    references: {
+      model: 'caracteristicas',
+      key: 'id_caracteristica'
+    }
   },
   valor: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  estado: {
+    type: DataTypes.ENUM('activo', 'inactivo'),
     allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    defaultValue: 'activo'
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'fichas_tecnicas',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
   indexes: [
     {
-      unique: true,
-      fields: ['id_producto', 'id_caracteristica']
+      fields: ['producto_id']
+    },
+    {
+      fields: ['caracteristica_id']
+    },
+    {
+      fields: ['estado']
     }
   ]
 });
 
-module.exports = FichaTecnica;
+module.exports = TechnicalSheet;
