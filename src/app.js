@@ -12,7 +12,7 @@ const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
 const servicesRoutes = require('./routes/ServicesRoutes');
 const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
-const clientRoutes = require('./routes/clients/ClienteRoutes');
+// const clientRoutes = require('./routes/clients/ClienteRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
 
 // Importar middleware de errores directamente
@@ -63,7 +63,7 @@ app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
 app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/clientes', clientRoutes);
+// app.use('/api/clientes', clientRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
 
 // Middleware para manejar rutas no encontradas

@@ -1,7 +1,7 @@
 const ServiceDetailService = require('../../services/serviceDetails/ServiceDetailService');
 
 class ServiceDetailController {
-  // Get all service details
+  // Obtener todos los detalles de servicios
   static async getAllServiceDetails(req, res) {
     try {
       const result = await ServiceDetailService.getAllServiceDetails();
@@ -20,7 +20,7 @@ class ServiceDetailController {
     }
   }
 
-  // Get service detail by ID
+  // Obtener detalle de servicio por ID
   static async getServiceDetailById(req, res) {
     try {
       const { id } = req.params;
@@ -40,7 +40,7 @@ class ServiceDetailController {
     }
   }
 
-  // Create new service detail
+  // Crear nuevo detalle de servicio
   static async createServiceDetail(req, res) {
     try {
       const serviceDetailData = req.body;
@@ -60,7 +60,7 @@ class ServiceDetailController {
     }
   }
 
-  // Update service detail
+  // Actualizar detalle de servicio
   static async updateServiceDetail(req, res) {
     try {
       const { id } = req.params;
@@ -81,7 +81,7 @@ class ServiceDetailController {
     }
   }
 
-  // Delete service detail
+  // Eliminar detalle de servicio
   static async deleteServiceDetail(req, res) {
     try {
       const { id } = req.params;
@@ -101,12 +101,12 @@ class ServiceDetailController {
     }
   }
 
-  // Update service detail status
-  static async updateServiceDetailStatus(req, res) {
+  // Cambiar estado del detalle de servicio
+  static async changeStatus(req, res) {
     try {
       const { id } = req.params;
-      const { status } = req.body;
-      const result = await ServiceDetailService.updateServiceDetailStatus(id, status);
+      const { estado } = req.body;
+      const result = await ServiceDetailService.changeStatus(id, estado);
       
       if (!result.success) {
         return res.status(404).json(result);
@@ -122,11 +122,11 @@ class ServiceDetailController {
     }
   }
 
-  // Get service details by status
-  static async getServiceDetailsByStatus(req, res) {
+  // Obtener detalles por servicio cliente
+  static async getByServiceClient(req, res) {
     try {
-      const { status } = req.params;
-      const result = await ServiceDetailService.getServiceDetailsByStatus(status);
+      const { serviceClientId } = req.params;
+      const result = await ServiceDetailService.getByServiceClient(serviceClientId);
       
       if (!result.success) {
         return res.status(404).json(result);
@@ -142,209 +142,11 @@ class ServiceDetailController {
     }
   }
 
-  // Get order of service
-  static async getOrderOfService(req, res) {
-    try {
-      const result = await ServiceDetailService.getOrderOfService();
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Start service
-  static async startService(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.startService(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Complete service
-  static async completeService(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.completeService(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Get scheduled services
-  static async getScheduledServices(req, res) {
-    try {
-      const result = await ServiceDetailService.getScheduledServices();
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Confirm scheduled service
-  static async confirmScheduledService(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.confirmScheduledService(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Reschedule service
-  static async rescheduleService(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.rescheduleService(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Get service details for sales
-  static async getServiceDetailsForSales(req, res) {
-    try {
-      const result = await ServiceDetailService.getServiceDetailsForSales();
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Convert to sale
-  static async convertToSale(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.convertToSale(id);
-      
-      if (!result.success) {
-        const statusCode = result.error === 'ALREADY_PAID' || result.error === 'INVALID_STATUS' ? 400 : 404;
-        return res.status(statusCode).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Cancel by client
-  static async cancelByClient(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.cancelByClient(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Mark as no show
-  static async markAsNoShow(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await ServiceDetailService.markAsNoShow(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
-    }
-  }
-
-  // Get service details by employee
-  static async getServiceDetailsByEmployee(req, res) {
+  // Obtener detalles por empleado
+  static async getByEmployee(req, res) {
     try {
       const { employeeId } = req.params;
-      const result = await ServiceDetailService.getServiceDetailsByEmployee(employeeId);
+      const result = await ServiceDetailService.getByEmployee(employeeId);
       
       if (!result.success) {
         return res.status(404).json(result);
@@ -360,11 +162,11 @@ class ServiceDetailController {
     }
   }
 
-  // Get service details by date range
-  static async getServiceDetailsByDateRange(req, res) {
+  // Obtener detalles por estado
+  static async getByStatus(req, res) {
     try {
-      const { startDate, endDate } = req.body;
-      const result = await ServiceDetailService.getServiceDetailsByDateRange(startDate, endDate);
+      const { status } = req.params;
+      const result = await ServiceDetailService.getByStatus(status);
       
       if (!result.success) {
         return res.status(404).json(result);
@@ -380,10 +182,30 @@ class ServiceDetailController {
     }
   }
 
-  // Get service detail stats
-  static async getServiceDetailStats(req, res) {
+  // Calcular precio total
+  static async calculateTotalPrice(req, res) {
     try {
-      const result = await ServiceDetailService.getServiceDetailStats();
+      const { id } = req.params;
+      const result = await ServiceDetailService.calculateTotalPrice(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener estadísticas
+  static async getStatistics(req, res) {
+    try {
+      const result = await ServiceDetailService.getStatistics();
       
       if (!result.success) {
         return res.status(404).json(result);
