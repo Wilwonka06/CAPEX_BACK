@@ -1,5 +1,6 @@
 // src/services/ServiceCategoryService.js
 const ServiceCategory = require('../models/ServiceCategory');
+const Services = require('../models/Services'); // 👈 Importamos Services
 const { Op } = require('sequelize');
 
 class ServiceCategoryService {
@@ -55,26 +56,37 @@ class ServiceCategoryService {
   }
 
   async deleteCategory(id_categoria_servicio) {
+    // 1. Buscar categoría
     const category = await ServiceCategory.findByPk(id_categoria_servicio);
     if (!category) {
       throw new Error('Categoría no encontrada');
     }
 
+    // 2. Verificar si tiene servicios asociados
+    const serviciosAsociados = await Services.findOne({
+      where: { id_categoria_servicio }
+    });
+
+    if (serviciosAsociados) {
+      throw new Error('No se puede eliminar la categoría porque tiene servicios asociados');
+    }
+
+    // 3. Eliminar
     await category.destroy();
     return { message: 'Categoría eliminada correctamente' };
   }
 
-  async searchCategories(searchTerm) {
-    return await ServiceCategory.findAll({
-      where: {
-        [Op.or]: [
-          { nombre: { [Op.like]: `%${searchTerm}%` } },
-          { descripcion: { [Op.like]: `%${searchTerm}%` } }
-        ]
-      },
-      order: [['nombre', 'ASC']]
-    });
-  }
+  // async searchCategories(searchTerm) {
+  //   return await ServiceCategory.findAll({
+  //     where: {
+  //       [Op.or]: [
+  //         { nombre: { [Op.like]: `%${searchTerm}%` } },
+  //         { descripcion: { [Op.like]: `%${searchTerm}%` } }
+  //       ]
+  //     },
+  //     order: [['nombre', 'ASC']]
+  //   });
+  // }
 
   async changeCategoryStatus(id_categoria_servicio, nuevoEstado) {
     const category = await ServiceCategory.findByPk(id_categoria_servicio);
@@ -89,6 +101,24 @@ class ServiceCategoryService {
   async getCategoryByName(nombre) {
     return await ServiceCategory.findOne({
       where: { nombre }
+    });
+  }
+
+  async searchCategories(filters) {
+    const { nombre, estado } = filters;
+    let where = {};
+
+    if (nombre) {
+      where.nombre = { [Op.like]: `%${nombre}%` };
+    }
+
+    if (estado) {
+      where.estado = estado;
+    }
+
+    return await ServiceCategory.findAll({
+      where,
+      order: [['nombre', 'ASC']]
     });
   }
 

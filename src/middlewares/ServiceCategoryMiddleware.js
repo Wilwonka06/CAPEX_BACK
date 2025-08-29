@@ -32,10 +32,9 @@ const validateServiceCategoryData = (req, res, next) => {
   }
 
   // Validar descripción si se proporciona (máximo 100 caracteres)
-  if (descripcion && descripcion.length > 100) {
+  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
     return res.status(400).json({
-      success: false,
-      message: 'La descripción no puede tener más de 100 caracteres.',
+      message: "La descripción es obligatoria, no puede tener más de 100 caracteres ni ser menor a 5.",
     });
   }
 
@@ -78,10 +77,9 @@ const validateServiceCategoryUpdate = (req, res, next) => {
   }
 
   // Si se proporciona descripción, validar longitud
-  if (descripcion && descripcion.length > 100) {
+  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
     return res.status(400).json({
-      success: false,
-      message: 'La descripción no puede tener más de 100 caracteres.',
+      message: "La descripción es obligatoria, no puede tener más de 100 caracteres ni ser menor a 5.",
     });
   }
 
@@ -99,7 +97,40 @@ const validateServiceCategoryUpdate = (req, res, next) => {
   next();
 };
 
+const validateServiceCategorySearch = (req, res, next) => {
+  const { nombre, estado } = req.query;
+
+  if (nombre) {
+    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+    if (!nameRegex.test(nombre)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre solo puede contener letras y espacios (incluyendo acentos).',
+      });
+    }
+    if (nombre.length > 20) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre no puede tener más de 20 caracteres.',
+      });
+    }
+  }
+
+  if (estado) {
+    const validStates = ['Activo', 'Inactivo'];
+    if (!validStates.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        message: "El estado debe ser 'Activo' o 'Inactivo'.",
+      });
+    }
+  }
+
+  next();
+};
+
 module.exports = {
   validateServiceCategoryData,
   validateServiceCategoryUpdate,
+  validateServiceCategorySearch, // 👈 exporta el nuevo
 };

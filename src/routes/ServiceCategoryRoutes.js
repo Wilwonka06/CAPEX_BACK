@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const ServiceCategoryController = require('../controllers/ServiceCategoryController');
-const { validateServiceCategoryData, validateServiceCategoryUpdate } = require('../middlewares/ServiceCategoryMiddleware');
+const { validateServiceCategoryData, validateServiceCategoryUpdate, validateServiceCategorySearch} = require('../middlewares/ServiceCategoryMiddleware');
 
 // Crear nueva categoría
 router.post('/', validateServiceCategoryData, ServiceCategoryController.create);
@@ -18,7 +18,9 @@ router.get('/active', ServiceCategoryController.getActive);
 router.get('/status/:status', ServiceCategoryController.getByStatus);
 
 // Buscar categorías
-router.get('/search', ServiceCategoryController.search);
+// router.get('/search', ServiceCategoryController.search);
+
+router.get('/search', validateServiceCategorySearch, ServiceCategoryController.search);
 
 // Obtener una categoría por ID
 router.get('/:id', ServiceCategoryController.getById);
