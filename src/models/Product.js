@@ -1,11 +1,12 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
 const Product = sequelize.define('Product', {
-  id_producto: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id_producto'
   },
   nombre: {
     type: DataTypes.STRING(100),
@@ -34,21 +35,47 @@ const Product = sequelize.define('Product', {
       min: 0
     }
   },
-  id_categoria_producto: {
+  categoria_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'id_categoria_producto',
     references: {
       model: 'categorias_productos',
       key: 'id_categoria_producto'
     }
   },
-  estado: {
+  activo: {
     type: DataTypes.BOOLEAN,
+    allowNull: false,
     defaultValue: true
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'productos',
-  timestamps: false
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
+  indexes: [
+    {
+      unique: true,
+      fields: ['nombre']
+    },
+    {
+      fields: ['categoria_id']
+    },
+    {
+      fields: ['activo']
+    }
+  ]
 });
 
 module.exports = Product;

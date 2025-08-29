@@ -1,36 +1,76 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
 const Characteristic = sequelize.define('Characteristic', {
-  id_caracteristica: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id_caracteristica'
   },
   nombre: {
     type: DataTypes.STRING(100),
     allowNull: false,
+    unique: true,
     validate: {
       notEmpty: true,
-      len: [1, 100]
+      len: [2, 100]
     }
   },
   descripcion: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: [0, 500]
+    }
   },
   tipo: {
-    type: DataTypes.ENUM('texto', 'numero', 'booleano', 'fecha'),
+    type: DataTypes.ENUM('texto', 'numero', 'booleano', 'fecha', 'lista'),
     allowNull: false,
     defaultValue: 'texto'
   },
-  estado: {
+  valores: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Array de valores predefinidos para características de tipo lista'
+  },
+  requerido: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    allowNull: false,
+    defaultValue: false
+  },
+  estado: {
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    allowNull: false,
+    defaultValue: 'activo'
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'caracteristicas',
-  timestamps: false
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
+  indexes: [
+    {
+      unique: true,
+      fields: ['nombre']
+    },
+    {
+      fields: ['tipo']
+    },
+    {
+      fields: ['estado']
+    }
+  ]
 });
 
 module.exports = Characteristic;

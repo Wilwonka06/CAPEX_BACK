@@ -1,23 +1,26 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
 const TechnicalSheet = sequelize.define('TechnicalSheet', {
-  id_ficha_tecnica: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id_ficha_tecnica'
   },
-  id_producto: {
+  producto_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'id_producto',
     references: {
       model: 'productos',
       key: 'id_producto'
     }
   },
-  id_caracteristica: {
+  caracteristica_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'id_caracteristica',
     references: {
       model: 'caracteristicas',
       key: 'id_caracteristica'
@@ -28,12 +31,36 @@ const TechnicalSheet = sequelize.define('TechnicalSheet', {
     allowNull: false
   },
   estado: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    allowNull: false,
+    defaultValue: 'activo'
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'fichas_tecnicas',
-  timestamps: false
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
+  indexes: [
+    {
+      fields: ['producto_id']
+    },
+    {
+      fields: ['caracteristica_id']
+    },
+    {
+      fields: ['estado']
+    }
+  ]
 });
 
 module.exports = TechnicalSheet;

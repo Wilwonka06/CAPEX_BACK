@@ -1,42 +1,44 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../../config/database');
+const sequelize = require('../../config/database').sequelize;
 
 const Role = sequelize.define('Role', {
   id_rol: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    field: 'id_rol'
+    autoIncrement: true
   },
   nombre: {
     type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
-    field: 'nombre',
     validate: {
-      notEmpty: {
-        msg: 'El nombre del rol no puede estar vacío'
-      },
-      len: {
-        args: [1, 50],
-        msg: 'El nombre del rol debe tener entre 1 y 50 caracteres'
-      }
+      notEmpty: true,
+      len: [2, 50]
     }
   },
   descripcion: {
     type: DataTypes.TEXT,
-    allowNull: true,
-    field: 'descripcion'
+    allowNull: true
   },
-  estado_rol: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: true,
-    field: 'estado_rol'
+  estado: {
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    defaultValue: 'activo',
+    allowNull: false
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    allowNull: false
   }
 }, {
   tableName: 'roles',
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      unique: true,
+      fields: ['nombre']
+    }
+  ]
 });
 
 module.exports = Role;

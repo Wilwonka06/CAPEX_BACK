@@ -2,70 +2,140 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../config/database');
 
 const ServiceDetail = sequelize.define('ServiceDetail', {
-  id_detalle_servicio_cliente: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  id_servicio_cliente: {
+  serviceId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'servicios',
+      key: 'id'
+    }
   },
-  id_servicio: {
+  clientId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'clientes',
+      key: 'id'
+    }
   },
-  id_empleado: {
+  employeeId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'empleados',
+      key: 'id'
+    }
   },
-  precio_unitario: {
-    type: DataTypes.DECIMAL(15, 2),
+  unitPrice: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
       min: 0
     }
   },
-  cantidad: {
+  quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    defaultValue: 1,
     validate: {
       min: 1
     }
   },
-  hora_inicio: {
-    type: DataTypes.TIME,
-    allowNull: false
-  },
-  hora_finalizacion: {
-    type: DataTypes.TIME,
-    allowNull: false
-  },
-  duracion: {
-    type: DataTypes.INTEGER,
+  totalPrice: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
-      min: 1
+      min: 0
     }
   },
-  estado: {
-    type: DataTypes.ENUM('En ejecución', 'Pagado'),
-    allowNull: false,
-    defaultValue: 'En ejecución'
+  startTime: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  endTime: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  duration: {
+    type: DataTypes.INTEGER, // Duración en minutos
+    allowNull: true,
+    validate: {
+      min: 0
+    }
+  },
+  status: {
+    type: DataTypes.ENUM('programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'),
+    defaultValue: 'programado',
+    allowNull: false
+  },
+  scheduledDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  paymentStatus: {
+    type: DataTypes.ENUM('pendiente', 'pagado', 'parcial'),
+    defaultValue: 'pendiente',
+    allowNull: false
+  },
+  paymentMethod: {
+    type: DataTypes.ENUM('efectivo', 'tarjeta', 'transferencia', 'otro'),
+    allowNull: true
+  },
+  paymentDate: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
-  tableName: 'detalles_servicios_clientes',
-  timestamps: false,
+  tableName: 'detalles_servicio',
+  timestamps: true,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  indexes: [
+    {
+      fields: ['serviceId']
+    },
+    {
+      fields: ['clientId']
+    },
+    {
+      fields: ['employeeId']
+    },
+    {
+      fields: ['status']
+    },
+    {
+      fields: ['paymentStatus']
+    },
+    {
+      fields: ['scheduledDate']
+    }
+  ],
   hooks: {
-    beforeValidate: (serviceDetail) => {
-      // Validar que hora_finalizacion sea mayor que hora_inicio
-      if (serviceDetail.hora_inicio && serviceDetail.hora_finalizacion) {
-        const inicio = new Date(`2000-01-01 ${serviceDetail.hora_inicio}`);
-        const fin = new Date(`2000-01-01 ${serviceDetail.hora_finalizacion}`);
-        
-        if (fin <= inicio) {
-          throw new Error('La hora de finalización debe ser mayor que la hora de inicio');
-        }
+    beforeCreate: (serviceDetail) => {
+      // Calcular precio total si no se proporciona
+      if (!serviceDetail.totalPrice) {
+        serviceDetail.totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
+      }
+    },
+    beforeUpdate: (serviceDetail) => {
+      // Recalcular precio total si cambian precio unitario o cantidad
+      if (serviceDetail.changed('unitPrice') || serviceDetail.changed('quantity')) {
+        serviceDetail.totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
+      }
+      
+      // Calcular duración si se proporcionan tiempos de inicio y fin
+      if (serviceDetail.startTime && serviceDetail.endTime) {
+        const durationMs = new Date(serviceDetail.endTime) - new Date(serviceDetail.startTime);
+        serviceDetail.duration = Math.round(durationMs / (1000 * 60)); // Convertir a minutos
       }
     }
   }

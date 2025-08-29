@@ -1,36 +1,30 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
+const setupAssociations = require('./config/associations');
+const initializeRoles = require('./config/initRoles');
 
 // Importar rutas
-const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
+const productRoutes = require('./routes/productRoutes');
+const characteristicRoutes = require('./routes/CharacteristicRoutes');
+const supplierRoutes = require('./routes/SupplierRoutes');
+const productCategoryRoutes = require('./routes/productCategoryRoutes');
+const usersRoutes = require('./routes/UsersRoutes');
+const schedulingRoutes = require('./routes/SchedulingRoutes');
+const employeeRoutes = require('./routes/EmployeeRoutes');
+const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
+const servicesRoutes = require('./routes/ServicesRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
+const userRoleRoutes = require('./routes/UserRoleRoutes');
+const clientRoutes = require('./routes/clients/ClientRoutes');
+const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 
-// Importar modelos directamente
-const Product = require('./models/Product');
-const Characteristic = require('./models/Characteristic');
-const TechnicalSheet = require('./models/TechnicalSheet');
-const Supplier = require('./models/Supplier');
-const ProductCategory = require('./models/ProductCategory');
-const Employee = require('./models/Employee');
-
-// Importar modelos de roles con asociaciones
-const { Role, Permission, Privilege, RolePermissionPrivilege } = require('./models/roles');
-
-// Middleware de errores personalizado
-const handleGeneralError = (err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || 'Error interno del servidor',
-    error: process.env.NODE_ENV === 'development' ? err : {}
-  });
-};
-
-// Importar función de inicialización de roles
-const { initializeRoles } = require('./config/initRoles');
+// Importar middleware de errores
+const ErrorMiddleware = require('./middlewares/ErrorMiddleware');
 
 const app = express();
+
+// Middlewares de parsing (DEBEN IR PRIMERO)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -52,60 +46,23 @@ app.use((req, res, next) => {
   }
 });
 
-// Definir relaciones entre modelos
-// Un producto puede tener muchas fichas técnicas
-Product.hasMany(TechnicalSheet, {
-  foreignKey: 'id_producto',
-  as: 'fichasTecnicas'
-});
-
-// Una ficha técnica pertenece a un producto
-TechnicalSheet.belongsTo(Product, {
-  foreignKey: 'id_producto',
-  as: 'producto'
-});
-
-// Una característica puede estar en muchas fichas técnicas
-Characteristic.hasMany(TechnicalSheet, {
-  foreignKey: 'id_caracteristica',
-  as: 'fichasTecnicas'
-});
-
-// Una ficha técnica pertenece a una característica
-TechnicalSheet.belongsTo(Characteristic, {
-  foreignKey: 'id_caracteristica',
-  as: 'caracteristica'
-});
-
-// Relación muchos a muchos entre Product y Characteristic a través de TechnicalSheet
-Product.belongsToMany(Characteristic, {
-  through: TechnicalSheet,
-  foreignKey: 'id_producto',
-  otherKey: 'id_caracteristica',
-  as: 'caracteristicas'
-});
-
-Characteristic.belongsToMany(Product, {
-  through: TechnicalSheet,
-  foreignKey: 'id_caracteristica',
-  otherKey: 'id_producto',
-  as: 'productos'
-});
-
-// Relación entre ProductCategory y Product
-ProductCategory.hasMany(Product, {
-  foreignKey: 'id_categoria_producto',
-  as: 'productos'
-});
-
-Product.belongsTo(ProductCategory, {
-  foreignKey: 'id_categoria_producto',
-  as: 'categoria'
-});
+// Configurar asociaciones entre modelos (después de conectar a la BD)
+setupAssociations();
 
 // Rutas de la API
-app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
+app.use('/api/productos', productRoutes);
+app.use('/api/caracteristicas', characteristicRoutes);
+app.use('/api/proveedores', supplierRoutes);
+app.use('/api/categorias-productos', productCategoryRoutes);
+app.use('/api/usuarios', usersRoutes);
+app.use('/api/scheduling', schedulingRoutes);
+app.use('/api/empleados', employeeRoutes);
+app.use('/api/categorias-servicios', serviceCategoryRoutes);
+app.use('/api/servicios', servicesRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/user-roles', userRoleRoutes);
+app.use('/api/clientes', clientRoutes);
+app.use('/api/detalles-servicio', serviceDetailRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
@@ -117,6 +74,6 @@ app.use((req, res) => {
 });
 
 // Middleware para manejar errores (debe ir al final)
-app.use(handleGeneralError);
+app.use(ErrorMiddleware.handleGeneralError);
 
 module.exports = app;
