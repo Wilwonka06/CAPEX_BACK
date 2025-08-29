@@ -5,7 +5,6 @@ const { connectDB, sequelize } = require('./config/database');
 // Importar rutas
 const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
-const clientRoutes = require('./routes/clients/ClienteRoutes');
 
 // Importar modelos directamente
 const Product = require('./models/Product');
@@ -107,7 +106,6 @@ Product.belongsTo(ProductCategory, {
 // Rutas de la API
 app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/clients', clientRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   

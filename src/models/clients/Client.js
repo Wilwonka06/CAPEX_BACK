@@ -22,7 +22,11 @@ const Client = sequelize.define('Client', {
   }
 }, {
   tableName: 'clientes',
-  timestamps: false
+  timestamps: false,
+  // Deshabilitar la sincronización automática con la base de datos
+  freezeTableName: true,
+  // No crear la tabla automáticamente
+  sync: false
 });
 
 module.exports = Client;
