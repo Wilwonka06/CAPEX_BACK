@@ -7,36 +7,40 @@ const validateServiceData = (req, res, next) => {
 
   // Validate required fields
   if (!nombre) {
-    return res.status(400).json({ error: "Name is required" });
+    return res.status(400).json({ message: "El nombre es obligatorio" });
   }
 
   // Validate name format (letters, accents and spaces)
   const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
   if (!nameRegex.test(nombre)) {
     return res.status(400).json({
-      error: "Name can only contain letters, accents, and spaces",
+      message: "El nombre solo puede contener letras, acentos y espacios",
     });
   }
 
-  if (nombre.length > 20) {
+  if (nombre.length > 20 && nombre.length < 3) {
     return res.status(400).json({
-      error: "Name cannot exceed 20 characters",
+      message: "El nombre no puede tener más de 20 caracteres ni tener menos de 3",
     });
   }
 
   // Validate category ID
   if (!id_categoria_servicio) {
-    return res.status(400).json({ error: "Category ID is required" });
+    return res.status(400).json({ message: "El id de la categoria es obligatorio" });
+  }
+
+  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
+    return res.status(400).json({ message: "La descripcion en obligatoria, no puede tener más de 100 caracteres ni ser menor a 5." });
   }
 
   // Validate duration
   if (!duracion || duracion <= 0) {
-    return res.status(400).json({ error: "Duration must be greater than 0" });
+    return res.status(400).json({ message: "La duración debe ser mayor a 0" });
   }
 
   // Validate price
   if (!precio || precio <= 0) {
-    return res.status(400).json({ error: "Price must be greater than 0" });
+    return res.status(400).json({ message: "El precio debe ser mayor a 0" });
   }
 
   next();
@@ -52,31 +56,31 @@ const validateServiceUpdate = (req, res, next) => {
     const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
     if (!nameRegex.test(nombre)) {
       return res.status(400).json({
-        error: "Name can only contain letters, accents, and spaces",
+        message: "El nombre solo puede contener letras, acentos y espacios",
       });
     }
-    if (nombre.length > 20) {
+    if (nombre.length > 20 && nombre.length < 3) {
       return res.status(400).json({
-        error: "Name cannot exceed 20 characters",
+        message: "El nombre no puede tener más de 20 caracteres ni tener menos de 3",
       });
     }
   }
 
-  if (descripcion && descripcion.length > 100) {
+  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
     return res.status(400).json({
-      error: "Description cannot exceed 100 characters",
+      message: "La descripción es obligatoria, no puede tener más de 100 caracteres ni ser menor a 5.",
     });
   }
 
   if (duracion && duracion <= 0) {
     return res.status(400).json({
-      error: "Duration must be greater than 0",
+      message: "La duración debe ser mayor a 0",
     });
   }
 
   if (precio && precio <= 0) {
     return res.status(400).json({
-      error: "Price must be greater than 0",
+      message: "El precio debe ser mayor a 0",
     });
   }
 
@@ -84,9 +88,50 @@ const validateServiceUpdate = (req, res, next) => {
     const validStates = ["Activo", "Inactivo"];
     if (!validStates.includes(estado)) {
       return res.status(400).json({
-        error: "Invalid status. Must be 'Activo' or 'Inactivo'",
+        message: "Estado inválido. Debe ser: Activo o Inactivo",
       });
     }
+  }
+
+  next();
+};
+
+const validateServiceSearch = (req, res, next) => {
+  const { precio, duracion, estado, id_categoria_servicio } = req.query;
+
+  // Validar precio (número o rango tipo 100-200)
+  if (precio && !/^\d+(-\d+)?$/.test(precio)) {
+    return res.status(400).json({
+      success: false,
+      message: "El precio debe ser un número o un rango (ejemplo: 100 o 100-200)"
+    });
+  }
+
+  // Validar duración (número o rango tipo 30-60)
+  if (duracion && !/^\d+(-\d+)?$/.test(duracion)) {
+    return res.status(400).json({
+      success: false,
+      message: "La duración debe ser un número o un rango (ejemplo: 30 o 30-60)"
+    });
+  }
+
+  // Validar estado
+  if (estado) {
+    const validStates = ['Activo', 'Inactivo'];
+    if (!validStates.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        message: "El estado debe ser 'Activo' o 'Inactivo'"
+      });
+    }
+  }
+
+  // Validar categoría
+  if (id_categoria_servicio && isNaN(Number(id_categoria_servicio))) {
+    return res.status(400).json({
+      success: false,
+      message: "El id_categoria_servicio debe ser un número"
+    });
   }
 
   next();
@@ -95,4 +140,5 @@ const validateServiceUpdate = (req, res, next) => {
 module.exports = {
   validateServiceData,
   validateServiceUpdate,
+  validateServiceSearch,
 };

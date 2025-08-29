@@ -53,6 +53,51 @@ class ServicesService {
     }
   }
 
+  // Búsqueda avanzada con filtros
+async searchServices(filters) {
+  const { nombre, estado, precio, duracion, id_categoria_servicio } = filters;
+  let where = {};
+
+  if (nombre) where.nombre = { [Op.like]: `%${nombre}%` };
+  if (estado) where.estado = estado;
+
+  if (precio) {
+    if (precio.includes('-')) {
+      const [min, max] = precio.split('-').map(Number);
+      where.precio = { [Op.between]: [min, max] };
+    } else {
+      where.precio = Number(precio);
+    }
+  }
+
+  if (duracion) {
+    if (duracion.includes('-')) {
+      const [min, max] = duracion.split('-').map(Number);
+      where.duracion = { [Op.between]: [min, max] };
+    } else {
+      where.duracion = Number(duracion);
+    }
+  }
+
+  if (id_categoria_servicio) where.id_categoria_servicio = id_categoria_servicio;
+
+  return await Services.findAll({ where, order: [['nombre', 'ASC']] });
+}
+
+// Búsqueda rápida por texto libre
+// async searchByTerm(searchTerm) {
+//   return await Services.findAll({
+//     where: {
+//       [Op.or]: [
+//         { nombre: { [Op.like]: `%${searchTerm}%` } },
+//         { descripcion: { [Op.like]: `%${searchTerm}%` } }
+//       ]
+//     },
+//     order: [['nombre', 'ASC']]
+//   });
+// }
+
+
   async deleteService(id_servicio) {
     const service = await Services.findByPk(id_servicio);
     if (!service) {
@@ -63,17 +108,17 @@ class ServicesService {
     return { message: 'Service deleted successfully' };
   }
 
-  async searchServices(searchTerm) {
-    return await Service.findAll({
-      where: {
-        [Op.or]: [
-          { nombre: { [Op.like]: `%${searchTerm}%` } },
-          { descripcion: { [Op.like]: `%${searchTerm}%` } }
-        ]
-      },
-      order: [['nombre', 'ASC']]
-    });
-  }
+  // async searchServices(searchTerm) {
+  //   return await Service.findAll({
+  //     where: {
+  //       [Op.or]: [
+  //         { nombre: { [Op.like]: `%${searchTerm}%` } },
+  //         { descripcion: { [Op.like]: `%${searchTerm}%` } }
+  //       ]
+  //     },
+  //     order: [['nombre', 'ASC']]
+  //   });
+  // }
 
   async changeServiceStatus(id_servicio, newStatus) {
     const service = await Services.findByPk(id_servicio);
