@@ -1,0 +1,150 @@
+{
+  "info": {
+    "name": "CAPEX Roles API",
+    "description": "Colección completa para probar la API de Roles de CAPEX",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Obtener Todos los Roles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/roles",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles"]
+        },
+        "description": "Obtiene todos los roles con sus permisos y privilegios asociados"
+      }
+    },
+    {
+      "name": "Obtener Rol por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/roles/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "1"]
+        },
+        "description": "Obtiene un rol específico por su ID"
+      }
+    },
+    {
+      "name": "Crear Nuevo Rol",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Supervisor\",\n  \"descripcion\": \"Rol de supervisor con acceso limitado\",\n  \"permisos_privilegios\": [\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 2\n    },\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 3\n    },\n    {\n      \"id_permiso\": 2,\n      \"id_privilegio\": 1\n    },\n    {\n      \"id_permiso\": 2,\n      \"id_privilegio\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles"]
+        },
+        "description": "Crea un nuevo rol con permisos y privilegios asociados"
+      }
+    },
+    {
+      "name": "Actualizar Rol",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Administrador Principal\",\n  \"descripcion\": \"Rol de administrador con acceso completo al sistema\",\n  \"permisos_privilegios\": [\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 1\n    },\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 2\n    },\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 3\n    },\n    {\n      \"id_permiso\": 1,\n      \"id_privilegio\": 4\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "1"]
+        },
+        "description": "Actualiza un rol existente"
+      }
+    },
+    {
+      "name": "Eliminar Rol",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/roles/4",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "4"]
+        },
+        "description": "Elimina un rol y todas sus relaciones"
+      }
+    },
+    {
+      "name": "Obtener Todos los Permisos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/roles/permisos",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "permisos"]
+        },
+        "description": "Obtiene todos los permisos disponibles"
+      }
+    },
+    {
+      "name": "Obtener Todos los Privilegios",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/roles/privilegios",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "privilegios"]
+        },
+        "description": "Obtiene todos los privilegios disponibles"
+      }
+    }
+  ]
+}

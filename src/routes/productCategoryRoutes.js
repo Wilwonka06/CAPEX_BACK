@@ -1,27 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getAllCategorias,
-  getCategoriaById,
-  createCategoria,
-  updateCategoria,
-  deleteCategoria,
-  searchCategorias,
-  getCategoriasByEstado
-} = require('../controllers/productCategoryController');
-const {
-  validateCreateCategoriaProducto,
-  validateUpdateCategoriaProducto,
-  validateSearchCategoriaProducto
-} = require('../middlewares/productCategoryMiddleware');
+const ProductCategoryController = require('../controllers/ProductCategoryController');
+const ProductCategoryValidationMiddleware = require('../middlewares/ProductCategoryValidationMiddleware');
 
 // Rutas para categorías de productos
-router.get('/', getAllCategorias);
-router.get('/search/', validateSearchCategoriaProducto, searchCategorias);
-router.get('/estado/:estado', getCategoriasByEstado);
-router.get('/:id', getCategoriaById);
-router.post('/', validateCreateCategoriaProducto, createCategoria);
-router.put('/:id', validateUpdateCategoriaProducto, updateCategoria);
-router.delete('/:id', deleteCategoria);
+router.get('/', ProductCategoryController.getAllProductCategories);
+router.get('/:id', ProductCategoryValidationMiddleware.validateGetById, ProductCategoryController.getProductCategoryById);
+router.post('/', ProductCategoryValidationMiddleware.validateCreate, ProductCategoryController.createProductCategory);
+router.put('/:id', ProductCategoryValidationMiddleware.validateUpdate, ProductCategoryController.updateProductCategory);
+router.delete('/:id', ProductCategoryValidationMiddleware.validateDelete, ProductCategoryController.deleteProductCategory);
 
 module.exports = router;

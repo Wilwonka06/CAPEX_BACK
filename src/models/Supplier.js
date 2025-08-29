@@ -1,78 +1,89 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 
-const Proveedor = sequelize.define('Proveedor', {
-  id_proveedor: {
+const Supplier = sequelize.define('Supplier', {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     field: 'id_proveedor'
   },
-  nit: {
-    type: DataTypes.STRING(20),
+  nombre: {
+    type: DataTypes.STRING(100),
     allowNull: false,
     validate: {
       notEmpty: true,
-      is: /^[A-Za-z][0-9]+$/
+      len: [2, 100]
     }
   },
-  tipo_proveedor: {
-    type: DataTypes.CHAR(1),
+  documento: {
+    type: DataTypes.STRING(20),
     allowNull: false,
-    validate: {
-      isIn: [['N', 'J']]
-    }
-  },
-  nombre: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
-  },
-  contacto: {
-    type: DataTypes.STRING(255),
-    allowNull: true
-  },
-  direccion: {
-    type: DataTypes.STRING(255),
-    allowNull: true
-  },
-  correo: {
-    type: DataTypes.STRING(255),
     unique: true,
-    allowNull: true,
     validate: {
-      isEmail: true
+      notEmpty: true,
+      len: [8, 20]
+    }
+  },
+  email: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+      notEmpty: true
     }
   },
   telefono: {
     type: DataTypes.STRING(20),
     allowNull: true,
     validate: {
-      is: /^\+[0-9]{7,15}$/
+      len: [0, 20]
+    }
+  },
+  direccion: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    validate: {
+      len: [0, 200]
     }
   },
   estado: {
-    type: DataTypes.STRING(10),
-    defaultValue: 'Activo',
-    validate: {
-      isIn: [['Activo', 'Inactivo']]
-    }
+    type: DataTypes.ENUM('activo', 'inactivo'),
+    allowNull: false,
+    defaultValue: 'activo'
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'proveedores',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
   indexes: [
     {
       unique: true,
-      fields: ['nit']
+      fields: ['documento']
     },
     {
       unique: true,
-      fields: ['correo']
+      fields: ['email']
+    },
+    {
+      fields: ['nombre']
+    },
+    {
+      fields: ['estado']
     }
   ]
 });
 
-module.exports = Proveedor;
+module.exports = Supplier;

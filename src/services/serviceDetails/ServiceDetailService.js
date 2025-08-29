@@ -6,7 +6,7 @@ class ServiceDetailService {
   static async getAllServiceDetails() {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        order: [['id_detalle_servicio_cliente', 'ASC']]
+        order: [['id', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
@@ -51,19 +51,6 @@ class ServiceDetailService {
   // Crear nuevo detalle de servicio
   static async createServiceDetail(serviceDetailData) {
     try {
-      // Validar que hora_finalizacion sea mayor que hora_inicio
-      if (serviceDetailData.hora_inicio && serviceDetailData.hora_finalizacion) {
-        const inicio = new Date(`2000-01-01 ${serviceDetailData.hora_inicio}`);
-        const fin = new Date(`2000-01-01 ${serviceDetailData.hora_finalizacion}`);
-        
-        if (fin <= inicio) {
-          return {
-            success: false,
-            message: 'La hora de finalización debe ser mayor que la hora de inicio'
-          };
-        }
-      }
-
       const serviceDetail = await ServiceDetail.create(serviceDetailData);
 
       return {
@@ -96,19 +83,6 @@ class ServiceDetailService {
           success: false,
           message: 'Detalle de servicio no encontrado'
         };
-      }
-
-      // Validar que hora_finalizacion sea mayor que hora_inicio si se están actualizando
-      if (serviceDetailData.hora_inicio && serviceDetailData.hora_finalizacion) {
-        const inicio = new Date(`2000-01-01 ${serviceDetailData.hora_inicio}`);
-        const fin = new Date(`2000-01-01 ${serviceDetailData.hora_finalizacion}`);
-        
-        if (fin <= inicio) {
-          return {
-            success: false,
-            message: 'La hora de finalización debe ser mayor que la hora de inicio'
-          };
-        }
       }
 
       await serviceDetail.update(serviceDetailData);
@@ -168,14 +142,15 @@ class ServiceDetailService {
         };
       }
 
-      if (!['En ejecución', 'Pagado'].includes(estado)) {
+      const validStatuses = ['programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'];
+      if (!validStatuses.includes(estado)) {
         return {
           success: false,
-          message: 'Estado no válido. Debe ser "En ejecución" o "Pagado"'
+          message: `Estado no válido. Debe ser uno de: ${validStatuses.join(', ')}`
         };
       }
 
-      await serviceDetail.update({ estado });
+      await serviceDetail.update({ status: estado });
 
       return {
         success: true,
@@ -191,8 +166,8 @@ class ServiceDetailService {
   static async getByServiceClient(serviceClientId) {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { id_servicio_cliente: serviceClientId },
-        order: [['hora_inicio', 'ASC']]
+        where: { serviceId: serviceClientId },
+        order: [['startTime', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
@@ -216,8 +191,8 @@ class ServiceDetailService {
   static async getByEmployee(employeeId) {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { id_empleado: employeeId },
-        order: [['hora_inicio', 'ASC']]
+        where: { employeeId: employeeId },
+        order: [['startTime', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
@@ -240,16 +215,17 @@ class ServiceDetailService {
   // Obtener detalles por estado
   static async getByStatus(status) {
     try {
-      if (!['En ejecución', 'Pagado'].includes(status)) {
+      const validStatuses = ['programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'];
+      if (!validStatuses.includes(status)) {
         return {
           success: false,
-          message: 'Estado no válido. Debe ser "En ejecución" o "Pagado"'
+          message: `Estado no válido. Debe ser uno de: ${validStatuses.join(', ')}`
         };
       }
 
       const serviceDetails = await ServiceDetail.findAll({
-        where: { estado: status },
-        order: [['hora_inicio', 'ASC']]
+        where: { status: status },
+        order: [['startTime', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
@@ -281,15 +257,15 @@ class ServiceDetailService {
         };
       }
 
-      const totalPrice = serviceDetail.precio_unitario * serviceDetail.cantidad;
+      const totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
 
       return {
         success: true,
         data: {
-          id_detalle_servicio_cliente: serviceDetail.id_detalle_servicio_cliente,
-          precio_unitario: serviceDetail.precio_unitario,
-          cantidad: serviceDetail.cantidad,
-          precio_total: totalPrice
+          id: serviceDetail.id,
+          unitPrice: serviceDetail.unitPrice,
+          quantity: serviceDetail.quantity,
+          totalPrice: totalPrice
         },
         message: 'Precio total calculado exitosamente'
       };
@@ -302,20 +278,24 @@ class ServiceDetailService {
   static async getStatistics() {
     try {
       const totalDetails = await ServiceDetail.count();
-      const enEjecucion = await ServiceDetail.count({ where: { estado: 'En ejecución' } });
-      const pagados = await ServiceDetail.count({ where: { estado: 'Pagado' } });
+      const programados = await ServiceDetail.count({ where: { status: 'programado' } });
+      const enProgreso = await ServiceDetail.count({ where: { status: 'en_progreso' } });
+      const completados = await ServiceDetail.count({ where: { status: 'completado' } });
+      const pagados = await ServiceDetail.count({ where: { status: 'pagado' } });
 
       // Calcular precio total de todos los detalles
       const allDetails = await ServiceDetail.findAll();
       const precioTotal = allDetails.reduce((total, detail) => {
-        return total + (detail.precio_unitario * detail.cantidad);
+        return total + (detail.totalPrice || 0);
       }, 0);
 
       return {
         success: true,
         data: {
           total_detalles: totalDetails,
-          en_ejecucion: enEjecucion,
+          programados: programados,
+          en_progreso: enProgreso,
+          completados: completados,
           pagados: pagados,
           precio_total_general: precioTotal
         },

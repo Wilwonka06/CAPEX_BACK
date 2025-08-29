@@ -54,6 +54,7 @@ http://localhost:3000
 ```
 
 ### Endpoints disponibles
+- **Roles:** `/api/roles` (con permisos y privilegios)
 - **Productos:** `/api/productos`
 - **Características:** `/api/caracteristicas`
 - **Proveedores:** `/api/proveedores`
@@ -62,6 +63,22 @@ http://localhost:3000
 - **Agendamiento:** `/api/scheduling`
 
 ## 📚 Documentación de Endpoints
+
+### 🧪 Pruebas con Postman
+
+Para probar la API fácilmente, hemos creado una colección completa de Postman:
+
+- **[Guía de Pruebas con Postman](docs/README_POSTMAN.md)** - Guía rápida para configurar y usar Postman
+- **[Documentación Completa API Roles](docs/API_ROLES_POSTMAN.md)** - Documentación detallada de todos los endpoints
+- **[Colección de Postman](docs/CAPEX_Roles_API.postman_collection.json)** - Archivo para importar directamente en Postman
+
+#### Configuración Rápida:
+1. Descarga e instala [Postman](https://www.postman.com/downloads/)
+2. Importa el archivo `docs/CAPEX_Roles_API.postman_collection.json`
+3. Configura la variable `base_url` con `http://localhost:3000`
+4. ¡Listo para probar!
+
+### 📋 Endpoints Disponibles
 
 ### Productos
 
@@ -105,6 +122,18 @@ http://localhost:3000
 | POST | `/api/categorias-productos` | Crear nueva categoría |
 | PUT | `/api/categorias-productos/:id` | Actualizar categoría |
 | DELETE | `/api/categorias-productos/:id` | Eliminar categoría |
+
+### Roles
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/roles` | Obtener todos los roles con permisos y privilegios |
+| GET | `/api/roles/:id` | Obtener rol por ID |
+| POST | `/api/roles` | Crear nuevo rol |
+| PUT | `/api/roles/:id` | Actualizar rol |
+| DELETE | `/api/roles/:id` | Eliminar rol |
+| GET | `/api/roles/permisos` | Obtener todos los permisos |
+| GET | `/api/roles/privilegios` | Obtener todos los privilegios |
 
 ### Usuarios
 
@@ -175,6 +204,30 @@ curl -X POST http://localhost:3000/api/caracteristicas \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "Procesador"
+  }'
+```
+
+### Crear un rol
+```bash
+curl -X POST http://localhost:3000/api/roles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Supervisor",
+    "descripcion": "Rol de supervisor con acceso limitado",
+    "permisos_privilegios": [
+      {
+        "id_permiso": 1,
+        "id_privilegio": 2
+      },
+      {
+        "id_permiso": 1,
+        "id_privilegio": 3
+      },
+      {
+        "id_permiso": 2,
+        "id_privilegio": 1
+      }
+    ]
   }'
 ```
 

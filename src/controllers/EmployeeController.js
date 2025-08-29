@@ -1,173 +1,149 @@
-// src/controllers/EmployeeController.js
-const employeeService = require('../services/EmployeeService');
+const Employee = require('../models/Employee');
+const ResponseMiddleware = require('../middlewares/ResponseMiddleware');
 
 class EmployeeController {
-  async create(req, res) {
+  // Obtener todos los empleados
+  static async getAllEmployees(req, res) {
     try {
-      const employee = await employeeService.createEmployee(req.body);
-      res.status(201).json({
-        success: true,
-        data: employee,
-        message: 'Empleado creado correctamente'
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+      
+      const { count, rows } = await Employee.findAndCountAll({
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        order: [['createdAt', 'DESC']]
+      });
+
+      return ResponseMiddleware.success(res, 'Empleados obtenidos exitosamente', {
+        employees: rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit),
+          hasNext: page * limit < count,
+          hasPrev: page > 1
+        }
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
-      });
+      return ResponseMiddleware.error(res, 'Error al obtener empleados', error);
     }
   }
 
-  async getAll(req, res) {
-    try {
-      const employees = await employeeService.getAllEmployees();
-      res.json({
-        success: true,
-        data: employees,
-        count: employees.length
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async getById(req, res) {
-    try {
-      const employee = await employeeService.getEmployeeById(req.params.id);
-      if (!employee) {
-        return res.status(404).json({
-          success: false,
-          error: 'Empleado no encontrado'
-        });
-      }
-      res.json({
-        success: true,
-        data: employee
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async getByStatus(req, res) {
-    try {
-      const { status } = req.params;
-      const employees = await employeeService.getEmployeesByStatus(status);
-      res.json({
-        success: true,
-        data: employees,
-        count: employees.length
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async getActive(req, res) {
-    try {
-      const employees = await employeeService.getActiveEmployees();
-      res.json({
-        success: true,
-        data: employees,
-        count: employees.length
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async update(req, res) {
-    try {
-      const updated = await employeeService.updateEmployee(req.params.id, req.body);
-      res.json({
-        success: true,
-        data: updated,
-        message: 'Empleado actualizado correctamente'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async delete(req, res) {
-    try {
-      const result = await employeeService.deleteEmployee(req.params.id);
-      res.json({
-        success: true,
-        message: result.message
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async search(req, res) {
-    try {
-      const { q } = req.query;
-      if (!q) {
-        return res.status(400).json({
-          success: false,
-          error: 'Término de búsqueda requerido'
-        });
-      }
-
-      const employees = await employeeService.searchEmployees(q);
-      res.json({
-        success: true,
-        data: employees,
-        count: employees.length
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  async changeStatus(req, res) {
+  // Obtener empleado por ID
+  static async getEmployeeById(req, res) {
     try {
       const { id } = req.params;
-      const { estado } = req.body;
-
-      if (!estado) {
-        return res.status(400).json({
-          success: false,
-          error: 'Nuevo estado requerido'
-        });
+      const employee = await Employee.findByPk(id);
+      
+      if (!employee) {
+        return ResponseMiddleware.error(res, 'Empleado no encontrado', null, 404);
       }
+      
+      return ResponseMiddleware.success(res, 'Empleado obtenido exitosamente', employee);
+    } catch (error) {
+      return ResponseMiddleware.error(res, 'Error al obtener empleado', error);
+    }
+  }
 
-      const employee = await employeeService.changeEmployeeStatus(id, estado);
-      res.json({
-        success: true,
-        data: employee,
-        message: `Estado del empleado cambiado a ${estado}`
+  // Crear nuevo empleado
+  static async createEmployee(req, res) {
+    try {
+      const employeeData = req.body;
+      const newEmployee = await Employee.create(employeeData);
+      return ResponseMiddleware.success(res, 'Empleado creado exitosamente', newEmployee, 201);
+    } catch (error) {
+      return ResponseMiddleware.error(res, 'Error al crear empleado', error);
+    }
+  }
+
+  // Actualizar empleado
+  static async updateEmployee(req, res) {
+    try {
+      const { id } = req.params;
+      const employeeData = req.body;
+      const employee = await Employee.findByPk(id);
+      
+      if (!employee) {
+        return ResponseMiddleware.error(res, 'Empleado no encontrado', null, 404);
+      }
+      
+      await employee.update(employeeData);
+      return ResponseMiddleware.success(res, 'Empleado actualizado exitosamente', employee);
+    } catch (error) {
+      return ResponseMiddleware.error(res, 'Error al actualizar empleado', error);
+    }
+  }
+
+  // Eliminar empleado
+  static async deleteEmployee(req, res) {
+    try {
+      const { id } = req.params;
+      const employee = await Employee.findByPk(id);
+      
+      if (!employee) {
+        return ResponseMiddleware.error(res, 'Empleado no encontrado', null, 404);
+      }
+      
+      await employee.destroy();
+      return ResponseMiddleware.success(res, 'Empleado eliminado exitosamente');
+    } catch (error) {
+      return ResponseMiddleware.error(res, 'Error al eliminar empleado', error);
+    }
+  }
+
+  // Obtener estadísticas de empleados
+  static async getEmployeeStats(req, res) {
+    try {
+      const totalEmployees = await Employee.count();
+      const activeEmployees = await Employee.count({ where: { status: 'activo' } });
+      const inactiveEmployees = await Employee.count({ where: { status: 'inactivo' } });
+
+      return ResponseMiddleware.success(res, 'Estadísticas obtenidas exitosamente', {
+        total: totalEmployees,
+        active: activeEmployees,
+        inactive: inactiveEmployees
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
+      return ResponseMiddleware.error(res, 'Error al obtener estadísticas', error);
+    }
+  }
+
+  // Buscar empleados
+  static async searchEmployees(req, res) {
+    try {
+      const { q, page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+      
+      const { count, rows } = await Employee.findAndCountAll({
+        where: {
+          [require('sequelize').Op.or]: [
+            { firstName: { [require('sequelize').Op.like]: `%${q}%` } },
+            { lastName: { [require('sequelize').Op.like]: `%${q}%` } },
+            { email: { [require('sequelize').Op.like]: `%${q}%` } },
+            { documentNumber: { [require('sequelize').Op.like]: `%${q}%` } }
+          ]
+        },
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        order: [['createdAt', 'DESC']]
       });
+
+      return ResponseMiddleware.success(res, 'Búsqueda completada exitosamente', {
+        employees: rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit),
+          hasNext: page * limit < count,
+          hasPrev: page > 1
+        }
+      });
+    } catch (error) {
+      return ResponseMiddleware.error(res, 'Error en la búsqueda', error);
     }
   }
 }
 
-module.exports = new EmployeeController();
+module.exports = EmployeeController;

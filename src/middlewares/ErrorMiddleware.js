@@ -1,148 +1,113 @@
 /**
- * Middleware para manejo global de errores
- * Este middleware captura todos los errores no manejados y los formatea de manera consistente
- * para que otros desarrolladores puedan consumir la API de manera predecible
+ * Middleware para manejo centralizado de errores
  */
-
 class ErrorMiddleware {
   /**
-   * Middleware para manejar errores de validación
-   * @param {Error} err - Error de validación
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
+   * Middleware para manejar errores generales
+   * @param {Error} error - Error capturado
+   * @param {Request} req - Objeto request de Express
+   * @param {Response} res - Objeto response de Express
    * @param {Function} next - Función next de Express
    */
-  static handleValidationError(err, req, res, next) {
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Error de validación',
-        errors: err.errors,
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
+  static handleGeneralError(error, req, res, next) {
+    console.error('Error no manejado:', error);
+
+    // Determinar el tipo de error y el código de estado apropiado
+    let statusCode = 500;
+    let message = 'Error interno del servidor';
+
+    if (error.name === 'ValidationError') {
+      statusCode = 400;
+      message = 'Error de validación';
+    } else if (error.name === 'SequelizeValidationError') {
+      statusCode = 400;
+      message = 'Error de validación de datos';
+    } else if (error.name === 'SequelizeUniqueConstraintError') {
+      statusCode = 409;
+      message = 'Conflicto: el recurso ya existe';
+    } else if (error.name === 'SequelizeForeignKeyConstraintError') {
+      statusCode = 400;
+      message = 'Error de referencia: recurso relacionado no encontrado';
+    } else if (error.name === 'JsonWebTokenError') {
+      statusCode = 401;
+      message = 'Token inválido';
+    } else if (error.name === 'TokenExpiredError') {
+      statusCode = 401;
+      message = 'Token expirado';
+    } else if (error.code === 'ENOTFOUND') {
+      statusCode = 503;
+      message = 'Servicio no disponible';
+    } else if (error.code === 'ECONNREFUSED') {
+      statusCode = 503;
+      message = 'Error de conexión con la base de datos';
     }
-    next(err);
+
+    // Enviar respuesta de error
+    res.status(statusCode).json({
+      success: false,
+      message,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      timestamp: new Date().toISOString(),
+      path: req.originalUrl
+    });
   }
 
   /**
-   * Middleware para manejar errores de base de datos
-   * @param {Error} err - Error de base de datos
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
-   * @param {Function} next - Función next de Express
-   */
-  static handleDatabaseError(err, req, res, next) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({
-        success: false,
-        message: 'El recurso ya existe',
-        error: 'DUPLICATE_ENTRY',
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
-    }
-
-    if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-      return res.status(400).json({
-        success: false,
-        message: 'Referencia inválida',
-        error: 'INVALID_REFERENCE',
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
-    }
-
-    if (err.code && err.code.startsWith('ER_')) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error de base de datos',
-        error: 'DATABASE_ERROR',
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
-    }
-
-    next(err);
-  }
-
-  /**
-   * Middleware para manejar errores de sintaxis JSON
-   * @param {Error} err - Error de sintaxis JSON
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
-   * @param {Function} next - Función next de Express
-   */
-  static handleJsonError(err, req, res, next) {
-    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-      return res.status(400).json({
-        success: false,
-        message: 'JSON inválido en el cuerpo de la solicitud',
-        error: 'INVALID_JSON',
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
-    }
-    next(err);
-  }
-
-  /**
-   * Middleware para manejar errores 404 (Not Found)
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
+   * Middleware para manejar rutas no encontradas
+   * @param {Request} req - Objeto request de Express
+   * @param {Response} res - Objeto response de Express
    */
   static handleNotFound(req, res) {
     res.status(404).json({
       success: false,
-      message: 'Endpoint no encontrado',
-      error: 'NOT_FOUND',
-      timestamp: new Date().toISOString(),
+      message: 'Ruta no encontrada',
       path: req.originalUrl,
-      method: req.method
-    });
-  }
-
-  /**
-   * Middleware para manejo general de errores
-   * @param {Error} err - Error general
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
-   * @param {Function} next - Función next de Express
-   */
-  static handleGeneralError(err, req, res, next) {
-    // Log del error para debugging (se puede configurar con un sistema de logging)
-    console.error('Error no manejado:', {
-      message: err.message,
-      stack: err.stack,
-      url: req.originalUrl,
-      method: req.method,
       timestamp: new Date().toISOString()
     });
+  }
 
-    // Determinar el código de estado apropiado
-    const statusCode = err.statusCode || err.status || 500;
-    
-    // Respuesta al cliente
-    res.status(statusCode).json({
+  /**
+   * Middleware para manejar errores de validación
+   * @param {Array} errors - Array de errores de validación
+   * @param {Request} req - Objeto request de Express
+   * @param {Response} res - Objeto response de Express
+   * @param {Function} next - Función next de Express
+   */
+  static handleValidationError(errors, req, res, next) {
+    res.status(400).json({
       success: false,
-      message: err.message || 'Error interno del servidor',
-      error: err.name || 'INTERNAL_ERROR',
+      message: 'Error de validación',
+      errors,
       timestamp: new Date().toISOString(),
-      path: req.originalUrl,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+      path: req.originalUrl
     });
   }
 
   /**
-   * Middleware para manejar errores de timeout
-   * @param {Request} req - Objeto de solicitud Express
-   * @param {Response} res - Objeto de respuesta Express
+   * Middleware para manejar errores de autenticación
+   * @param {Request} req - Objeto request de Express
+   * @param {Response} res - Objeto response de Express
+   * @param {Function} next - Función next de Express
    */
-  static handleTimeout(req, res) {
-    res.status(408).json({
+  static handleAuthenticationError(req, res, next) {
+    res.status(401).json({
       success: false,
-      message: 'La solicitud ha excedido el tiempo límite',
-      error: 'REQUEST_TIMEOUT',
+      message: 'No autorizado',
+      timestamp: new Date().toISOString(),
+      path: req.originalUrl
+    });
+  }
+
+  /**
+   * Middleware para manejar errores de autorización
+   * @param {Request} req - Objeto request de Express
+   * @param {Response} res - Objeto response de Express
+   * @param {Function} next - Función next de Express
+   */
+  static handleAuthorizationError(req, res, next) {
+    res.status(403).json({
+      success: false,
+      message: 'Acceso prohibido',
       timestamp: new Date().toISOString(),
       path: req.originalUrl
     });

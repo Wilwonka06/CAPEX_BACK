@@ -1,66 +1,129 @@
-// src/models/Scheduling.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-const Programacion = sequelize.define('Programacion', {
-  id_programacion: {
+const Scheduling = sequelize.define('Scheduling', {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  id_empleado: {
+  employeeId: {
     type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  fecha: {
-    type: DataTypes.DATEONLY,
-    allowNull: false
-  },
-  hora_inicio: {
-    type: DataTypes.TIME,
-    allowNull: false
-  },
-  hora_fin: {
-    type: DataTypes.TIME,
     allowNull: false,
-    validate: {
-      is: /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-      isAfterStartTime(value) {
-        if (this.hora_inicio && value <= this.hora_inicio) {
-          throw new Error('La hora de fin debe ser posterior a la hora de inicio');
-        }
-      }
+    references: {
+      model: 'empleados',
+      key: 'id'
     }
   },
-  tipo_turno: {
-    type: DataTypes.ENUM('mañana', 'tarde', 'noche', 'completo'),
-    allowNull: false
+  scheduledDate: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
-  estado: {
-    type: DataTypes.ENUM('Programado', 'En curso', 'Completado', 'Cancelado'),
-    defaultValue: 'Programado'
+  startTime: {
+    type: DataTypes.TIME,
+    allowNull: true
   },
-  observaciones: {
+  endTime: {
+    type: DataTypes.TIME,
+    allowNull: true
+  },
+  description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  fecha_creacion: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+  status: {
+    type: DataTypes.ENUM('programado', 'confirmado', 'en_progreso', 'completado', 'cancelado'),
+    defaultValue: 'programado',
+    allowNull: false
   },
-  fecha_actualizacion: {
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  priority: {
+    type: DataTypes.ENUM('baja', 'media', 'alta', 'urgente'),
+    defaultValue: 'media',
+    allowNull: false
+  },
+  location: {
+    type: DataTypes.STRING(200),
+    allowNull: true
+  },
+  isRecurring: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  recurrencePattern: {
+    type: DataTypes.ENUM('diario', 'semanal', 'mensual', 'anual'),
+    allowNull: true
+  },
+  recurrenceEndDate: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    allowNull: true
   }
 }, {
   tableName: 'programaciones',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
   indexes: [
     {
-      unique: true,
-      fields: ['fecha', 'hora_inicio', 'id_empleado']
+      fields: ['employeeId']
+    },
+    {
+      fields: ['scheduledDate']
+    },
+    {
+      fields: ['status']
+    },
+    {
+      fields: ['priority']
+    },
+    {
+      fields: ['isRecurring']
     }
-  ]
+  ],
+  hooks: {
+    beforeCreate: (scheduling) => {
+      // Validar que la fecha programada sea futura
+      if (scheduling.scheduledDate && new Date(scheduling.scheduledDate) <= new Date()) {
+        throw new Error('La fecha programada debe ser futura');
+      }
+      
+      // Validar que la hora de inicio sea anterior a la hora de fin
+      if (scheduling.startTime && scheduling.endTime) {
+        const startTime = new Date(`2000-01-01 ${scheduling.startTime}`);
+        const endTime = new Date(`2000-01-01 ${scheduling.endTime}`);
+        
+        if (startTime >= endTime) {
+          throw new Error('La hora de inicio debe ser anterior a la hora de fin');
+        }
+      }
+    },
+    beforeUpdate: (scheduling) => {
+      // Validar que la fecha programada sea futura
+      if (scheduling.changed('scheduledDate') && scheduling.scheduledDate) {
+        if (new Date(scheduling.scheduledDate) <= new Date()) {
+          throw new Error('La fecha programada debe ser futura');
+        }
+      }
+      
+      // Validar que la hora de inicio sea anterior a la hora de fin
+      if ((scheduling.changed('startTime') || scheduling.changed('endTime')) && 
+          scheduling.startTime && scheduling.endTime) {
+        const startTime = new Date(`2000-01-01 ${scheduling.startTime}`);
+        const endTime = new Date(`2000-01-01 ${scheduling.endTime}`);
+        
+        if (startTime >= endTime) {
+          throw new Error('La hora de inicio debe ser anterior a la hora de fin');
+        }
+      }
+    }
+  }
 });
 
-module.exports = Programacion;
+module.exports = Scheduling;

@@ -1,32 +1,16 @@
-// src/routes/SchedulingRoutes.js
 const express = require('express');
 const router = express.Router();
-
 const SchedulingController = require('../controllers/SchedulingController');
-const { validateSchedulingData, validateMultipleSchedulingData } = require('../middlewares/SchedulingMiddleware');
+const SchedulingValidationMiddleware = require('../middlewares/SchedulingValidationMiddleware');
 
-// Crear programación individual
-router.post('/', validateSchedulingData, SchedulingController.create);
-
-// Crear múltiples programaciones
-router.post('/multiple', validateMultipleSchedulingData, SchedulingController.createMultiple);
-
-// Obtener todas las programaciones
-router.get('/', SchedulingController.getAll);
-
-// Obtener programaciones por empleado
-router.get('/employee/:employeeId', SchedulingController.getByEmployee);
-
-// Obtener una programación por ID
-router.get('/:id', SchedulingController.getById);
-
-// Actualizar una programación por ID
-router.put('/:id', validateSchedulingData, SchedulingController.update);
-
-// Eliminar una programación por ID
-router.delete('/:id', SchedulingController.delete);
-
-// Verificar conflictos de horarios
-router.post('/check-conflicts', SchedulingController.checkConflicts);
+// Rutas para programación
+router.get('/', SchedulingController.getAllSchedules);
+router.get('/:id', SchedulingValidationMiddleware.validateGetById, SchedulingController.getScheduleById);
+router.post('/', SchedulingValidationMiddleware.validateCreate, SchedulingController.createSchedule);
+router.post('/multiple', SchedulingValidationMiddleware.validateCreateMultiple, SchedulingController.createMultipleSchedules);
+router.put('/:id', SchedulingValidationMiddleware.validateUpdate, SchedulingController.updateSchedule);
+router.delete('/:id', SchedulingValidationMiddleware.validateDelete, SchedulingController.deleteSchedule);
+router.get('/empleado/:employeeId', SchedulingController.getSchedulesByEmployee);
+router.post('/verificar-conflicto', SchedulingController.checkScheduleConflict);
 
 module.exports = router;

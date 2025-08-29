@@ -1,119 +1,216 @@
-const UserRoleService = require('../services/UserRoleService');
+const UserRole = require('../models/UserRole');
+const { Usuario } = require('../models/User');
+const { Role } = require('../models/roles');
 const ResponseMiddleware = require('../middlewares/ResponseMiddleware');
 
 class UserRoleController {
-  /**
-   * Asignar un rol a un usuario
-   */
-  static async asignarRol(req, res) {
+  // Obtener todos los roles de usuario
+  static async getAllUserRoles(req, res) {
     try {
-      const { idUsuario, idRol } = req.body;
+      const userRoles = await UserRole.findAll({
+        include: [
+          {
+            model: Usuario,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'email']
+          },
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'descripcion']
+          }
+        ],
+        order: [['fecha_asignacion', 'DESC']]
+      });
 
-      if (!idUsuario || !idRol) {
-        return ResponseMiddleware.sendErrorResponse(res, 400, 'Se requiere idUsuario e idRol');
+      return ResponseMiddleware.success(res, 'Roles de usuario obtenidos exitosamente', userRoles);
+    } catch (error) {
+      console.error('Error al obtener roles de usuario:', error);
+      return ResponseMiddleware.error(res, 'Error al obtener roles de usuario', error, 500);
+    }
+  }
+
+  // Obtener rol de usuario por ID
+  static async getUserRoleById(req, res) {
+    try {
+      const { id } = req.params;
+      const userRole = await UserRole.findByPk(id, {
+        include: [
+          {
+            model: Usuario,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'email']
+          },
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'descripcion']
+          }
+        ]
+      });
+
+      if (!userRole) {
+        return ResponseMiddleware.error(res, 'Rol de usuario no encontrado', null, 404);
       }
 
-      const resultado = await UserRoleService.asignarRolAUsuario(idUsuario, idRol);
-      return ResponseMiddleware.sendSuccessResponse(res, 201, resultado.message, resultado.data);
+      return ResponseMiddleware.success(res, 'Rol de usuario obtenido exitosamente', userRole);
     } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 400, error.message);
+      console.error('Error al obtener rol de usuario:', error);
+      return ResponseMiddleware.error(res, 'Error al obtener rol de usuario', error, 500);
     }
   }
 
-  /**
-   * Remover un rol de un usuario
-   */
-  static async removerRol(req, res) {
+  // Crear nuevo rol de usuario
+  static async createUserRole(req, res) {
     try {
-      const { idUsuario, idRol } = req.body;
+      const userRoleData = req.body;
+      const userRole = await UserRole.create(userRoleData);
 
-      if (!idUsuario || !idRol) {
-        return ResponseMiddleware.sendErrorResponse(res, 400, 'Se requiere idUsuario e idRol');
+      const userRoleWithDetails = await UserRole.findByPk(userRole.id, {
+        include: [
+          {
+            model: Usuario,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'email']
+          },
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'descripcion']
+          }
+        ]
+      });
+
+      return ResponseMiddleware.success(res, 'Rol de usuario creado exitosamente', userRoleWithDetails, 201);
+    } catch (error) {
+      console.error('Error al crear rol de usuario:', error);
+      
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return ResponseMiddleware.error(res, 'El usuario ya tiene asignado este rol', null, 409);
       }
 
-      const resultado = await UserRoleService.removerRolDeUsuario(idUsuario, idRol);
-      return ResponseMiddleware.sendSuccessResponse(res, 200, resultado.message);
-    } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 400, error.message);
-    }
-  }
-
-  /**
-   * Obtener todos los roles de un usuario
-   */
-  static async obtenerRolesDeUsuario(req, res) {
-    try {
-      const { idUsuario } = req.params;
-
-      if (!idUsuario) {
-        return ResponseMiddleware.sendErrorResponse(res, 400, 'Se requiere idUsuario');
+      if (error.name === 'SequelizeForeignKeyConstraintError') {
+        const field = error.fields[0];
+        const message = field === 'id_usuario' ? 'El usuario especificado no existe' : 
+                       field === 'id_rol' ? 'El rol especificado no existe' : 
+                       'Error de referencia';
+        return ResponseMiddleware.error(res, message, null, 400);
       }
 
-      const resultado = await UserRoleService.obtenerRolesDeUsuario(idUsuario);
-      return ResponseMiddleware.sendSuccessResponse(res, 200, 'Roles obtenidos correctamente', resultado.data);
-    } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 400, error.message);
+      return ResponseMiddleware.error(res, 'Error al crear rol de usuario', error, 500);
     }
   }
 
-  /**
-   * Obtener todos los usuarios de un rol
-   */
-  static async obtenerUsuariosDeRol(req, res) {
+  // Actualizar rol de usuario
+  static async updateUserRole(req, res) {
     try {
-      const { idRol } = req.params;
+      const { id } = req.params;
+      const updateData = req.body;
 
-      if (!idRol) {
-        return ResponseMiddleware.sendErrorResponse(res, 400, 'Se requiere idRol');
+      const userRole = await UserRole.findByPk(id);
+      if (!userRole) {
+        return ResponseMiddleware.error(res, 'Rol de usuario no encontrado', null, 404);
       }
 
-      const resultado = await UserRoleService.obtenerUsuariosDeRol(idRol);
-      return ResponseMiddleware.sendSuccessResponse(res, 200, 'Usuarios obtenidos correctamente', resultado.data);
+      await userRole.update(updateData);
+
+      const updatedUserRole = await UserRole.findByPk(id, {
+        include: [
+          {
+            model: Usuario,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'email']
+          },
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'descripcion']
+          }
+        ]
+      });
+
+      return ResponseMiddleware.success(res, 'Rol de usuario actualizado exitosamente', updatedUserRole);
     } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 400, error.message);
-    }
-  }
-
-  /**
-   * Obtener todas las asignaciones activas
-   */
-  static async obtenerTodasLasAsignaciones(req, res) {
-    try {
-      const resultado = await UserRoleService.obtenerTodasLasAsignaciones();
-      return ResponseMiddleware.sendSuccessResponse(res, 200, 'Asignaciones obtenidas correctamente', resultado.data);
-    } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 500, error.message);
-    }
-  }
-
-  /**
-   * Verificar si un usuario tiene un rol específico
-   */
-  static async verificarRol(req, res) {
-    try {
-      const { idUsuario } = req.params;
-      const { nombreRol } = req.query;
-
-      if (!idUsuario || !nombreRol) {
-        return ResponseMiddleware.sendErrorResponse(res, 400, 'Se requiere idUsuario y nombreRol');
+      console.error('Error al actualizar rol de usuario:', error);
+      
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return ResponseMiddleware.error(res, 'El usuario ya tiene asignado este rol', null, 409);
       }
 
-      const resultado = await UserRoleService.usuarioTieneRol(idUsuario, nombreRol);
-      return ResponseMiddleware.sendSuccessResponse(res, 200, 'Verificación completada', resultado);
-    } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 400, error.message);
+      if (error.name === 'SequelizeForeignKeyConstraintError') {
+        const field = error.fields[0];
+        const message = field === 'id_usuario' ? 'El usuario especificado no existe' : 
+                       field === 'id_rol' ? 'El rol especificado no existe' : 
+                       'Error de referencia';
+        return ResponseMiddleware.error(res, message, null, 400);
+      }
+
+      return ResponseMiddleware.error(res, 'Error al actualizar rol de usuario', error, 500);
     }
   }
 
-  /**
-   * Obtener usuarios con sus roles
-   */
-  static async obtenerUsuariosConRoles(req, res) {
+  // Eliminar rol de usuario
+  static async deleteUserRole(req, res) {
     try {
-      const resultado = await UserRoleService.obtenerUsuariosConRoles();
-      return ResponseMiddleware.sendSuccessResponse(res, 200, 'Usuarios con roles obtenidos correctamente', resultado.data);
+      const { id } = req.params;
+      const userRole = await UserRole.findByPk(id);
+
+      if (!userRole) {
+        return ResponseMiddleware.error(res, 'Rol de usuario no encontrado', null, 404);
+      }
+
+      await userRole.destroy();
+
+      return ResponseMiddleware.success(res, 'Rol de usuario eliminado exitosamente', null);
     } catch (error) {
-      return ResponseMiddleware.sendErrorResponse(res, 500, error.message);
+      console.error('Error al eliminar rol de usuario:', error);
+      return ResponseMiddleware.error(res, 'Error al eliminar rol de usuario', error, 500);
+    }
+  }
+
+  // Obtener roles de usuario por usuario
+  static async getUserRolesByUser(req, res) {
+    try {
+      const { userId } = req.params;
+      const userRoles = await UserRole.findAll({
+        where: { id_usuario: userId },
+        include: [
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'descripcion']
+          }
+        ],
+        order: [['fecha_asignacion', 'DESC']]
+      });
+
+      return ResponseMiddleware.success(res, 'Roles de usuario obtenidos exitosamente', userRoles);
+    } catch (error) {
+      console.error('Error al obtener roles de usuario por usuario:', error);
+      return ResponseMiddleware.error(res, 'Error al obtener roles de usuario por usuario', error, 500);
+    }
+  }
+
+  // Obtener roles de usuario por rol
+  static async getUserRolesByRole(req, res) {
+    try {
+      const { roleId } = req.params;
+      const userRoles = await UserRole.findAll({
+        where: { id_rol: roleId },
+        include: [
+          {
+            model: Usuario,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'email']
+          }
+        ],
+        order: [['fecha_asignacion', 'DESC']]
+      });
+
+      return ResponseMiddleware.success(res, 'Usuarios con rol obtenidos exitosamente', userRoles);
+    } catch (error) {
+      console.error('Error al obtener usuarios por rol:', error);
+      return ResponseMiddleware.error(res, 'Error al obtener usuarios por rol', error, 500);
     }
   }
 }
