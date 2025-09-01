@@ -6,10 +6,22 @@ module.exports = {
     await queryInterface.createTable('programaciones', {
       id_programacion: {
         type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
+        primaryKey: true
       },
-      id_empleado: {
+      fecha_inicio: {
+        type: Sequelize.DATEONLY,
+        allowNull: false
+      },
+      hora_entrada: {
+        type: Sequelize.TIME,
+        allowNull: false
+      },
+      hora_salida: {
+        type: Sequelize.TIME,
+        allowNull: false
+      },
+      id_usuario: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -19,44 +31,28 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      fecha: {
-        type: Sequelize.DATEONLY,
-        allowNull: false
-      },
-      hora_inicio: {
-        type: Sequelize.TIME,
-        allowNull: false
-      },
-      hora_fin: {
-        type: Sequelize.TIME,
-        allowNull: false
-      },
-      tipo_turno: {
-        type: Sequelize.ENUM('mañana', 'tarde', 'noche', 'completo'),
-        allowNull: false
-      },
-      estado: {
-        type: Sequelize.ENUM('programado', 'en_curso', 'completado', 'cancelado'),
-        defaultValue: 'programado'
-      },
-      observaciones: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      fecha_creacion: {
+      createdAt: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW
       },
-      fecha_actualizacion: {
+      updatedAt: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW
       }
     });
 
-    // Agregar índices para mejorar el rendimiento
-    await queryInterface.addIndex('programaciones', ['id_empleado']);
-    await queryInterface.addIndex('programaciones', ['fecha']);
-    await queryInterface.addIndex('programaciones', ['estado']);
+    // Restricción única (fecha_inicio, hora_entrada, id_usuario)
+    await queryInterface.addConstraint('programaciones', {
+      fields: ['fecha_inicio', 'hora_entrada', 'id_usuario'],
+      type: 'unique',
+      name: 'unique_programacion_usuario'
+    });
+
+    // Restricción CHECK (hora_salida > hora_entrada)
+    await queryInterface.sequelize.query(`
+      ALTER TABLE programaciones
+      ADD CONSTRAINT chk_horas CHECK (hora_salida > hora_entrada)
+    `);
   },
 
   async down (queryInterface, Sequelize) {
