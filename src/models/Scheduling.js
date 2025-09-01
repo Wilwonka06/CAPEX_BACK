@@ -1,66 +1,38 @@
-// src/models/Scheduling.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const User = require('./User');  // 👈 asegúrate de que User.js exporta un modelo real
 
-const Programacion = sequelize.define('Programacion', {
+const Scheduling = sequelize.define('Scheduling', {
   id_programacion: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  id_empleado: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  fecha: {
+  fecha_inicio: {
     type: DataTypes.DATEONLY,
     allowNull: false
   },
-  hora_inicio: {
+  hora_entrada: {
     type: DataTypes.TIME,
     allowNull: false
   },
-  hora_fin: {
+  hora_salida: {
     type: DataTypes.TIME,
-    allowNull: false,
-    validate: {
-      is: /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-      isAfterStartTime(value) {
-        if (this.hora_inicio && value <= this.hora_inicio) {
-          throw new Error('La hora de fin debe ser posterior a la hora de inicio');
-        }
-      }
-    }
-  },
-  tipo_turno: {
-    type: DataTypes.ENUM('mañana', 'tarde', 'noche', 'completo'),
     allowNull: false
   },
-  estado: {
-    type: DataTypes.ENUM('Programado', 'En curso', 'Completado', 'Cancelado'),
-    defaultValue: 'Programado'
-  },
-  observaciones: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  fecha_creacion: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  },
-  fecha_actualizacion: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+  id_usuario: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   tableName: 'programaciones',
   timestamps: false,
-  indexes: [
-    {
-      unique: true,
-      fields: ['fecha', 'hora_inicio', 'id_empleado']
-    }
-  ]
+  underscored: true
 });
 
-module.exports = Programacion;
+// 🔗 Asociación con User
+if (User && User.associations !== undefined) {
+  Scheduling.belongsTo(User, { foreignKey: 'id_usuario', as: 'usuario' });
+}
+
+module.exports = Scheduling;
