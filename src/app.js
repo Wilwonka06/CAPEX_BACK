@@ -17,7 +17,7 @@ const servicesRoutes = require('./routes/ServicesRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
 const clientRoutes = require('./routes/clients/ClientRoutes');
-const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
+const serviceDetailRoutes = require('./routes/serviceDetail/DetalleServicioRoutes');
 
 // Importar middleware de errores
 const ErrorMiddleware = require('./middlewares/ErrorMiddleware');

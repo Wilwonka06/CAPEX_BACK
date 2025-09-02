@@ -159,39 +159,51 @@ function setupAssociations() {
     as: 'empleado'
   });
 
-  // Un empleado puede tener muchos detalles de servicio
-  Employee.hasMany(ServiceDetail, {
-    foreignKey: 'empleado_id',
+  // ===== ASOCIACIONES DETALLES DE SERVICIO =====
+  
+  // Un servicio cliente puede tener muchos detalles de servicio
+  // Nota: Asumiendo que existe un modelo ServiceClient
+  // ServiceClient.hasMany(ServiceDetail, {
+  //   foreignKey: 'id_servicio_cliente',
+  //   as: 'detallesServicio'
+  // });
+
+  // ServiceDetail.belongsTo(ServiceClient, {
+  //   foreignKey: 'id_servicio_cliente',
+  //   as: 'servicioCliente'
+  // });
+
+  // Un producto puede estar en muchos detalles de servicio
+  Product.hasMany(ServiceDetail, {
+    foreignKey: 'id_producto',
     as: 'detallesServicio'
   });
 
-  ServiceDetail.belongsTo(Employee, {
-    foreignKey: 'empleado_id',
-    as: 'empleado'
+  ServiceDetail.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
   });
 
-  // ===== ASOCIACIONES DETALLES DE SERVICIO =====
-  
   // Un servicio puede estar en muchos detalles de servicio
   Service.hasMany(ServiceDetail, {
-    foreignKey: 'servicio_id',
+    foreignKey: 'id_servicio',
     as: 'detallesServicio'
   });
 
   ServiceDetail.belongsTo(Service, {
-    foreignKey: 'servicio_id',
+    foreignKey: 'id_servicio',
     as: 'servicio'
   });
 
-  // Un cliente puede tener muchos detalles de servicio
-  Client.hasMany(ServiceDetail, {
-    foreignKey: 'cliente_id',
+  // Un empleado puede tener muchos detalles de servicio
+  Employee.hasMany(ServiceDetail, {
+    foreignKey: 'id_empleado',
     as: 'detallesServicio'
   });
 
-  ServiceDetail.belongsTo(Client, {
-    foreignKey: 'cliente_id',
-    as: 'cliente'
+  ServiceDetail.belongsTo(Employee, {
+    foreignKey: 'id_empleado',
+    as: 'empleado'
   });
 
   console.log('✅ Asociaciones configuradas correctamente');

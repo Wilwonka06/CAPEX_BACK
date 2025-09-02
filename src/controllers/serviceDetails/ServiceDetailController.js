@@ -5,12 +5,7 @@ class ServiceDetailController {
   static async getAllServiceDetails(req, res) {
     try {
       const result = await ServiceDetailService.getAllServiceDetails();
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -25,12 +20,7 @@ class ServiceDetailController {
     try {
       const { id } = req.params;
       const result = await ServiceDetailService.getServiceDetailById(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -43,14 +33,8 @@ class ServiceDetailController {
   // Crear nuevo detalle de servicio
   static async createServiceDetail(req, res) {
     try {
-      const serviceDetailData = req.body;
-      const result = await ServiceDetailService.createServiceDetail(serviceDetailData);
-      
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
-      
-      res.status(201).json(result);
+      const result = await ServiceDetailService.createServiceDetail(req.body);
+      res.status(result.success ? 201 : 400).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -64,14 +48,8 @@ class ServiceDetailController {
   static async updateServiceDetail(req, res) {
     try {
       const { id } = req.params;
-      const serviceDetailData = req.body;
-      const result = await ServiceDetailService.updateServiceDetail(id, serviceDetailData);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      const result = await ServiceDetailService.updateServiceDetail(id, req.body);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -86,12 +64,7 @@ class ServiceDetailController {
     try {
       const { id } = req.params;
       const result = await ServiceDetailService.deleteServiceDetail(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -107,12 +80,7 @@ class ServiceDetailController {
       const { id } = req.params;
       const { estado } = req.body;
       const result = await ServiceDetailService.changeStatus(id, estado);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -122,17 +90,57 @@ class ServiceDetailController {
     }
   }
 
-  // Obtener detalles por servicio cliente
+  // Obtener detalles por servicio cliente (organizados)
   static async getByServiceClient(req, res) {
     try {
       const { serviceClientId } = req.params;
       const result = await ServiceDetailService.getByServiceClient(serviceClientId);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener detalles organizados por servicios y productos
+  static async getDetailsOrganized(req, res) {
+    try {
+      const { serviceClientId } = req.params;
+      const result = await ServiceDetailService.getDetailsOrganized(serviceClientId);
+      res.status(result.success ? 200 : 404).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener detalles por producto
+  static async getByProduct(req, res) {
+    try {
+      const { productId } = req.params;
+      const result = await ServiceDetailService.getByProduct(productId);
+      res.status(result.success ? 200 : 404).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener detalles por servicio
+  static async getByService(req, res) {
+    try {
+      const { serviceId } = req.params;
+      const result = await ServiceDetailService.getByService(serviceId);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -145,14 +153,9 @@ class ServiceDetailController {
   // Obtener detalles por empleado
   static async getByEmployee(req, res) {
     try {
-      const { employeeId } = req.params;
-      const result = await ServiceDetailService.getByEmployee(employeeId);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      const { empleadoId } = req.params;
+      const result = await ServiceDetailService.getByEmployee(empleadoId);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -167,12 +170,7 @@ class ServiceDetailController {
     try {
       const { status } = req.params;
       const result = await ServiceDetailService.getByStatus(status);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -182,17 +180,12 @@ class ServiceDetailController {
     }
   }
 
-  // Calcular precio total
-  static async calculateTotalPrice(req, res) {
+  // Calcular subtotal
+  static async calculateSubtotal(req, res) {
     try {
       const { id } = req.params;
-      const result = await ServiceDetailService.calculateTotalPrice(id);
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      const result = await ServiceDetailService.calculateSubtotal(id);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -206,12 +199,7 @@ class ServiceDetailController {
   static async getStatistics(req, res) {
     try {
       const result = await ServiceDetailService.getStatistics();
-      
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-      
-      res.status(200).json(result);
+      res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
       res.status(500).json({
         success: false,

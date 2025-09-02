@@ -5,137 +5,107 @@ const ServiceDetail = sequelize.define('ServiceDetail', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id_detalle'
+  },
+  serviceClientId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'id_servicio_cliente',
+    references: {
+      model: 'servicios_clientes',
+      key: 'id_servicio_cliente'
+    }
+  },
+  productId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'id_producto',
+    references: {
+      model: 'productos',
+      key: 'id_producto'
+    }
   },
   serviceId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
+    field: 'id_servicio',
     references: {
       model: 'servicios',
-      key: 'id'
+      key: 'id_servicio'
     }
   },
-  clientId: {
+  empleadoId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'clientes',
-      key: 'id'
-    }
-  },
-  employeeId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
+    field: 'id_empleado',
     references: {
       model: 'empleados',
-      key: 'id'
-    }
-  },
-  unitPrice: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    validate: {
-      min: 0
+      key: 'id_empleado'
     }
   },
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 1,
+    field: 'cantidad',
     validate: {
       min: 1
     }
   },
-  totalPrice: {
+  unitPrice: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
+    field: 'precio_unitario',
     validate: {
       min: 0
     }
   },
-  startTime: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  endTime: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  duration: {
-    type: DataTypes.INTEGER, // Duración en minutos
-    allowNull: true,
+  subtotal: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    field: 'subtotal',
     validate: {
       min: 0
     }
   },
   status: {
-    type: DataTypes.ENUM('programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'),
-    defaultValue: 'programado',
-    allowNull: false
-  },
-  scheduledDate: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  notes: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  paymentStatus: {
-    type: DataTypes.ENUM('pendiente', 'pagado', 'parcial'),
-    defaultValue: 'pendiente',
-    allowNull: false
-  },
-  paymentMethod: {
-    type: DataTypes.ENUM('efectivo', 'tarjeta', 'transferencia', 'otro'),
-    allowNull: true
-  },
-  paymentDate: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: DataTypes.ENUM('En ejecución', 'Pagada', 'Anulada'),
+    defaultValue: 'En ejecución',
+    allowNull: false,
+    field: 'estado'
   }
 }, {
-  tableName: 'detalles_servicio',
-  timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
+  tableName: 'detalle_servicio_cliente',
+  timestamps: false,
   indexes: [
     {
-      fields: ['serviceId']
+      fields: ['id_servicio_cliente']
     },
     {
-      fields: ['clientId']
+      fields: ['id_producto']
     },
     {
-      fields: ['employeeId']
+      fields: ['id_servicio']
     },
     {
-      fields: ['status']
+      fields: ['id_empleado']
     },
     {
-      fields: ['paymentStatus']
-    },
-    {
-      fields: ['scheduledDate']
+      fields: ['estado']
     }
   ],
   hooks: {
     beforeCreate: (serviceDetail) => {
-      // Calcular precio total si no se proporciona
-      if (!serviceDetail.totalPrice) {
-        serviceDetail.totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
+      // Calcular subtotal si no se proporciona
+      if (!serviceDetail.subtotal) {
+        serviceDetail.subtotal = serviceDetail.unitPrice * serviceDetail.quantity;
       }
     },
     beforeUpdate: (serviceDetail) => {
-      // Recalcular precio total si cambian precio unitario o cantidad
+      // Recalcular subtotal si cambian precio unitario o cantidad
       if (serviceDetail.changed('unitPrice') || serviceDetail.changed('quantity')) {
-        serviceDetail.totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
-      }
-      
-      // Calcular duración si se proporcionan tiempos de inicio y fin
-      if (serviceDetail.startTime && serviceDetail.endTime) {
-        const durationMs = new Date(serviceDetail.endTime) - new Date(serviceDetail.startTime);
-        serviceDetail.duration = Math.round(durationMs / (1000 * 60)); // Convertir a minutos
+        serviceDetail.subtotal = serviceDetail.unitPrice * serviceDetail.quantity;
       }
     }
   }

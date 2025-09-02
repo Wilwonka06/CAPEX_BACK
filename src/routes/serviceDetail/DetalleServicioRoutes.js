@@ -1,14 +1,17 @@
 const express = require('express');
-const router = express.Router();
 const ServiceDetailController = require('../../controllers/serviceDetails/ServiceDetailController');
 const ServiceDetailValidationMiddleware = require('../../middlewares/serviceDetails/ServiceDetailValidationMiddleware');
 const AuthMiddleware = require('../../middlewares/AuthMiddleware');
 
-// Aplicar middleware de autenticación a todas las rutas
-router.use(AuthMiddleware.authenticate);
+const router = express.Router();
 
-// Rutas para detalles de servicios
+// Aplicar middleware de autenticación a todas las rutas
+router.use(AuthMiddleware.verifyToken);
+
+// Rutas para detalles de servicio
 router.get('/', ServiceDetailController.getAllServiceDetails);
+
+router.get('/statistics/overview', ServiceDetailController.getStatistics);
 
 router.get('/:id', 
   ServiceDetailValidationMiddleware.validateGetById,
@@ -30,18 +33,34 @@ router.delete('/:id',
   ServiceDetailController.deleteServiceDetail
 );
 
-// Rutas específicas
 router.patch('/:id/status', 
   ServiceDetailValidationMiddleware.validateChangeStatus,
   ServiceDetailController.changeStatus
 );
 
+// Rutas para obtener detalles por diferentes criterios
 router.get('/service-client/:serviceClientId', 
   ServiceDetailValidationMiddleware.validateGetByServiceClient,
   ServiceDetailController.getByServiceClient
 );
 
-router.get('/employee/:employeeId', 
+// Nueva ruta para obtener detalles organizados
+router.get('/service-client/:serviceClientId/organized', 
+  ServiceDetailValidationMiddleware.validateGetByServiceClient,
+  ServiceDetailController.getDetailsOrganized
+);
+
+router.get('/product/:productId', 
+  ServiceDetailValidationMiddleware.validateGetByProduct,
+  ServiceDetailController.getByProduct
+);
+
+router.get('/service/:serviceId', 
+  ServiceDetailValidationMiddleware.validateGetByService,
+  ServiceDetailController.getByService
+);
+
+router.get('/employee/:empleadoId', 
   ServiceDetailValidationMiddleware.validateGetByEmployee,
   ServiceDetailController.getByEmployee
 );
@@ -50,13 +69,9 @@ router.get('/status/:status',
   ServiceDetailController.getByStatus
 );
 
-router.get('/:id/total-price', 
+router.get('/:id/subtotal', 
   ServiceDetailValidationMiddleware.validateGetById,
-  ServiceDetailController.calculateTotalPrice
-);
-
-router.get('/statistics/overview', 
-  ServiceDetailController.getStatistics
+  ServiceDetailController.calculateSubtotal
 );
 
 module.exports = router;

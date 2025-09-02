@@ -1,4 +1,7 @@
 const ServiceDetail = require('../../models/serviceDetails/ServiceDetail');
+const Service = require('../../models/Service');
+const Product = require('../../models/Product');
+const Employee = require('../../models/Employee');
 const { Op } = require('sequelize');
 
 class ServiceDetailService {
@@ -6,6 +9,23 @@ class ServiceDetailService {
   static async getAllServiceDetails() {
     try {
       const serviceDetails = await ServiceDetail.findAll({
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
         order: [['id', 'ASC']]
       });
 
@@ -29,7 +49,25 @@ class ServiceDetailService {
   // Obtener detalle de servicio por ID
   static async getServiceDetailById(id) {
     try {
-      const serviceDetail = await ServiceDetail.findByPk(id);
+      const serviceDetail = await ServiceDetail.findByPk(id, {
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ]
+      });
 
       if (!serviceDetail) {
         return {
@@ -48,15 +86,68 @@ class ServiceDetailService {
     }
   }
 
-  // Crear nuevo detalle de servicio
+  // Crear nuevo detalle de servicio con datos anidados
   static async createServiceDetail(serviceDetailData) {
     try {
+      // Validación: Debe haber al menos un servicio o producto
+      if (!serviceDetailData.productId && !serviceDetailData.serviceId) {
+        return {
+          success: false,
+          message: 'Debe especificar al menos un producto o servicio'
+        };
+      }
+
+      // Validación: Debe haber un cliente asociado (serviceClientId)
+      if (!serviceDetailData.serviceClientId) {
+        return {
+          success: false,
+          message: 'Debe especificar un cliente asociado al servicio'
+        };
+      }
+
+      // Validación: empleadoId es obligatorio solo si hay servicio
+      if (serviceDetailData.serviceId && !serviceDetailData.empleadoId) {
+        return {
+          success: false,
+          message: 'El empleado es obligatorio cuando se especifica un servicio'
+        };
+      }
+
+      // Si solo hay producto (sin servicio), el empleadoId puede ser null
+      if (!serviceDetailData.serviceId) {
+        serviceDetailData.empleadoId = null;
+      }
+
+      // Estado por defecto
+      serviceDetailData.status = serviceDetailData.status || 'En ejecución';
+
       const serviceDetail = await ServiceDetail.create(serviceDetailData);
+
+      // Obtener el detalle creado con datos anidados
+      const createdDetail = await ServiceDetail.findByPk(serviceDetail.id, {
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ]
+      });
 
       return {
         success: true,
-        data: serviceDetail,
-        message: 'Detalle de servicio creado exitosamente'
+        data: createdDetail,
+        message: 'Orden de servicio creada exitosamente'
       };
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
@@ -85,11 +176,54 @@ class ServiceDetailService {
         };
       }
 
+      // Validación: Si se están actualizando producto o servicio, debe haber al menos uno
+      if ((serviceDetailData.hasOwnProperty('productId') || serviceDetailData.hasOwnProperty('serviceId')) &&
+          !serviceDetailData.productId && !serviceDetailData.serviceId) {
+        return {
+          success: false,
+          message: 'Debe especificar al menos un producto o servicio'
+        };
+      }
+
+      // Validación: empleadoId es obligatorio solo si hay servicio
+      if (serviceDetailData.hasOwnProperty('serviceId') && serviceDetailData.serviceId && !serviceDetailData.empleadoId) {
+        return {
+          success: false,
+          message: 'El empleado es obligatorio cuando se especifica un servicio'
+        };
+      }
+
+      // Si solo hay producto (sin servicio), el empleadoId puede ser null
+      if (serviceDetailData.hasOwnProperty('serviceId') && !serviceDetailData.serviceId) {
+        serviceDetailData.empleadoId = null;
+      }
+
       await serviceDetail.update(serviceDetailData);
+
+      // Obtener el detalle actualizado con datos anidados
+      const updatedDetail = await ServiceDetail.findByPk(id, {
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ]
+      });
 
       return {
         success: true,
-        data: serviceDetail,
+        data: updatedDetail,
         message: 'Detalle de servicio actualizado exitosamente'
       };
     } catch (error) {
@@ -142,44 +276,147 @@ class ServiceDetailService {
         };
       }
 
-      const validStatuses = ['programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'];
-      if (!validStatuses.includes(estado)) {
+      // Validar que el estado sea válido
+      const estadosValidos = ['En ejecución', 'Pagada', 'Anulada'];
+      if (!estadosValidos.includes(estado)) {
         return {
           success: false,
-          message: `Estado no válido. Debe ser uno de: ${validStatuses.join(', ')}`
+          message: 'Estado no válido. Estados permitidos: En ejecución, Pagada, Anulada'
         };
       }
 
       await serviceDetail.update({ status: estado });
 
+      // Obtener el detalle actualizado con datos anidados
+      const updatedDetail = await ServiceDetail.findByPk(id, {
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ]
+      });
+
       return {
         success: true,
-        data: serviceDetail,
+        data: updatedDetail,
         message: 'Estado del detalle de servicio actualizado exitosamente'
       };
     } catch (error) {
-      throw new Error(`Error al cambiar estado: ${error.message}`);
+      throw new Error(`Error al cambiar estado del detalle de servicio: ${error.message}`);
     }
   }
 
-  // Obtener detalles por servicio cliente
+  // Obtener detalles por servicio cliente (organizados por servicios y productos)
   static async getByServiceClient(serviceClientId) {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { serviceId: serviceClientId },
-        order: [['startTime', 'ASC']]
+        where: { serviceClientId },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
         return {
           success: false,
-          message: 'No se encontraron detalles para este servicio cliente'
+          message: 'No se encontraron detalles para el servicio cliente especificado'
         };
       }
 
+      // Organizar datos por servicios y productos
+      const servicios = [];
+      const productos = [];
+      let totalServicios = 0;
+      let totalProductos = 0;
+
+      serviceDetails.forEach(detail => {
+        if (detail.serviceId && detail.servicio) {
+          // Es un servicio
+          servicios.push({
+            id: detail.id,
+            serviceId: detail.serviceId,
+            nombre: detail.servicio.nombre,
+            descripcion: detail.servicio.descripcion,
+            precioOriginal: detail.servicio.precio,
+            empleadoId: detail.empleadoId,
+            empleado: detail.empleado ? {
+              id: detail.empleado.id,
+              nombre: detail.empleado.nombre,
+              especialidad: detail.empleado.especialidad,
+              telefono: detail.empleado.telefono,
+              email: detail.empleado.email
+            } : null,
+            cantidad: detail.quantity,
+            precioUnitario: detail.unitPrice,
+            subtotal: detail.subtotal,
+            estado: detail.status,
+            fechaCreacion: detail.createdAt,
+            fechaActualizacion: detail.updatedAt
+          });
+          totalServicios += parseFloat(detail.subtotal);
+        } else if (detail.productId && detail.producto) {
+          // Es un producto
+          productos.push({
+            id: detail.id,
+            productId: detail.productId,
+            nombre: detail.producto.nombre,
+            descripcion: detail.producto.descripcion,
+            precioOriginal: detail.producto.precio,
+            cantidad: detail.quantity,
+            precioUnitario: detail.unitPrice,
+            subtotal: detail.subtotal,
+            estado: detail.status,
+            fechaCreacion: detail.createdAt,
+            fechaActualizacion: detail.updatedAt
+          });
+          totalProductos += parseFloat(detail.subtotal);
+        }
+      });
+
+      const respuesta = {
+        serviceClientId: serviceClientId,
+        resumen: {
+          totalDetalles: serviceDetails.length,
+          totalServicios: servicios.length,
+          totalProductos: productos.length,
+          subtotalServicios: totalServicios.toFixed(2),
+          subtotalProductos: totalProductos.toFixed(2),
+          totalGeneral: (totalServicios + totalProductos).toFixed(2)
+        },
+        servicios: servicios,
+        productos: productos
+      };
+
       return {
         success: true,
-        data: serviceDetails,
+        data: respuesta,
         message: 'Detalles de servicio cliente obtenidos exitosamente'
       };
     } catch (error) {
@@ -187,25 +424,232 @@ class ServiceDetailService {
     }
   }
 
-  // Obtener detalles por empleado
-  static async getByEmployee(employeeId) {
+  // Obtener detalles organizados por servicios y productos (método general)
+  static async getDetailsOrganized(serviceClientId) {
     try {
       const serviceDetails = await ServiceDetail.findAll({
-        where: { employeeId: employeeId },
-        order: [['startTime', 'ASC']]
+        where: { serviceClientId },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
         return {
           success: false,
-          message: 'No se encontraron detalles para este empleado'
+          message: 'No se encontraron detalles para el servicio cliente especificado'
+        };
+      }
+
+      // Organizar datos por servicios y productos
+      const servicios = [];
+      const productos = [];
+      let totalServicios = 0;
+      let totalProductos = 0;
+
+      serviceDetails.forEach(detail => {
+        if (detail.serviceId && detail.servicio) {
+          // Es un servicio
+          servicios.push({
+            id: detail.id,
+            serviceId: detail.serviceId,
+            nombre: detail.servicio.nombre,
+            descripcion: detail.servicio.descripcion,
+            precioOriginal: detail.servicio.precio,
+            empleadoId: detail.empleadoId,
+            empleado: detail.empleado ? {
+              id: detail.empleado.id,
+              nombre: detail.empleado.nombre,
+              especialidad: detail.empleado.especialidad,
+              telefono: detail.empleado.telefono,
+              email: detail.empleado.email
+            } : null,
+            cantidad: detail.quantity,
+            precioUnitario: detail.unitPrice,
+            subtotal: detail.subtotal,
+            estado: detail.status,
+            fechaCreacion: detail.createdAt,
+            fechaActualizacion: detail.updatedAt
+          });
+          totalServicios += parseFloat(detail.subtotal);
+        } else if (detail.productId && detail.producto) {
+          // Es un producto
+          productos.push({
+            id: detail.id,
+            productId: detail.productId,
+            nombre: detail.producto.nombre,
+            descripcion: detail.producto.descripcion,
+            precioOriginal: detail.producto.precio,
+            cantidad: detail.quantity,
+            precioUnitario: detail.unitPrice,
+            subtotal: detail.subtotal,
+            estado: detail.status,
+            fechaCreacion: detail.createdAt,
+            fechaActualizacion: detail.updatedAt
+          });
+          totalProductos += parseFloat(detail.subtotal);
+        }
+      });
+
+      const respuesta = {
+        serviceClientId: serviceClientId,
+        resumen: {
+          totalDetalles: serviceDetails.length,
+          totalServicios: servicios.length,
+          totalProductos: productos.length,
+          subtotalServicios: totalServicios.toFixed(2),
+          subtotalProductos: totalProductos.toFixed(2),
+          totalGeneral: (totalServicios + totalProductos).toFixed(2)
+        },
+        servicios: servicios,
+        productos: productos
+      };
+
+      return {
+        success: true,
+        data: respuesta,
+        message: 'Detalles organizados obtenidos exitosamente'
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener detalles organizados: ${error.message}`);
+    }
+  }
+
+  // Obtener detalles por producto
+  static async getByProduct(productId) {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: { productId },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
+      });
+
+      if (!serviceDetails || serviceDetails.length === 0) {
+        return {
+          success: false,
+          message: 'No se encontraron detalles para el producto especificado'
         };
       }
 
       return {
         success: true,
         data: serviceDetails,
-        message: 'Detalles de empleado obtenidos exitosamente'
+        message: 'Detalles por producto obtenidos exitosamente'
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener detalles por producto: ${error.message}`);
+    }
+  }
+
+  // Obtener detalles por servicio
+  static async getByService(serviceId) {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: { serviceId },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
+      });
+
+      if (!serviceDetails || serviceDetails.length === 0) {
+        return {
+          success: false,
+          message: 'No se encontraron detalles para el servicio especificado'
+        };
+      }
+
+      return {
+        success: true,
+        data: serviceDetails,
+        message: 'Detalles por servicio obtenidos exitosamente'
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener detalles por servicio: ${error.message}`);
+    }
+  }
+
+  // Obtener detalles por empleado
+  static async getByEmployee(empleadoId) {
+    try {
+      const serviceDetails = await ServiceDetail.findAll({
+        where: { empleadoId },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
+      });
+
+      if (!serviceDetails || serviceDetails.length === 0) {
+        return {
+          success: false,
+          message: 'No se encontraron detalles para el empleado especificado'
+        };
+      }
+
+      return {
+        success: true,
+        data: serviceDetails,
+        message: 'Detalles por empleado obtenidos exitosamente'
       };
     } catch (error) {
       throw new Error(`Error al obtener detalles por empleado: ${error.message}`);
@@ -215,40 +659,67 @@ class ServiceDetailService {
   // Obtener detalles por estado
   static async getByStatus(status) {
     try {
-      const validStatuses = ['programado', 'confirmado', 'en_progreso', 'completado', 'cancelado', 'pagado'];
-      if (!validStatuses.includes(status)) {
-        return {
-          success: false,
-          message: `Estado no válido. Debe ser uno de: ${validStatuses.join(', ')}`
-        };
-      }
-
       const serviceDetails = await ServiceDetail.findAll({
-        where: { status: status },
-        order: [['startTime', 'ASC']]
+        where: { status },
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ],
+        order: [['id', 'ASC']]
       });
 
       if (!serviceDetails || serviceDetails.length === 0) {
         return {
           success: false,
-          message: `No se encontraron detalles con estado "${status}"`
+          message: 'No se encontraron detalles con el estado especificado'
         };
       }
 
       return {
         success: true,
         data: serviceDetails,
-        message: `Detalles con estado "${status}" obtenidos exitosamente`
+        message: 'Detalles por estado obtenidos exitosamente'
       };
     } catch (error) {
       throw new Error(`Error al obtener detalles por estado: ${error.message}`);
     }
   }
 
-  // Calcular precio total
-  static async calculateTotalPrice(id) {
+  // Calcular subtotal
+  static async calculateSubtotal(id) {
     try {
-      const serviceDetail = await ServiceDetail.findByPk(id);
+      const serviceDetail = await ServiceDetail.findByPk(id, {
+        include: [
+          {
+            model: Service,
+            as: 'servicio',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Product,
+            as: 'producto',
+            attributes: ['id', 'nombre', 'precio', 'descripcion']
+          },
+          {
+            model: Employee,
+            as: 'empleado',
+            attributes: ['id', 'nombre', 'especialidad', 'telefono', 'email']
+          }
+        ]
+      });
 
       if (!serviceDetail) {
         return {
@@ -257,7 +728,7 @@ class ServiceDetailService {
         };
       }
 
-      const totalPrice = serviceDetail.unitPrice * serviceDetail.quantity;
+      const subtotal = serviceDetail.unitPrice * serviceDetail.quantity;
 
       return {
         success: true,
@@ -265,12 +736,15 @@ class ServiceDetailService {
           id: serviceDetail.id,
           unitPrice: serviceDetail.unitPrice,
           quantity: serviceDetail.quantity,
-          totalPrice: totalPrice
+          subtotal: subtotal,
+          servicio: serviceDetail.servicio,
+          producto: serviceDetail.producto,
+          empleado: serviceDetail.empleado
         },
-        message: 'Precio total calculado exitosamente'
+        message: 'Subtotal calculado exitosamente'
       };
     } catch (error) {
-      throw new Error(`Error al calcular precio total: ${error.message}`);
+      throw new Error(`Error al calcular subtotal: ${error.message}`);
     }
   }
 
@@ -278,26 +752,22 @@ class ServiceDetailService {
   static async getStatistics() {
     try {
       const totalDetails = await ServiceDetail.count();
-      const programados = await ServiceDetail.count({ where: { status: 'programado' } });
-      const enProgreso = await ServiceDetail.count({ where: { status: 'en_progreso' } });
-      const completados = await ServiceDetail.count({ where: { status: 'completado' } });
-      const pagados = await ServiceDetail.count({ where: { status: 'pagado' } });
+      const enEjecucion = await ServiceDetail.count({ where: { status: 'En ejecución' } });
+      const pagadas = await ServiceDetail.count({ where: { status: 'Pagada' } });
+      const anuladas = await ServiceDetail.count({ where: { status: 'Anulada' } });
 
-      // Calcular precio total de todos los detalles
+      // Calcular total de ventas
       const allDetails = await ServiceDetail.findAll();
-      const precioTotal = allDetails.reduce((total, detail) => {
-        return total + (detail.totalPrice || 0);
-      }, 0);
+      const totalVentas = allDetails.reduce((sum, detail) => sum + parseFloat(detail.subtotal), 0);
 
       return {
         success: true,
         data: {
-          total_detalles: totalDetails,
-          programados: programados,
-          en_progreso: enProgreso,
-          completados: completados,
-          pagados: pagados,
-          precio_total_general: precioTotal
+          totalDetails,
+          enEjecucion,
+          pagadas,
+          anuladas,
+          totalVentas: totalVentas.toFixed(2)
         },
         message: 'Estadísticas obtenidas exitosamente'
       };
@@ -308,3 +778,4 @@ class ServiceDetailService {
 }
 
 module.exports = ServiceDetailService;
+
