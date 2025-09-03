@@ -6,12 +6,14 @@ const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
+const Pedido = require('../models/salesProducts/Order');
+const DetallePedido = require('../models/salesProducts/OrderDetail');
 
 /**
  * Configurar todas las asociaciones entre modelos
  */
 function setupAssociations() {
-  console.log('🔗 Configurando asociaciones entre modelos...');
+  console.log('Configurando asociaciones entre modelos...');
 
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
   
@@ -127,7 +129,32 @@ function setupAssociations() {
     as: 'categoria'
   });
 
-  console.log('✅ Asociaciones configuradas correctamente');
+  // ===== ASOCIACIONES PEDIDOS =====
+
+  // Un pedido puede tener muchos detalles
+  Pedido.hasMany(DetallePedido, {
+    foreignKey: 'id_pedido',
+    as: 'detalles'
+  });
+
+  // Un detalle pertenece a un pedido
+  DetallePedido.belongsTo(Pedido, {
+    foreignKey: 'id_pedido',
+    as: 'pedido'
+  });
+
+  // Un detalle pertenece a un producto
+  DetallePedido.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+
+  // Un producto puede estar en muchos detalles de pedido
+  Product.hasMany(DetallePedido, {
+    foreignKey: 'id_producto',
+    as: 'detallesPedidos'
+  });
+
 }
 
 module.exports = { setupAssociations };

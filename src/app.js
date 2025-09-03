@@ -14,6 +14,7 @@ const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
 const clientRoutes = require('./routes/clients/ClienteRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
+const pedidoRoutes = require('./routes/salesProducts/OrderRoutes');
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/errorMiddleware');
@@ -65,6 +66,8 @@ app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/clientes', clientRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
+app.use('/api/ventas/pedidos', pedidoRoutes);
+
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
