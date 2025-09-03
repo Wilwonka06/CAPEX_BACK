@@ -8,6 +8,9 @@ router.post('/', validateCreate, SchedulingController.create);
 
 // GETs normales
 router.get('/', SchedulingController.getAll);
+// Buscar programaciones por usuario
+router.get('/usuario/:id_usuario', SchedulingController.getByUser);
+
 router.get('/:id', SchedulingController.getById);
 
 // PUT solo valida consistencia de campos enviados
