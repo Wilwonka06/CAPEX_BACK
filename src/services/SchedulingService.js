@@ -1,4 +1,6 @@
+// src/services/SchedulingService.js
 const Scheduling = require('../models/Scheduling');
+const { Usuario } = require('../models/User');
 
 class SchedulingService {
   async createScheduling(data) {
@@ -6,11 +8,40 @@ class SchedulingService {
   }
 
   async getAll() {
-    return await Scheduling.findAll();
+    return await Scheduling.findAll({
+      include: [
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['id_usuario', 'nombre', 'correo']
+        }
+      ]
+    });
   }
 
   async getById(id) {
-    return await Scheduling.findByPk(id);
+    return await Scheduling.findByPk(id, {
+      include: [
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['id_usuario', 'nombre', 'correo']
+        }
+      ]
+    });
+  }
+
+  async getByUser(id_usuario) {
+    return await Scheduling.findAll({
+      where: { id_usuario },
+      include: [
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['id_usuario', 'nombre', 'correo']
+        }
+      ]
+    });
   }
 
   async updateScheduling(id, data) {
