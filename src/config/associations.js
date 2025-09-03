@@ -8,6 +8,8 @@ const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
 const Pedido = require('../models/salesProducts/Order');
 const DetallePedido = require('../models/salesProducts/OrderDetail');
+const VentaProducto = require('../models/salesProducts/SalesProduct');
+const DetalleVentaProducto = require('../models/salesProducts/SalesProductDetail');
 
 /**
  * Configurar todas las asociaciones entre modelos
@@ -153,6 +155,41 @@ function setupAssociations() {
   Product.hasMany(DetallePedido, {
     foreignKey: 'id_producto',
     as: 'detallesPedidos'
+  });
+
+  // ===== ASOCIACIONES VENTAS DE PRODUCTOS =====
+  
+  // Relación entre VentaProducto y Cliente
+  VentaProducto.belongsTo(Client, {
+    foreignKey: 'id_cliente',
+    as: 'cliente'
+  });
+
+  Client.hasMany(VentaProducto, {
+    foreignKey: 'id_cliente',
+    as: 'ventasProductos'
+  });
+
+  // Relación entre VentaProducto y DetalleVentaProducto
+  VentaProducto.hasMany(DetalleVentaProducto, {
+    foreignKey: 'id_venta_producto',
+    as: 'detalles'
+  });
+
+  DetalleVentaProducto.belongsTo(VentaProducto, {
+    foreignKey: 'id_venta_producto',
+    as: 'venta'
+  });
+
+  // Relación entre DetalleVentaProducto y Product
+  DetalleVentaProducto.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+
+  Product.hasMany(DetalleVentaProducto, {
+    foreignKey: 'id_producto',
+    as: 'detallesVentas'
   });
 
 }
