@@ -53,3 +53,50 @@ exports.delete = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+exports.search = async (req, res) => {
+  try {
+    const servicios = await ServicesService.searchServices(req.query);
+
+    res.status(200).json({
+      success: true,
+      data: servicios, // puede ser [] si no hay resultados
+      message: servicios.length > 0 
+        ? "Servicios encontrados correctamente" 
+        : "No se encontraron servicios con esos criterios"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error al buscar servicios",
+      error: error.message
+    });
+  }
+};
+
+
+exports.changeStatus = async (req, res) =>{
+    try {
+      const { id } = req.params;
+      const { estado } = req.body;
+
+      if (!estado) {
+        return res.status(400).json({
+          success: false,
+          error: 'Nuevo estado requerido'
+        });
+      }
+
+      const category = await ServicesService.changeServiceStatus(id, estado);
+      res.json({
+        success: true,
+        data: category,
+        message: `Estado del servicio cambiado a ${estado}`
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
