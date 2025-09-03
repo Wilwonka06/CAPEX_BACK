@@ -2,13 +2,13 @@ const SchedulingService = require('../services/SchedulingService');
 
 class SchedulingController {
   async create(req, res) {
-    try {
-      const scheduling = await SchedulingService.createScheduling(req.body);
-      res.status(201).json(scheduling);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
+  try {
+    const scheduling = await SchedulingService.createScheduling(req.body);
+    res.status(201).json(scheduling);
+  } catch (error) {
+    res.status(400).json({ error: error.message }); // 👈 captura y devuelve mensaje legible
   }
+}
 
   async getAll(req, res) {
     try {

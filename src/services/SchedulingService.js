@@ -2,6 +2,18 @@ const Scheduling = require('../models/Scheduling');
 
 class SchedulingService {
   async createScheduling(data) {
+    // 🔎 Validar usuario antes de crear la programación
+    const user = await Usuario.findByPk(data.id_usuario);
+
+    if (!user) {
+      throw new Error("El usuario no existe.");
+    }
+
+    if (user.rol !== 'empleado') {
+      throw new Error("El usuario no es un empleado.");
+    }
+
+    // ✅ Si pasa las validaciones, recién se crea
     return await Scheduling.create(data);
   }
 
