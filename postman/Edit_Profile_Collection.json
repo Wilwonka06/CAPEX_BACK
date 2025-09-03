@@ -1,0 +1,293 @@
+{
+  "info": {
+    "name": "CAPEX - Editar Perfil",
+    "description": "Colección para probar la funcionalidad de editar perfil de usuario",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Editar Perfil - Solo Nombre",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"María González\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Actualizar solo el nombre del usuario"
+      }
+    },
+    {
+      "name": "Editar Perfil - Múltiples Campos",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Carlos Rodríguez\",\n  \"telefono\": \"+573001234568\",\n  \"correo\": \"carlos.rodriguez@ejemplo.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Actualizar múltiples campos del perfil"
+      }
+    },
+    {
+      "name": "Editar Perfil - Solo Contraseña",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contrasena\": \"NuevaContraseña123!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Actualizar solo la contraseña del usuario"
+      }
+    },
+    {
+      "name": "Editar Perfil - Foto y Dirección",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"foto\": \"https://ejemplo.com/nueva-foto.jpg\",\n  \"direccion\": \"Calle 456 #78-90, Medellín, Colombia\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Actualizar foto y dirección del usuario"
+      }
+    },
+    {
+      "name": "Editar Perfil - Todo el Perfil",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Ana Martínez\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"87654321\",\n  \"telefono\": \"+573001234569\",\n  \"correo\": \"ana.martinez@ejemplo.com\",\n  \"foto\": \"https://ejemplo.com/foto-perfil.jpg\",\n  \"direccion\": \"Carrera 789 #12-34, Cali, Valle del Cauca\",\n  \"contrasena\": \"NuevaContraseña456!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Actualizar todo el perfil del usuario"
+      }
+    },
+    {
+      "name": "Validación - Sin Campos",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar que se requiere al menos un campo"
+      }
+    },
+    {
+      "name": "Validación - Nombre Inválido",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar que el nombre no puede contener números"
+      }
+    },
+    {
+      "name": "Validación - Teléfono Inválido",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"telefono\": \"3001234567\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar formato de teléfono internacional"
+      }
+    },
+    {
+      "name": "Validación - Contraseña Débil",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contrasena\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar complejidad de contraseña"
+      }
+    },
+    {
+      "name": "Validación - Foto Inválida",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"foto\": \"foto-invalida.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar que la foto debe ser una URL válida"
+      }
+    },
+    {
+      "name": "Validación - Dirección Muy Larga",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"direccion\": \"A\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1", "profile"]
+        },
+        "description": "Validar que la dirección no puede exceder 1000 caracteres"
+      }
+    },
+    {
+      "name": "Validación - Usuario Inexistente",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Usuario Inexistente\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/99999/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "99999", "profile"]
+        },
+        "description": "Validar que el usuario existe"
+      }
+    },
+    {
+      "name": "Obtener Usuario por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "1"]
+        },
+        "description": "Obtener información del usuario para verificar cambios"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

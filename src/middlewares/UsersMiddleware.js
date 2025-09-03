@@ -21,7 +21,7 @@ class UsersMiddleware {
         return ResponseMiddleware.sendError(res, 400, 'Content-Type debe ser application/json');
       }
 
-      const { nombre, tipo_documento, documento, telefono, correo, contrasena } = req.body;
+      const { nombre, tipo_documento, documento, telefono, correo, contrasena, foto, direccion } = req.body;
 
       // Validar campos requeridos
       const camposRequeridos = ['nombre', 'tipo_documento', 'documento', 'correo', 'contrasena'];
@@ -72,6 +72,21 @@ class UsersMiddleware {
         return ResponseMiddleware.sendError(res, 400, 'La contraseña debe contener al menos una mayúscula, una minúscula y un número');
       }
 
+      // Validar foto si está presente
+      if (foto) {
+        const urlRegex = /^https?:\/\/.+/;
+        if (!urlRegex.test(foto)) {
+          return ResponseMiddleware.sendError(res, 400, 'La foto debe ser una URL válida que comience con http:// o https://');
+        }
+      }
+
+      // Validar dirección si está presente
+      if (direccion) {
+        if (direccion.length > 1000) {
+          return ResponseMiddleware.sendError(res, 400, 'La dirección no puede exceder los 1000 caracteres');
+        }
+      }
+
       next();
     } catch (error) {
       console.error('Error en validación de creación de usuario:', error);
@@ -84,7 +99,7 @@ class UsersMiddleware {
    */
   static validateUpdateUser(req, res, next) {
     try {
-      const { nombre, tipo_documento, documento, telefono, correo } = req.body;
+      const { nombre, tipo_documento, documento, telefono, correo, foto, direccion } = req.body;
       const userId = parseInt(req.params.id);
 
       // Validar ID
@@ -93,7 +108,7 @@ class UsersMiddleware {
       }
 
       // Validar que al menos un campo esté presente
-      if (!nombre && !tipo_documento && !documento && !telefono && !correo) {
+      if (!nombre && !tipo_documento && !documento && !telefono && !correo && !foto && !direccion) {
         return ResponseMiddleware.sendError(res, 400, 'Al menos un campo debe ser proporcionado para actualizar');
       }
 
@@ -128,6 +143,21 @@ class UsersMiddleware {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(correo)) {
           return ResponseMiddleware.sendError(res, 400, 'Formato de correo electrónico no válido');
+        }
+      }
+
+      // Validar foto si está presente
+      if (foto) {
+        const urlRegex = /^https?:\/\/.+/;
+        if (!urlRegex.test(foto)) {
+          return ResponseMiddleware.sendError(res, 400, 'La foto debe ser una URL válida que comience con http:// o https://');
+        }
+      }
+
+      // Validar dirección si está presente
+      if (direccion) {
+        if (direccion.length > 1000) {
+          return ResponseMiddleware.sendError(res, 400, 'La dirección no puede exceder los 1000 caracteres');
         }
       }
 
@@ -226,6 +256,139 @@ class UsersMiddleware {
     } catch (error) {
       console.error('Error en validación de parámetros de búsqueda:', error);
       return ResponseMiddleware.sendError(res, 500, `Error en la validación de parámetros: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validar cambio de estado de usuario
+   */
+  static validateCambiarEstado(req, res, next) {
+    try {
+      const { nuevoEstado } = req.body;
+      const userId = parseInt(req.params.id);
+
+      // Validar ID
+      if (isNaN(userId) || userId <= 0) {
+        return ResponseMiddleware.sendError(res, 400, 'ID de usuario inválido');
+      }
+
+      // Validar campos requeridos
+      if (!nuevoEstado) {
+        return ResponseMiddleware.sendError(res, 400, 'El nuevo estado es requerido');
+      }
+
+      // Validar que el estado sea válido
+      const estadosValidos = ['Activo', 'Inactivo', 'Suspendido'];
+      if (!estadosValidos.includes(nuevoEstado)) {
+        return ResponseMiddleware.sendError(res, 400, 'Estado no válido. Estados permitidos: Activo, Inactivo, Suspendido');
+      }
+
+      next();
+    } catch (error) {
+      console.error('Error en validación de cambio de estado:', error);
+      return ResponseMiddleware.sendError(res, 500, `Error en la validación de datos: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validar edición de perfil
+   */
+  static validateEditProfile(req, res, next) {
+    try {
+      const { nombre, tipo_documento, documento, telefono, correo, contrasena, foto, direccion } = req.body;
+      const userId = parseInt(req.params.id);
+
+      // Validar ID
+      if (isNaN(userId) || userId <= 0) {
+        return ResponseMiddleware.sendError(res, 400, 'ID de usuario inválido');
+      }
+
+      // Validar que al menos un campo esté presente
+      if (!nombre && !tipo_documento && !documento && !telefono && !correo && !contrasena && !foto && !direccion) {
+        return ResponseMiddleware.sendError(res, 400, 'Al menos un campo debe ser proporcionado para actualizar el perfil');
+      }
+
+      // Validar nombre si está presente
+      if (nombre) {
+        if (nombre.length < 2 || nombre.length > 100) {
+          return ResponseMiddleware.sendError(res, 400, 'El nombre debe tener entre 2 y 100 caracteres');
+        }
+        // Validar que solo contenga letras, espacios y caracteres especiales del español
+        const nombreRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/;
+        if (!nombreRegex.test(nombre)) {
+          return ResponseMiddleware.sendError(res, 400, 'El nombre solo puede contener letras y espacios');
+        }
+      }
+
+      // Validar tipo de documento si está presente
+      if (tipo_documento) {
+        const tiposDocumentoValidos = ['Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'];
+        if (!tiposDocumentoValidos.includes(tipo_documento)) {
+          return ResponseMiddleware.sendError(res, 400, 'Tipo de documento no válido. Valores permitidos: Pasaporte, Cedula de ciudadania, Cedula de extranjeria');
+        }
+      }
+
+      // Validar documento si está presente
+      if (documento) {
+        if (documento.length < 5 || documento.length > 20) {
+          return ResponseMiddleware.sendError(res, 400, 'El documento debe tener entre 5 y 20 caracteres');
+        }
+        // Validar que solo contenga letras y números
+        const documentoRegex = /^[A-Za-z0-9]+$/;
+        if (!documentoRegex.test(documento)) {
+          return ResponseMiddleware.sendError(res, 400, 'El documento solo puede contener letras y números');
+        }
+      }
+
+      // Validar teléfono si está presente
+      if (telefono) {
+        const phoneRegex = /^\+[0-9]{7,15}$/;
+        if (!phoneRegex.test(telefono)) {
+          return ResponseMiddleware.sendError(res, 400, 'Formato de teléfono no válido. Debe comenzar con + y tener entre 7 y 15 dígitos');
+        }
+      }
+
+      // Validar correo si está presente
+      if (correo) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+          return ResponseMiddleware.sendError(res, 400, 'Formato de correo electrónico no válido');
+        }
+      }
+
+      // Validar foto si está presente
+      if (foto) {
+        const urlRegex = /^https?:\/\/.+/;
+        if (!urlRegex.test(foto)) {
+          return ResponseMiddleware.sendError(res, 400, 'La foto debe ser una URL válida que comience con http:// o https://');
+        }
+      }
+
+      // Validar dirección si está presente
+      if (direccion) {
+        if (direccion.length > 1000) {
+          return ResponseMiddleware.sendError(res, 400, 'La dirección no puede exceder los 1000 caracteres');
+        }
+      }
+
+      // Validar contraseña si está presente (opcional)
+      if (contrasena) {
+        if (contrasena.length < 8 || contrasena.length > 100) {
+          return ResponseMiddleware.sendError(res, 400, 'La contraseña debe tener entre 8 y 100 caracteres');
+        }
+        
+        // Validar que la contraseña contenga al menos una mayúscula, una minúscula, un número y un carácter especial
+        // Incluye caracteres especiales del español (á, é, í, ó, ú, ñ, Á, É, Í, Ó, Ú, Ñ)
+        const passwordRegex = /^(?=.*[a-záéíóúñ])(?=.*[A-ZÁÉÍÓÚÑ])(?=.*\d)(?=.*[@$!%?&])[A-Za-zÁÉÍÓÚáéíóúÑñ\d@$!%?&]{8,}$/;
+        if (!passwordRegex.test(contrasena)) {
+          return ResponseMiddleware.sendError(res, 400, 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%?&)');
+        }
+      }
+
+      next();
+    } catch (error) {
+      console.error('Error en validación de edición de perfil:', error);
+      return ResponseMiddleware.sendError(res, 500, `Error en la validación de datos: ${error.message}`);
     }
   }
 }
