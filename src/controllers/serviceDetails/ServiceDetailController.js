@@ -120,6 +120,55 @@ class ServiceDetailController {
     }
   }
 
+  // Anular servicio o producto específico del detalle (NO ELIMINAR)
+  static async removeServiceOrProduct(req, res) {
+    try {
+      const { id } = req.params;
+      const { serviceId, productId } = req.body;
+      
+      const result = await ServiceDetailService.removeServiceOrProduct(id, serviceId, productId);
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Agregar nuevo servicio o producto al detalle existente
+  static async addServiceOrProduct(req, res) {
+    try {
+      const { serviceClientId } = req.params;
+      const serviceData = req.body;
+      
+      const result = await ServiceDetailService.addServiceOrProduct(serviceClientId, serviceData);
+      res.status(result.success ? 201 : 400).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener detalles del servicio cliente con conteo
+  static async getServiceClientDetailsWithCount(req, res) {
+    try {
+      const { serviceClientId } = req.params;
+      const result = await ServiceDetailService.getServiceClientDetailsWithCount(serviceClientId);
+      res.status(result.success ? 200 : 404).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
   // Obtener detalles por producto
   static async getByProduct(req, res) {
     try {

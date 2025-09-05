@@ -12,6 +12,11 @@
  * - empleadoId es obligatorio SOLO cuando hay servicio
  * - Respuestas incluyen datos anidados de servicios, productos y empleados
  * - Respuestas organizadas con listas separadas de servicios y productos
+ * 
+ * REGLAS DE NEGOCIO POR ESTADO:
+ * - "En ejecución": ✅ Leer, ✅ Editar, ✅ Eliminar, ✅ Anular
+ * - "Pagada": ✅ Leer, ❌ Editar, ❌ Eliminar, ✅ Anular
+ * - "Anulada": ✅ Leer, ❌ Editar, ❌ Eliminar, ❌ Anular
  */
 
 // ===== DATOS DE SERVICIOS CLIENTES =====
@@ -256,6 +261,227 @@ const servicios = [
   }
 ];
 
+// ===== EJEMPLOS DE REGLAS DE NEGOCIO POR ESTADO =====
+
+const ejemplosReglasNegocio = {
+  
+  // ===== ESTADO: "En ejecución" =====
+  estadoEnEjecucion: {
+    descripcion: "Estado inicial y más flexible - Todas las operaciones permitidas",
+    operacionesPermitidas: ["Leer", "Editar", "Eliminar", "Anular"],
+    ejemplos: [
+      {
+        titulo: "Crear nuevo detalle",
+        request: {
+          method: "POST",
+          url: "http://localhost:3000/api/detalles-servicio",
+          body: {
+            "serviceClientId": 1,
+            "productId": 1,
+            "quantity": 2,
+            "unitPrice": 45.00
+          }
+        },
+        resultado: "✅ Creado exitosamente con estado 'En ejecución'"
+      },
+      {
+        titulo: "Editar detalle existente",
+        request: {
+          method: "PUT",
+          url: "http://localhost:3000/api/detalles-servicio/1",
+          body: {
+            "quantity": 3,
+            "unitPrice": 50.00
+          }
+        },
+        resultado: "✅ Editado exitosamente"
+      },
+      {
+        titulo: "Eliminar detalle",
+        request: {
+          method: "DELETE",
+          url: "http://localhost:3000/api/detalles-servicio/1"
+        },
+        resultado: "✅ Eliminado exitosamente"
+      },
+      {
+        titulo: "Cambiar a 'Pagada'",
+        request: {
+          method: "PATCH",
+          url: "http://localhost:3000/api/detalles-servicio/1/status",
+          body: {
+            "estado": "Pagada"
+          }
+        },
+        resultado: "✅ Estado cambiado a 'Pagada'"
+      },
+      {
+        titulo: "Cambiar a 'Anulada'",
+        request: {
+          method: "PATCH",
+          url: "http://localhost:3000/api/detalles-servicio/1/status",
+          body: {
+            "estado": "Anulada"
+          }
+        },
+        resultado: "✅ Estado cambiado a 'Anulada'"
+      }
+    ]
+  },
+
+  // ===== ESTADO: "Pagada" =====
+  estadoPagada: {
+    descripcion: "Estado intermedio - Solo lectura y anulación permitidas",
+    operacionesPermitidas: ["Leer", "Anular"],
+    operacionesBloqueadas: ["Editar", "Eliminar"],
+    ejemplos: [
+      {
+        titulo: "Intentar editar (BLOQUEADO)",
+        request: {
+          method: "PUT",
+          url: "http://localhost:3000/api/detalles-servicio/2",
+          body: {
+            "quantity": 2
+          }
+        },
+        resultado: "❌ ERROR: No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular.",
+        codigoError: 400
+      },
+      {
+        titulo: "Intentar eliminar (BLOQUEADO)",
+        request: {
+          method: "DELETE",
+          url: "http://localhost:3000/api/detalles-servicio/2"
+        },
+        resultado: "❌ ERROR: No se puede eliminar un detalle de servicio que ya está pagado. Solo se permite anular.",
+        codigoError: 400
+      },
+      {
+        titulo: "Cambiar a 'Anulada' (PERMITIDO)",
+        request: {
+          method: "PATCH",
+          url: "http://localhost:3000/api/detalles-servicio/2/status",
+          body: {
+            "estado": "Anulada"
+          }
+        },
+        resultado: "✅ Estado cambiado a 'Anulada'"
+      },
+      {
+        titulo: "Intentar cambiar a 'En ejecución' (BLOQUEADO)",
+        request: {
+          method: "PATCH",
+          url: "http://localhost:3000/api/detalles-servicio/2/status",
+          body: {
+            "estado": "En ejecución"
+          }
+        },
+        resultado: "❌ ERROR: No se puede cambiar el estado a \"En ejecución\" desde \"Pagada\"",
+        codigoError: 400
+      }
+    ]
+  },
+
+  // ===== ESTADO: "Anulada" =====
+  estadoAnulada: {
+    descripcion: "Estado final - Solo lectura permitida",
+    operacionesPermitidas: ["Leer"],
+    operacionesBloqueadas: ["Editar", "Eliminar", "Anular"],
+    ejemplos: [
+      {
+        titulo: "Intentar editar (BLOQUEADO)",
+        request: {
+          method: "PUT",
+          url: "http://localhost:3000/api/detalles-servicio/3",
+          body: {
+            "quantity": 1
+          }
+        },
+        resultado: "❌ ERROR: No se puede editar un detalle de servicio anulado.",
+        codigoError: 400
+      },
+      {
+        titulo: "Intentar eliminar (BLOQUEADO)",
+        request: {
+          method: "DELETE",
+          url: "http://localhost:3000/api/detalles-servicio/3"
+        },
+        resultado: "❌ ERROR: No se puede eliminar un detalle de servicio anulado.",
+        codigoError: 400
+      },
+      {
+        titulo: "Intentar cambiar estado (BLOQUEADO)",
+        request: {
+          method: "PATCH",
+          url: "http://localhost:3000/api/detalles-servicio/3/status",
+          body: {
+            "estado": "En ejecución"
+          }
+        },
+        resultado: "❌ ERROR: No se puede cambiar el estado a \"En ejecución\" desde \"Anulada\"",
+        codigoError: 400
+      },
+      {
+        titulo: "Leer detalle (PERMITIDO)",
+        request: {
+          method: "GET",
+          url: "http://localhost:3000/api/detalles-servicio/3"
+        },
+        resultado: "✅ Detalle leído exitosamente"
+      }
+    ]
+  }
+};
+
+// ===== EJEMPLOS DE TRANSICIONES DE ESTADO =====
+
+const transicionesEstado = {
+  
+  // Transiciones permitidas
+  transicionesPermitidas: [
+    {
+      desde: "En ejecución",
+      hacia: "Pagada",
+      descripcion: "Cliente paga el servicio/producto",
+      ejemplo: "Marcar como pagado después de recibir el pago"
+    },
+    {
+      desde: "En ejecución",
+      hacia: "Anulada",
+      descripcion: "Cliente cancela o se anula el servicio",
+      ejemplo: "Cliente no se presenta o cancela la cita"
+    },
+    {
+      desde: "Pagada",
+      hacia: "Anulada",
+      descripcion: "Anular después del pago (reembolso)",
+      ejemplo: "Error en facturación o solicitud de reembolso"
+    }
+  ],
+
+  // Transiciones bloqueadas
+  transicionesBloqueadas: [
+    {
+      desde: "Pagada",
+      hacia: "En ejecución",
+      descripcion: "No se puede revertir a ejecución desde pagado",
+      mensajeError: "No se puede cambiar el estado a \"En ejecución\" desde \"Pagada\""
+    },
+    {
+      desde: "Anulada",
+      hacia: "En ejecución",
+      descripcion: "No se puede reactivar un servicio anulado",
+      mensajeError: "No se puede cambiar el estado a \"En ejecución\" desde \"Anulada\""
+    },
+    {
+      desde: "Anulada",
+      hacia: "Pagada",
+      descripcion: "No se puede marcar como pagado un servicio anulado",
+      mensajeError: "No se puede cambiar el estado a \"Pagada\" desde \"Anulada\""
+    }
+  ]
+};
+
 // ===== EJEMPLOS DE RESPUESTAS ORGANIZADAS EN POSTMAN =====
 
 const ejemplosRespuestasOrganizadas = {
@@ -312,7 +538,7 @@ const ejemplosRespuestasOrganizadas = {
           "cantidad": 1,
           "precioUnitario": "120.00",
           "subtotal": "120.00",
-          "estado": "En ejecución",
+          "estado": "Pagada",
           "fechaCreacion": "2024-01-15T10:00:00.000Z",
           "fechaActualizacion": "2024-01-15T10:00:00.000Z"
         }
@@ -340,7 +566,7 @@ const ejemplosRespuestasOrganizadas = {
           "cantidad": 1,
           "precioUnitario": "76.00",
           "subtotal": "76.00",
-          "estado": "En ejecución",
+          "estado": "Anulada",
           "fechaCreacion": "2024-01-15T09:30:00.000Z",
           "fechaActualizacion": "2024-01-15T09:30:00.000Z"
         }
@@ -648,7 +874,7 @@ const ejemplosPostman = {
     }
   },
 
-  // 6. Actualizar detalle
+  // 6. Actualizar detalle (solo si está "En ejecución")
   actualizarDetalle: {
     method: "PUT",
     url: "http://localhost:3000/api/detalles-servicio/1",
@@ -663,7 +889,7 @@ const ejemplosPostman = {
     }
   },
 
-  // 7. Cambiar estado
+  // 7. Cambiar estado (con validaciones de transición)
   cambiarEstado: {
     method: "PATCH",
     url: "http://localhost:3000/api/detalles-servicio/1/status",
@@ -985,6 +1211,30 @@ const informacionAdicional = {
     "ID 8 - Sofia Herrera (Tratamientos corporales)"
   ],
 
+  // Reglas de negocio por estado
+  reglasNegocio: [
+    "🟢 EN EJECUCIÓN: Todas las operaciones permitidas (Leer, Editar, Eliminar, Anular)",
+    "🟡 PAGADA: Solo lectura y anulación permitidas (Leer, Anular)",
+    "🔴 ANULADA: Solo lectura permitida (Leer)",
+    "Las transiciones de estado están controladas para mantener la integridad de datos",
+    "No se puede editar o eliminar detalles pagados o anulados",
+    "No se puede reactivar un servicio anulado"
+  ],
+
+  // Transiciones de estado permitidas
+  transicionesPermitidas: [
+    "En ejecución → Pagada ✅",
+    "En ejecución → Anulada ✅", 
+    "Pagada → Anulada ✅"
+  ],
+
+  // Transiciones de estado bloqueadas
+  transicionesBloqueadas: [
+    "Pagada → En ejecución ❌",
+    "Anulada → En ejecución ❌",
+    "Anulada → Pagada ❌"
+  ],
+
   // Notas importantes
   notas: [
     "El sistema NO permite crear venta sin cliente asociado",
@@ -997,8 +1247,608 @@ const informacionAdicional = {
     "Los IDs de empleadoId deben existir en la tabla empleados (si se proporciona)",
     "Todos los endpoints requieren autenticación JWT",
     "Todas las respuestas incluyen datos anidados de productos, servicios y empleados",
-    "Las respuestas organizadas facilitan la visualización de servicios y productos por separado"
+    "Las respuestas organizadas facilitan la visualización de servicios y productos por separado",
+    "Las reglas de negocio por estado controlan qué operaciones se permiten",
+    "Las transiciones de estado están validadas para mantener la integridad de datos"
   ]
+};
+
+// ===== EJEMPLOS DE EDICIÓN VALIDA =====
+
+const ejemplosEdicionValida = {
+  detalleEnEjecucion: {
+    titulo: "Editar detalle 'En ejecución'",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/1",
+      body: {
+        "quantity": 2,
+        "unitPrice": 40.00
+      }
+    },
+    resultado: "✅ Editado exitosamente con estado 'En ejecución'"
+  },
+  detallePagado: {
+    titulo: "Editar detalle 'Pagada'",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/2",
+      body: {
+        "quantity": 1,
+        "unitPrice": 50.00
+      }
+    },
+    resultado: "✅ Editado exitosamente con estado 'Pagada'"
+  },
+  detalleAnulado: {
+    titulo: "Editar detalle 'Anulada'",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/3",
+      body: {
+        "quantity": 1,
+        "unitPrice": 60.00
+      }
+    },
+    resultado: "✅ Editado exitosamente con estado 'Anulada'"
+  }
+};
+
+// ===== EJEMPLOS DE EDICIÓN INVÁLIDA =====
+
+const ejemplosEdicionInvalida = {
+  detallePagado: {
+    titulo: "Intentar editar detalle 'Pagada' (BLOQUEADO)",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/2",
+      body: {
+        "quantity": 3
+      }
+    },
+    resultado: "❌ ERROR: No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular.",
+    codigoError: 400
+  },
+  detalleAnulado: {
+    titulo: "Intentar editar detalle 'Anulada' (BLOQUEADO)",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/3",
+      body: {
+        "quantity": 2
+      }
+    },
+    resultado: "❌ ERROR: No se puede editar un detalle de servicio anulado.",
+    codigoError: 400
+  }
+};
+
+// ===== EJEMPLOS DE GESTIÓN INDIVIDUAL =====
+
+const ejemplosGestionIndividual = {
+  crearDetalle: {
+    titulo: "Crear nuevo detalle",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "✅ Creado exitosamente con estado 'En ejecución'"
+  },
+  obtenerDetalle: {
+    titulo: "Obtener detalle por ID",
+    request: {
+      method: "GET",
+      url: "http://localhost:3000/api/detalles-servicio/1"
+    },
+    resultado: "✅ Detalle obtenido exitosamente"
+  },
+  actualizarDetalle: {
+    titulo: "Actualizar detalle existente",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/1",
+      body: {
+        "quantity": 2,
+        "unitPrice": 40.00
+      }
+    },
+    resultado: "✅ Actualizado exitosamente con estado 'En ejecución'"
+  },
+  cambiarEstado: {
+    titulo: "Cambiar estado de detalle",
+    request: {
+      method: "PATCH",
+      url: "http://localhost:3000/api/detalles-servicio/1/status",
+      body: {
+        "estado": "Pagada"
+      }
+    },
+    resultado: "✅ Estado cambiado a 'Pagada'"
+  },
+  eliminarDetalle: {
+    titulo: "Eliminar detalle",
+    request: {
+      method: "DELETE",
+      url: "http://localhost:3000/api/detalles-servicio/1"
+    },
+    resultado: "✅ Eliminado exitosamente"
+  }
+};
+
+// ===== EJEMPLOS DE ERRORES DE GESTIÓN INDIVIDUAL =====
+
+const ejemplosErroresGestionIndividual = {
+  crearDetalleConClienteNoAsociado: {
+    titulo: "Intentar crear detalle con cliente no asociado",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 999, // ID de cliente inexistente
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El cliente con ID 999 no existe."
+  },
+  crearDetalleConProductoNoExistente: {
+    titulo: "Intentar crear detalle con producto no existente",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 999, // ID de producto inexistente
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto con ID 999 no existe."
+  },
+  crearDetalleConServicioNoExistente: {
+    titulo: "Intentar crear detalle con servicio no existente",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 999, // ID de servicio inexistente
+        "empleadoId": 1,
+        "quantity": 1,
+        "unitPrice": 80.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio con ID 999 no existe."
+  },
+  actualizarDetalleConEstadoPagado: {
+    titulo: "Intentar actualizar detalle 'Pagada'",
+    request: {
+      method: "PUT",
+      url: "http://localhost:3000/api/detalles-servicio/2",
+      body: {
+        "quantity": 3,
+        "unitPrice": 50.00
+      }
+    },
+    resultado: "❌ ERROR: No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular."
+  },
+  cambiarEstadoConEstadoAnulado: {
+    titulo: "Intentar cambiar estado a 'Anulada'",
+    request: {
+      method: "PATCH",
+      url: "http://localhost:3000/api/detalles-servicio/3/status",
+      body: {
+        "estado": "Anulada"
+      }
+    },
+    resultado: "❌ ERROR: No se puede cambiar el estado a \"Anulada\" desde \"Anulada\"."
+  }
+};
+
+// ===== NUEVOS ENDPOINTS =====
+
+const nuevosEndpoints = {
+  obtenerDetallesPorEmpleado: {
+    titulo: "Obtener detalles por empleado",
+    request: {
+      method: "GET",
+      url: "http://localhost:3000/api/detalles-servicio/employee/1"
+    },
+    resultado: "✅ Detalles obtenidos exitosamente"
+  },
+  obtenerDetallesPorEstado: {
+    titulo: "Obtener detalles por estado",
+    request: {
+      method: "GET",
+      url: "http://localhost:3000/api/detalles-servicio/status/En%20ejecuci%C3%B3n"
+    },
+    resultado: "✅ Detalles obtenidos exitosamente"
+  },
+  calcularSubtotalPorDetalle: {
+    titulo: "Calcular subtotal por detalle",
+    request: {
+      method: "GET",
+      url: "http://localhost:3000/api/detalles-servicio/1/subtotal"
+    },
+    resultado: "✅ Subtotal calculado exitosamente"
+  },
+  obtenerEstadisticasPorServicioCliente: {
+    titulo: "Obtener estadísticas por servicio cliente",
+    request: {
+      method: "GET",
+      url: "http://localhost:3000/api/detalles-servicio/statistics/service-client/1"
+    },
+    resultado: "✅ Estadísticas obtenidas exitosamente"
+  }
+};
+
+// ===== INTEGRIDAD DE VENTAS =====
+
+const integridadVentas = {
+  ventaSinCliente: {
+    titulo: "Intentar crear venta sin cliente asociado",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": null, // ID de cliente inexistente
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El cliente no está asociado a la venta."
+  },
+  ventaSinProductoOservicio: {
+    titulo: "Intentar crear venta sin al menos un producto o servicio",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": null,
+        "serviceId": null,
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. La venta debe tener al menos un producto o servicio."
+  },
+  ventaConProductoSinEmpleado: {
+    titulo: "Intentar crear detalle de producto sin empleado asociado",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 no tiene un empleado asociado."
+  },
+  ventaConServicioSinEmpleado: {
+    titulo: "Intentar crear detalle de servicio sin empleado asociado",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 no tiene un empleado asociado."
+  },
+  ventaConProductoAnulado: {
+    titulo: "Intentar crear detalle de producto con estado 'Anulada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Anulada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está anulado."
+  },
+  ventaConServicioAnulado: {
+    titulo: "Intentar crear detalle de servicio con estado 'Anulada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Anulada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está anulado."
+  },
+  ventaConProductoPagado: {
+    titulo: "Intentar crear detalle de producto con estado 'Pagada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Pagada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está pagado."
+  },
+  ventaConServicioPagado: {
+    titulo: "Intentar crear detalle de servicio con estado 'Pagada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Pagada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está pagado."
+  },
+  ventaConProductoEnEjecucion: {
+    titulo: "Intentar crear detalle de producto con estado 'En ejecución'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "En ejecución"
+      }
+    },
+    resultado: "✅ Creado exitosamente con estado 'En ejecución'"
+  },
+  ventaConServicioEnEjecucion: {
+    titulo: "Intentar crear detalle de servicio con estado 'En ejecución'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "En ejecución"
+      }
+    },
+    resultado: "✅ Creado exitosamente con estado 'En ejecución'"
+  },
+  ventaConProductoFinalizada: {
+    titulo: "Intentar crear detalle de producto con estado 'Finalizada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Finalizada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está finalizado."
+  },
+  ventaConServicioFinalizada: {
+    titulo: "Intentar crear detalle de servicio con estado 'Finalizada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Finalizada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está finalizado."
+  },
+  ventaConProductoCanceladaPorCliente: {
+    titulo: "Intentar crear detalle de producto con estado 'Cancelada por el cliente'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Cancelada por el cliente"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está cancelado por el cliente."
+  },
+  ventaConServicioCanceladaPorCliente: {
+    titulo: "Intentar crear detalle de servicio con estado 'Cancelada por el cliente'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Cancelada por el cliente"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está cancelado por el cliente."
+  },
+  ventaConProductoNoAsistio: {
+    titulo: "Intentar crear detalle de producto con estado 'No asistio'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "No asistio"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 no asistió."
+  },
+  ventaConServicioNoAsistio: {
+    titulo: "Intentar crear detalle de servicio con estado 'No asistio'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "No asistio"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 no asistió."
+  },
+  ventaConProductoReprogramada: {
+    titulo: "Intentar crear detalle de producto con estado 'Reprogramada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Reprogramada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está reprogramado."
+  },
+  ventaConServicioReprogramada: {
+    titulo: "Intentar crear detalle de servicio con estado 'Reprogramada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Reprogramada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está reprogramado."
+  },
+  ventaConProductoConfirmada: {
+    titulo: "Intentar crear detalle de producto con estado 'Confirmada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Confirmada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está confirmado."
+  },
+  ventaConServicioConfirmada: {
+    titulo: "Intentar crear detalle de servicio con estado 'Confirmada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Confirmada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está confirmado."
+  },
+  ventaConProductoAgendada: {
+    titulo: "Intentar crear detalle de producto con estado 'Agendada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "Agendada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está agendado."
+  },
+  ventaConServicioAgendada: {
+    titulo: "Intentar crear detalle de servicio con estado 'Agendada'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "Agendada"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está agendado."
+  },
+  ventaConProductoEnProceso: {
+    titulo: "Intentar crear detalle de producto con estado 'En proceso'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "productId": 1,
+        "quantity": 1,
+        "unitPrice": 45.00,
+        "status": "En proceso"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El producto 1 está en proceso."
+  },
+  ventaConServicioEnProceso: {
+    titulo: "Intentar crear detalle de servicio con estado 'En proceso'",
+    request: {
+      method: "POST",
+      url: "http://localhost:3000/api/detalles-servicio",
+      body: {
+        "serviceClientId": 1,
+        "serviceId": 1,
+        "quantity": 1,
+        "unitPrice": 35.00,
+        "status": "En proceso"
+      }
+    },
+    resultado: "❌ ERROR: No se pudo crear el detalle. El servicio 1 está en proceso."
+  }
 };
 
 // Exportar todos los datos para uso en pruebas
@@ -1007,12 +1857,20 @@ module.exports = {
   empleados,
   productos,
   servicios,
+  ejemplosReglasNegocio,
+  transicionesEstado,
   ejemplosRespuestasOrganizadas,
   ejemplosRespuestasPostman,
   ejemplosPostman,
   escenariosPrueba,
   ejemplosPorEspecialidad,
-  informacionAdicional
+  informacionAdicional,
+  ejemplosEdicionValida,
+  ejemplosEdicionInvalida,
+  ejemplosGestionIndividual,
+  ejemplosErroresGestionIndividual,
+  nuevosEndpoints,
+  integridadVentas
 };
 
 console.log("📋 Datos de prueba cargados correctamente");
@@ -1023,3 +1881,6 @@ console.log("👥 Campo empleadoId opcional para productos, obligatorio para ser
 console.log("🔗 Respuestas incluyen datos anidados de productos, servicios y empleados");
 console.log("📊 Nuevas respuestas organizadas con listas separadas de servicios y productos");
 console.log("🚫 Estados válidos: En ejecución, Pagada, Anulada");
+console.log("🔐 Reglas de negocio implementadas por estado");
+console.log("⚡ Transiciones de estado controladas y validadas");
+console.log("🛡️ Operaciones bloqueadas según el estado actual del detalle");

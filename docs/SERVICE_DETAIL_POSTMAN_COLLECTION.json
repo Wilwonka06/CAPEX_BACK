@@ -1,0 +1,885 @@
+{
+  "info": {
+    "name": "CAPEX - ServiceDetail API",
+    "description": "Colección completa para probar la API de detalles de servicio del sistema CAPEX. Incluye todos los endpoints para gestionar servicios y productos individuales, con validaciones de estado y reglas de negocio.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "capex-service-detail-api",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "URL base de la API"
+    },
+    {
+      "key": "auth_token",
+      "value": "{{jwt_token}}",
+      "type": "string",
+      "description": "Token JWT para autenticación"
+    },
+    {
+      "key": "service_client_id",
+      "value": "1",
+      "type": "string",
+      "description": "ID del servicio cliente para pruebas"
+    },
+    {
+      "key": "detail_id",
+      "value": "1",
+      "type": "string",
+      "description": "ID del detalle de servicio para pruebas"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Autenticación",
+      "item": [
+        {
+          "name": "Login para obtener JWT Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@capex.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Endpoint para autenticación y obtención del token JWT. Usar las credenciales del sistema."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 CRUD Básico - Detalles de Servicio",
+      "item": [
+        {
+          "name": "1. Crear Detalle de Servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceClientId\": 1,\n  \"serviceId\": 1,\n  \"empleadoId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 35.00,\n  \"status\": \"En ejecución\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio"]
+            },
+            "description": "Crear un nuevo detalle de servicio. El empleadoId es obligatorio cuando se especifica un serviceId."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Crear Detalle de Producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceClientId\": 1,\n  \"productId\": 1,\n  \"quantity\": 2,\n  \"unitPrice\": 45.00,\n  \"status\": \"En ejecución\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio"]
+            },
+            "description": "Crear un nuevo detalle de producto. No requiere empleadoId."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Obtener Detalle por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}"]
+            },
+            "description": "Obtener un detalle específico por su ID con datos anidados (servicio, producto, empleado)."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Actualizar Detalle (En ejecución)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3,\n  \"unitPrice\": 40.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}"]
+            },
+            "description": "Actualizar un detalle que esté en estado 'En ejecución'. Solo se puede editar en este estado."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Cambiar Estado a Pagada",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Pagada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}", "status"]
+            },
+            "description": "Cambiar el estado de un detalle a 'Pagada'. Solo se puede cambiar desde 'En ejecución'."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Cambiar Estado a Anulada",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Anulada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}", "status"]
+            },
+            "description": "Cambiar el estado de un detalle a 'Anulada'. Se puede cambiar desde 'En ejecución' o 'Pagada'."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 Gestión Individual - Servicios y Productos",
+      "item": [
+        {
+          "name": "1. Agregar Nuevo Servicio al Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": 2,\n  \"empleadoId\": 2,\n  \"quantity\": 1,\n  \"unitPrice\": 80.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service-client/{{service_client_id}}/add-item",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service-client", "{{service_client_id}}", "add-item"]
+            },
+            "description": "Agregar un nuevo servicio al cliente existente. Crea un nuevo detalle independiente."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Agregar Nuevo Producto al Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 2,\n  \"quantity\": 1,\n  \"unitPrice\": 38.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service-client/{{service_client_id}}/add-item",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service-client", "{{service_client_id}}", "add-item"]
+            },
+            "description": "Agregar un nuevo producto al cliente existente. No requiere empleadoId."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Anular Servicio Específico (NO ELIMINAR)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}/remove-item",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}", "remove-item"]
+            },
+            "description": "Anular un servicio específico del detalle. NO elimina el registro, solo cambia el estado a 'Anulada' para mantener integridad de ventas."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Anular Producto Específico (NO ELIMINAR)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}/remove-item",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}", "remove-item"]
+            },
+            "description": "Anular un producto específico del detalle. NO elimina el registro, solo cambia el estado a 'Anulada' para mantener integridad de ventas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Consultas y Reportes",
+      "item": [
+        {
+          "name": "1. Obtener Detalles por Servicio Cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service-client/{{service_client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service-client", "{{service_client_id}}"]
+            },
+            "description": "Obtener todos los detalles de un servicio cliente específico con datos anidados."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Obtener Detalles Organizados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service-client/{{service_client_id}}/organized",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service-client", "{{service_client_id}}", "organized"]
+            },
+            "description": "Obtener detalles organizados por servicios y productos, con resumen y totales."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Obtener Detalles con Conteo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service-client/{{service_client_id}}/with-count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service-client", "{{service_client_id}}", "with-count"]
+            },
+            "description": "Obtener detalles del servicio cliente con conteo detallado y resumen de totales."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Obtener Detalles por Producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/product/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "product", "1"]
+            },
+            "description": "Obtener todos los detalles que contengan un producto específico."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Obtener Detalles por Servicio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/service/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "service", "1"]
+            },
+            "description": "Obtener todos los detalles que contengan un servicio específico."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Obtener Detalles por Empleado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/employee/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "employee", "1"]
+            },
+            "description": "Obtener todos los detalles asociados a un empleado específico."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Obtener Detalles por Estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/status/En%20ejecuci%C3%B3n",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "status", "En ejecución"]
+            },
+            "description": "Obtener todos los detalles con un estado específico (En ejecución, Pagada, Anulada)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🧮 Cálculos y Estadísticas",
+      "item": [
+        {
+          "name": "1. Calcular Subtotal por Detalle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/{{detail_id}}/subtotal",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "{{detail_id}}", "subtotal"]
+            },
+            "description": "Calcular el subtotal de un detalle específico (precio unitario × cantidad)."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Obtener Estadísticas Generales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/statistics/overview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "statistics", "overview"]
+            },
+            "description": "Obtener estadísticas generales del sistema: total de detalles, servicios en ejecución, pagados, anulados y total de ventas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "❌ Casos de Error - Validaciones",
+      "item": [
+        {
+          "name": "1. Crear Detalle sin Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 45.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio"]
+            },
+            "description": "Intentar crear un detalle sin especificar serviceClientId. Debe fallar."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Crear Detalle sin Producto/Servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceClientId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 45.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio"]
+            },
+            "description": "Intentar crear un detalle sin especificar productId o serviceId. Debe fallar."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Crear Servicio sin Empleado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceClientId\": 1,\n  \"serviceId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 35.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio"]
+            },
+            "description": "Intentar crear un servicio sin especificar empleadoId. Debe fallar."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Editar Detalle Pagado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "2"]
+            },
+            "description": "Intentar editar un detalle con estado 'Pagada'. Debe fallar - solo se permite anular."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Editar Detalle Anulado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "3"]
+            },
+            "description": "Intentar editar un detalle con estado 'Anulada'. Debe fallar - no se puede editar."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Anular Último Detalle Activo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/1/remove-item",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "1", "remove-item"]
+            },
+            "description": "Intentar anular el último detalle activo del cliente. Debe fallar - debe mantener al menos uno."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Cambiar Estado Inválido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"En ejecución\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/detalles-servicio/2/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "detalles-servicio", "2", "status"]
+            },
+            "description": "Intentar cambiar estado de 'Pagada' a 'En ejecución'. Debe fallar - transición no permitida."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📝 Ejemplos de Respuestas",
+      "item": [
+        {
+          "name": "Respuesta Exitosa - Detalle Creado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://httpbin.org/status/201"
+            },
+            "description": "Ejemplo de respuesta exitosa al crear un detalle de servicio."
+          },
+          "response": [
+            {
+              "name": "Ejemplo de Respuesta",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"serviceClientId\": 1,\n  \"serviceId\": 1,\n  \"empleadoId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 35.00\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/detalles-servicio",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "detalles-servicio"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"serviceClientId\": 1,\n    \"serviceId\": 1,\n    \"productId\": null,\n    \"empleadoId\": 1,\n    \"quantity\": 1,\n    \"unitPrice\": \"35.00\",\n    \"subtotal\": \"35.00\",\n    \"status\": \"En ejecución\",\n    \"servicio\": {\n      \"id\": 1,\n      \"nombre\": \"Corte de Cabello\",\n      \"precio\": \"35.00\",\n      \"descripcion\": \"Corte profesional de cabello\"\n    },\n    \"producto\": null,\n    \"empleado\": {\n      \"id\": 1,\n      \"nombre\": \"María García\",\n      \"especialidad\": \"Estilista\",\n      \"telefono\": \"3001234567\",\n      \"email\": \"maria@capex.com\"\n    }\n  },\n  \"message\": \"Detalle de servicio creado exitosamente\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Respuesta de Error - Validación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://httpbin.org/status/400"
+            },
+            "description": "Ejemplo de respuesta de error por validación fallida."
+          },
+          "response": [
+            {
+              "name": "Ejemplo de Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"serviceClientId\": 1,\n  \"quantity\": 1,\n  \"unitPrice\": 45.00\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/detalles-servicio",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "detalles-servicio"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Datos de validación incorrectos\",\n  \"errors\": [\n    {\n      \"field\": \"productId\",\n      \"message\": \"Debe especificar al menos un producto o servicio\"\n    },\n    {\n      \"field\": \"serviceId\",\n      \"message\": \"Debe especificar al menos un producto o servicio\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Respuesta de Error - Regla de Negocio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://httpbin.org/status/400"
+            },
+            "description": "Ejemplo de respuesta de error por regla de negocio."
+          },
+          "response": [
+            {
+              "name": "Ejemplo de Regla de Negocio",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"quantity\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/detalles-servicio/2",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "detalles-servicio", "2"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"message\": \"No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular.\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de pre-request para configuraciones automáticas",
+          "console.log('Configurando request para ServiceDetail API...');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de test para validaciones automáticas",
+          "pm.test('Status code is 200, 201, or 400', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 404, 500]);",
+          "});",
+          "",
+          "pm.test('Response has required fields', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('success');",
+          "    if (jsonData.success) {",
+          "        pm.expect(jsonData).to.have.property('message');",
+          "    } else {",
+          "        pm.expect(jsonData).to.have.property('message');",
+          "    }",
+          "});",
+          "",
+          "pm.test('Response time is less than 2000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

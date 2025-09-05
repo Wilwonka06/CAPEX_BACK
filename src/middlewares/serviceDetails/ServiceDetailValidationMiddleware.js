@@ -107,7 +107,7 @@ class ServiceDetailValidationMiddleware {
     }
   ];
 
-  // Validación para actualizar
+  // Validación para actualizar (con verificación de estado)
   static validateUpdate = [
     param('id').isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
     
@@ -201,7 +201,7 @@ class ServiceDetailValidationMiddleware {
     }
   ];
 
-  // Validación para cambiar estado
+  // Validación para cambiar estado (con verificación de estado actual)
   static validateChangeStatus = [
     param('id').isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
     body('estado')
@@ -271,6 +271,110 @@ class ServiceDetailValidationMiddleware {
   // Validación para obtener por empleado
   static validateGetByEmployee = [
     param('empleadoId').isInt({ min: 1 }).withMessage('El ID del empleado debe ser un número entero positivo'),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de validación incorrectos',
+          errors: errors.array()
+        });
+      }
+      next();
+    }
+  ];
+
+  // Validación para anular servicio o producto específico del detalle (NO ELIMINAR)
+  static validateRemoveServiceOrProduct = [
+    param('id').isInt({ min: 1 }).withMessage('El ID del detalle debe ser un número entero positivo'),
+    
+    // Validar que se especifique al menos un serviceId o productId
+    body().custom((value, { req }) => {
+      const { serviceId, productId } = req.body;
+      if (!serviceId && !productId) {
+        throw new Error('Debe especificar un serviceId o productId para anular');
+      }
+      return true;
+    }).withMessage('Debe especificar un serviceId o productId para anular'),
+
+    body('serviceId')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('El ID del servicio debe ser un número entero positivo'),
+    
+    body('productId')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('El ID del producto debe ser un número entero positivo'),
+
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de validación incorrectos',
+          errors: errors.array()
+        });
+      }
+      next();
+    }
+  ];
+
+  // Validación para agregar servicio o producto al detalle existente
+  static validateAddServiceOrProduct = [
+    param('serviceClientId').isInt({ min: 1 }).withMessage('El ID del servicio cliente debe ser un número entero positivo'),
+    
+    // Validar que existe al menos un servicio o producto
+    body().custom((value, { req }) => {
+      const { productId, serviceId } = req.body;
+      if (!productId && !serviceId) {
+        throw new Error('Debe especificar al menos un producto o servicio');
+      }
+      return true;
+    }).withMessage('Debe especificar al menos un producto o servicio'),
+
+    body('productId')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('El ID del producto debe ser un número entero positivo'),
+
+    body('serviceId')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('El ID del servicio debe ser un número entero positivo'),
+
+    body('empleadoId')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('El ID del empleado debe ser un número entero positivo'),
+
+    body('quantity')
+      .isInt({ min: 1 })
+      .withMessage('La cantidad debe ser un número entero positivo'),
+
+    body('unitPrice')
+      .isFloat({ min: 0 })
+      .withMessage('El precio unitario debe ser un número positivo'),
+
+    body('subtotal')
+      .optional()
+      .isFloat({ min: 0 })
+      .withMessage('El subtotal debe ser un número positivo'),
+
+    body('status')
+      .optional()
+      .isIn(['En ejecución', 'Pagada', 'Anulada'])
+      .withMessage('El estado debe ser: En ejecución, Pagada o Anulada'),
+
+    // Validación personalizada: empleadoId es obligatorio solo si hay servicio
+    body().custom((value, { req }) => {
+      const { serviceId, empleadoId } = req.body;
+      if (serviceId && !empleadoId) {
+        throw new Error('El empleado es obligatorio cuando se especifica un servicio');
+      }
+      return true;
+    }).withMessage('El empleado es obligatorio cuando se especifica un servicio'),
+
     (req, res, next) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

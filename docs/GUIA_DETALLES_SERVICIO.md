@@ -1,365 +1,389 @@
-# Guía de Detalles de Servicio Cliente
+# 📋 GUÍA COMPLETA DEL MÓDULO DETALLES DE SERVICIO CLIENTE
 
-## Descripción
-Este módulo permite crear órdenes de servicio detalladas donde puedes agregar múltiples servicios y productos a un cliente, cada uno con su empleado asignado y cantidad específica.
+## 🎯 **Descripción General**
+El módulo `ServiceDetail` (detalles de servicio cliente) permite gestionar los productos y servicios asociados a cada cita o servicio cliente. Cada detalle puede contener un producto, un servicio, o ambos, y mantiene un estado que controla las operaciones permitidas.
 
-## Características Principales
+## 🏗️ **Estructura de la Base de Datos**
 
-### ✅ Precio Automático
-- **Servicios**: El precio se obtiene automáticamente del catálogo de servicios
-- **Productos**: El precio se obtiene automáticamente del catálogo de productos
-- **Precio Personalizado**: Puedes sobrescribir el precio si es necesario
-
-### ✅ Cálculo Automático
-- **Subtotal**: Se calcula automáticamente (precio unitario × cantidad)
-- **Validaciones**: Verifica que existan los servicios, productos y empleados
-
-### ✅ Asignación de Empleados
-- Cada detalle puede tener un empleado específico asignado
-- Permite distribuir el trabajo entre diferentes empleados
-
-## Estructura de Datos
-
-### Campos Requeridos
-```json
-{
-  "serviceClientId": 1,    // ID del servicio cliente (OBLIGATORIO)
-  "empleadoId": 8,         // ID del empleado (OBLIGATORIO)
-  "quantity": 1,           // Cantidad (OBLIGATORIO, mínimo 1)
-  "serviceId": 3,          // ID del servicio (OBLIGATORIO si no hay producto)
-  "productId": 5           // ID del producto (OBLIGATORIO si no hay servicio)
-}
+### Tabla: `detalle_servicio_cliente`
+```sql
+CREATE TABLE detalle_servicio_cliente (
+  id_detalle INT AUTO_INCREMENT PRIMARY KEY,
+  id_servicio_cliente INT NOT NULL,
+  id_producto INT NULL,
+  id_servicio INT NULL,
+  id_empleado INT NULL,
+  cantidad INT NOT NULL DEFAULT 1,
+  precio_unitario DECIMAL(10,2) NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL,
+  estado VARCHAR(20) NOT NULL CHECK (estado IN ('En ejecución', 'Pagada', 'Anulada')) DEFAULT 'En ejecución',
+  FOREIGN KEY (id_servicio_cliente) REFERENCES servicios_clientes(id_servicio_cliente),
+  FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
+  FOREIGN KEY (id_servicio) REFERENCES servicios(id_servicio),
+  FOREIGN KEY (id_empleado) REFERENCES empleados(id_empleado)
+);
 ```
 
-### Campos Opcionales
-```json
-{
-  "unitPrice": 120.00,     // Precio personalizado (opcional)
-  "status": "En ejecución" // Estado por defecto
-}
+## 🔐 **Reglas de Negocio por Estado**
+
+### 📊 **Matriz de Operaciones Permitidas**
+
+| Estado | ✅ Leer | ✅ Editar | ✅ Eliminar | ✅ Anular |
+|--------|---------|-----------|-------------|-----------|
+| **"En ejecución"** | ✅ | ✅ | ✅ | ✅ |
+| **"Pagada"** | ✅ | ❌ | ❌ | ✅ |
+| **"Anulada"** | ✅ | ❌ | ❌ | ❌ |
+
+### 📝 **Detalle de Reglas**
+
+#### 🟢 **Estado: "En ejecución"**
+- **Operaciones permitidas**: Todas las operaciones
+- **Descripción**: Estado inicial y más flexible
+- **Uso**: Para detalles recién creados o en proceso
+
+#### 🟡 **Estado: "Pagada"**
+- **Operaciones permitidas**: Solo lectura y anulación
+- **Operaciones bloqueadas**: Edición y eliminación
+- **Mensaje de error**: *"No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular."*
+- **Uso**: Para detalles que ya han sido pagados por el cliente
+
+#### 🔴 **Estado: "Anulada"**
+- **Operaciones permitidas**: Solo lectura
+- **Operaciones bloqueadas**: Edición, eliminación y cambio de estado
+- **Mensaje de error**: *"No se puede editar un detalle de servicio anulado."*
+- **Uso**: Para detalles que han sido cancelados o anulados
+
+### 🔄 **Transiciones de Estado Permitidas**
+
+```
+"En ejecución" → "Pagada" ✅
+"En ejecución" → "Anulada" ✅
+"Pagada" → "Anulada" ✅
+"Pagada" → "En ejecución" ❌
+"Anulada" → "En ejecución" ❌
+"Anulada" → "Pagada" ❌
+"Anulada" → "Anulada" ❌
 ```
 
-## Ejemplos de Uso
+## 🚀 **Endpoints de la API**
 
-### 1. Crear Detalle con Servicio (Precio Automático)
+### **1. Crear Detalle de Servicio**
+```http
+POST /api/detalles-servicio
+```
 
-**POST** `/api/detalles-servicio`
+**Criterios de Aceptación:**
+- ✅ Debe haber cliente asociado (`serviceClientId`)
+- ✅ Debe haber al menos un producto (`productId`) o servicio (`serviceId`)
+- ✅ `empleadoId` es obligatorio SOLO cuando hay servicio
+- ✅ Se asigna automáticamente estado "En ejecución"
+- ✅ Se calcula automáticamente el subtotal
 
+**Ejemplo de Request:**
 ```json
 {
   "serviceClientId": 1,
-  "serviceId": 3,          // Coloración - $120.00
-  "empleadoId": 8,
-  "quantity": 1
+  "productId": 1,
+  "quantity": 2,
+  "unitPrice": 45.00
 }
 ```
 
-**Respuesta:**
+**Ejemplo de Response:**
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
     "serviceClientId": 1,
-    "serviceId": 3,
-    "productId": null,
-    "empleadoId": 8,
-    "quantity": 1,
-    "unitPrice": 120.00,    // Obtenido automáticamente del servicio
-    "subtotal": 120.00,     // Calculado automáticamente
-    "status": "En ejecución"
+    "productId": 1,
+    "serviceId": null,
+    "empleadoId": null,
+    "quantity": 2,
+    "unitPrice": "45.00",
+    "subtotal": "90.00",
+    "status": "En ejecución",
+    "producto": {
+      "id": 1,
+      "nombre": "Shampoo Profesional",
+      "precio": "45.00",
+      "descripcion": "Shampoo para todo tipo de cabello"
+    },
+    "servicio": null,
+    "empleado": null
   },
   "message": "Orden de servicio creada exitosamente"
 }
 ```
 
-### 2. Crear Detalle con Producto (Precio Automático)
+### **2. Obtener Detalle por ID**
+```http
+GET /api/detalles-servicio/:id
+```
 
+**Operación**: ✅ Siempre permitida (leer)
+
+### **3. Actualizar Detalle**
+```http
+PUT /api/detalles-servicio/:id
+```
+
+**Restricciones por Estado:**
+- ✅ **"En ejecución"**: Permitida
+- ❌ **"Pagada"**: Bloqueada con mensaje específico
+- ❌ **"Anulada"**: Bloqueada con mensaje específico
+
+**Ejemplo de Error (Estado "Pagada"):**
 ```json
 {
-  "serviceClientId": 1,
-  "productId": 5,           // Shampoo - $25.00
-  "empleadoId": 8,
-  "quantity": 2
+  "success": false,
+  "message": "No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular."
 }
 ```
 
-**Respuesta:**
+### **4. Eliminar Detalle**
+```http
+DELETE /api/detalles-servicio/:id
+```
+
+**Restricciones por Estado:**
+- ✅ **"En ejecución"**: Permitida
+- ❌ **"Pagada"**: Bloqueada con mensaje específico
+- ❌ **"Anulada"**: Bloqueada con mensaje específico
+
+### **5. Cambiar Estado**
+```http
+PATCH /api/detalles-servicio/:id/status
+```
+
+**Restricciones de Transición:**
+- ✅ **"En ejecución" → "Pagada"**
+- ✅ **"En ejecución" → "Anulada"**
+- ✅ **"Pagada" → "Anulada"**
+- ❌ **"Pagada" → "En ejecución"** (bloqueado)
+- ❌ **"Anulada" → "En ejecución"** (bloqueado)
+- ❌ **"Anulada" → "Pagada"** (bloqueado)
+
+**Ejemplo de Request:**
+```json
+{
+  "estado": "Pagada"
+}
+```
+
+**Ejemplo de Error (Transición inválida):**
+```json
+{
+  "success": false,
+  "message": "No se puede cambiar el estado a \"En ejecución\" desde \"Pagada\""
+}
+```
+
+### **6. Obtener Detalles Organizados**
+```http
+GET /api/detalles-servicio/service-client/:serviceClientId/organized
+```
+
+**Operación**: ✅ Siempre permitida (leer)
+
+**Response Organizado:**
 ```json
 {
   "success": true,
   "data": {
-    "id": 2,
     "serviceClientId": 1,
-    "serviceId": null,
-    "productId": 5,
-    "empleadoId": 8,
-    "quantity": 2,
-    "unitPrice": 25.00,     // Obtenido automáticamente del producto
-    "subtotal": 50.00,      // Calculado automáticamente
-    "status": "En ejecución"
-  }
+    "resumen": {
+      "totalDetalles": 4,
+      "totalServicios": 2,
+      "totalProductos": 2,
+      "subtotalServicios": "155.00",
+      "subtotalProductos": "166.00",
+      "totalGeneral": "321.00"
+    },
+    "servicios": [...],
+    "productos": [...]
+  },
+  "message": "Detalles organizados obtenidos exitosamente"
 }
 ```
 
-### 3. Crear Detalle con Precio Personalizado
+### **7. Anular Servicio o Producto Específico del Detalle**
+```http
+DELETE /api/detalles-servicio/:id/remove-item
+```
 
+**Operación**: ✅ Permitida si estado es "En ejecución" o "Pagada"
+
+**Request Body:**
 ```json
 {
-  "serviceClientId": 1,
-  "serviceId": 2,           // Peinado - $45.00
-  "empleadoId": 8,
-  "quantity": 1,
-  "unitPrice": 50.00        // Precio personalizado
+  "serviceId": 1
+}
+```
+o
+```json
+{
+  "productId": 2
 }
 ```
 
-**Respuesta:**
+**Restricciones:**
+- ✅ **"En ejecución"**: Permitida
+- ✅ **"Pagada"**: Permitida
+- ❌ **"Anulada"**: Bloqueada (ya está anulado)
+- ❌ **No se puede anular el último detalle activo** del cliente
+
+**Ejemplo de Response:**
 ```json
 {
   "success": true,
-  "data": {
-    "id": 3,
-    "serviceClientId": 1,
-    "serviceId": 2,
-    "productId": null,
-    "empleadoId": 8,
-    "quantity": 1,
-    "unitPrice": 50.00,     // Precio personalizado
-    "subtotal": 50.00,      // Calculado con precio personalizado
-    "status": "En ejecución"
-  }
+  "message": "Servicio/Producto anulado exitosamente del detalle (mantenido para integridad de ventas)"
 }
 ```
 
-## 🛍️ Ejemplos Específicos de Productos
-
-### Productos Disponibles (Datos de Prueba)
-
-| ID | Producto | Precio | Categoría |
-|----|----------|--------|-----------|
-| 5 | Shampoo Profesional | $25.00 | Cuidado Capilar |
-| 6 | Acondicionador | $30.00 | Cuidado Capilar |
-| 7 | Mascarilla Capilar | $45.00 | Cuidado Capilar |
-| 8 | Aceite Capilar | $35.00 | Cuidado Capilar |
-| 9 | Tinte Profesional | $55.00 | Coloración |
-| 10 | Decolorante | $40.00 | Coloración |
-| 11 | Oxidante | $20.00 | Coloración |
-| 12 | Gel para Cabello | $15.00 | Peinado |
-| 13 | Laca para Cabello | $18.00 | Peinado |
-| 14 | Cera Modeladora | $22.00 | Peinado |
-
-### Ejemplo 1: Agregar un Solo Producto
-
+**Ejemplo de Error (Ya anulado):**
 ```json
 {
-  "serviceClientId": 1,
-  "productId": 5,           // Shampoo - $25.00
-  "empleadoId": 8,
-  "quantity": 2             // 2 shampoos
+  "success": false,
+  "message": "El detalle de servicio ya está anulado"
 }
 ```
 
-**Resultado:**
-- Precio unitario: $25.00 (automático)
-- Subtotal: $50.00 (2 × $25.00)
-
-### Ejemplo 2: Agregar Múltiples Productos Diferentes
-
-```javascript
-// Producto 1: Shampoo
-{
-  "serviceClientId": 1,
-  "productId": 5,           // Shampoo - $25.00
-  "empleadoId": 8,
-  "quantity": 1
-}
-
-// Producto 2: Acondicionador
-{
-  "serviceClientId": 1,
-  "productId": 6,           // Acondicionador - $30.00
-  "empleadoId": 8,
-  "quantity": 1
-}
-
-// Producto 3: Mascarilla
-{
-  "serviceClientId": 1,
-  "productId": 7,           // Mascarilla - $45.00
-  "empleadoId": 9,
-  "quantity": 1
-}
-```
-
-**Resultado:**
-- Shampoo: $25.00
-- Acondicionador: $30.00
-- Mascarilla: $45.00
-- **Total: $100.00**
-
-### Ejemplo 3: Productos con Cantidades Variables
-
-```javascript
-// Tinte (2 unidades)
-{
-  "serviceClientId": 1,
-  "productId": 9,           // Tinte - $55.00
-  "empleadoId": 8,
-  "quantity": 2
-}
-
-// Oxidante (3 unidades)
-{
-  "serviceClientId": 1,
-  "productId": 11,          // Oxidante - $20.00
-  "empleadoId": 8,
-  "quantity": 3
-}
-
-// Gel (1 unidad)
-{
-  "serviceClientId": 1,
-  "productId": 12,          // Gel - $15.00
-  "empleadoId": 9,
-  "quantity": 1
-}
-```
-
-**Resultado:**
-- Tinte (2x): $110.00
-- Oxidante (3x): $60.00
-- Gel (1x): $15.00
-- **Total: $185.00**
-
-### Ejemplo 4: Producto con Precio Personalizado
-
+**Ejemplo de Error (Último detalle activo):**
 ```json
 {
+  "success": false,
+  "message": "No se puede anular el último servicio/producto del cliente. Debe mantener al menos un detalle activo."
+}
+```
+
+## 🗑️ **Gestión de Servicios y Productos Individuales**
+
+### **Concepto:**
+Cada `detalle_servicio_cliente` puede contener múltiples servicios y productos individuales. Cada uno se gestiona de forma independiente, permitiendo:
+
+- ✅ **Anular servicios/productos específicos** del detalle (NO ELIMINAR)
+- ✅ **Agregar nuevos servicios/productos** al detalle existente
+- ✅ **Mantener múltiples detalles** por cliente
+- ✅ **Gestionar cada detalle individualmente**
+- 🔒 **Mantener integridad de ventas** - los registros nunca se eliminan
+
+### **Flujo de Trabajo:**
+1. **Crear detalle inicial** con un servicio o producto
+2. **Agregar más servicios/productos** usando el endpoint `add-item`
+3. **Anular servicios/productos específicos** usando el endpoint `remove-item`
+4. **Mantener al menos un detalle activo** por cliente
+
+### **Ejemplo de Uso:**
+```javascript
+// 1. Crear detalle inicial
+POST /api/detalles-servicio
+{
   "serviceClientId": 1,
-  "productId": 5,           // Shampoo - $25.00 (precio original)
-  "empleadoId": 8,
+  "serviceId": 1,
+  "empleadoId": 1,
   "quantity": 1,
-  "unitPrice": 30.00        // Precio personalizado
+  "unitPrice": 35.00
+}
+
+// 2. Agregar producto al mismo cliente
+POST /api/detalles-servicio/service-client/1/add-item
+{
+  "productId": 1,
+  "quantity": 2,
+  "unitPrice": 45.00
+}
+
+// 3. Agregar otro servicio
+POST /api/detalles-servicio/service-client/1/add-item
+{
+  "serviceId": 5,
+  "empleadoId": 5,
+  "quantity": 1,
+  "unitPrice": 80.00
+}
+
+// 4. ANULAR el primer servicio (NO ELIMINAR)
+DELETE /api/detalles-servicio/1/remove-item
+{
+  "serviceId": 1
 }
 ```
 
-**Resultado:**
-- Precio original: $25.00
-- Precio personalizado: $30.00
-- Subtotal: $30.00
+### **Restricciones de Anulación:**
+- ❌ **No se puede anular el último detalle activo** del cliente
+- ❌ **No se puede anular si ya está anulado**
+- ✅ **Se puede anular si el estado es "En ejecución" o "Pagada"**
+- 🔒 **Los registros se mantienen** para integridad de ventas
 
-## Endpoints Disponibles
+### **Ventajas del Sistema:**
+- 🔄 **Flexibilidad**: Agregar/quitar servicios según necesidades del cliente
+- 📊 **Control granular**: Cada servicio/producto se gestiona independientemente
+- 💰 **Precios individuales**: Cada detalle puede tener su propio precio
+- 👥 **Empleados específicos**: Cada servicio puede tener un empleado diferente
+- 📈 **Escalabilidad**: Agregar tantos servicios/productos como sea necesario
+- 🛡️ **Integridad de datos**: Los registros nunca se eliminan, solo se anulan
+- 📋 **Auditoría completa**: Historial completo de todas las transacciones
+- 💼 **Cumplimiento contable**: Cumple con estándares de facturación
 
-### Crear Detalle de Servicio
-- **POST** `/api/detalles-servicio`
-- Crea un nuevo detalle con validaciones automáticas
+## 🔍 **Validaciones Implementadas**
 
-### Obtener Detalles por Servicio Cliente
-- **GET** `/api/detalles-servicio/service-client/:serviceClientId`
-- Obtiene todos los detalles de un servicio cliente específico
+### **Validaciones de Creación:**
+- ✅ Cliente asociado obligatorio
+- ✅ Al menos un producto o servicio
+- ✅ Empleado obligatorio solo para servicios
+- ✅ Cantidad y precio unitario válidos
 
-### Calcular Subtotal
-- **GET** `/api/detalles-servicio/:id/subtotal`
-- Calcula el subtotal de un detalle específico
+### **Validaciones de Estado:**
+- ✅ Solo estados válidos: "En ejecución", "Pagada", "Anulada"
+- ✅ Transiciones de estado controladas
+- ✅ Operaciones bloqueadas según estado actual
 
-### Cambiar Estado
-- **PATCH** `/api/detalles-servicio/:id/status`
-- Cambia el estado de un detalle (En ejecución, Pagada)
+### **Validaciones de Negocio:**
+- ✅ No editar detalles pagados (solo anular)
+- ✅ No editar detalles anulados
+- ✅ No eliminar detalles pagados o anulados
+- ✅ No cambiar estado de anulados
 
-### Obtener por Empleado
-- **GET** `/api/detalles-servicio/employee/:empleadoId`
-- Obtiene todos los detalles asignados a un empleado
+## 📊 **Estados y Flujo de Trabajo**
 
-### Obtener por Producto
-- **GET** `/api/detalles-servicio/product/:productId`
-- Obtiene todos los detalles de un producto específico
+### **Flujo Típico:**
+1. **Crear** → Estado: "En ejecución"
+2. **Editar** → Solo si está "En ejecución"
+3. **Marcar como Pagada** → Estado: "Pagada"
+4. **Anular** → Estado: "Anulada" (desde cualquier estado excepto ya anulado)
 
-## Validaciones Automáticas
+### **Casos de Uso:**
+- **Cliente solicita cambios**: Solo si está "En ejecución"
+- **Cliente paga**: Cambiar a "Pagada" (bloquea ediciones)
+- **Cliente cancela**: Cambiar a "Anulada" (bloquea todo)
+- **Error en facturación**: Anular desde "Pagada"
 
-### ✅ Validaciones de Entrada
-- Debe especificar al menos un servicio o producto
-- Debe especificar un cliente asociado (serviceClientId)
-- Debe especificar un empleado
-- Debe especificar una cantidad válida (mínimo 1)
+## 🚨 **Mensajes de Error Comunes**
 
-### ✅ Validaciones de Existencia
-- Verifica que el servicio existe en el catálogo
-- Verifica que el producto existe en el catálogo
-- Verifica que el empleado existe
-
-### ✅ Validaciones de Precio
-- Si no se proporciona precio, lo obtiene automáticamente
-- Valida que el precio sea mayor a 0
-- Calcula automáticamente el subtotal
-
-## Flujo de Trabajo Típico
-
-### 1. Crear Servicio Cliente
-Primero debes crear un servicio cliente que represente la orden general.
-
-### 2. Agregar Detalles
-Luego agregas múltiples detalles, cada uno con:
-- Un servicio o producto específico
-- Un empleado asignado
-- Una cantidad
-- Precio (automático o personalizado)
-
-### 3. Gestionar Estados
-- **En ejecución**: Detalle activo
-- **Pagada**: Detalle completado y pagado
-
-### 4. Calcular Totales
-El sistema calcula automáticamente:
-- Subtotal por detalle
-- Total del servicio cliente
-
-## Ejemplo Completo con Productos
-
-```javascript
-// 1. Crear detalle con servicio de coloración
-const detalle1 = {
-  serviceClientId: 1,
-  serviceId: 3,        // Coloración - $120.00
-  empleadoId: 8,
-  quantity: 1
-};
-
-// 2. Crear detalle con producto shampoo
-const detalle2 = {
-  serviceClientId: 1,
-  productId: 5,        // Shampoo - $25.00
-  empleadoId: 8,
-  quantity: 2
-};
-
-// 3. Crear detalle con producto tinte
-const detalle3 = {
-  serviceClientId: 1,
-  productId: 9,        // Tinte - $55.00
-  empleadoId: 8,
-  quantity: 1
-};
-
-// 4. Crear detalle con producto oxidante
-const detalle4 = {
-  serviceClientId: 1,
-  productId: 11,       // Oxidante - $20.00
-  empleadoId: 9,
-  quantity: 3
-};
-
-// Resultado: Servicio cliente con 4 detalles
-// - Coloración: $120.00
-// - Shampoo (2x): $50.00
-// - Tinte (1x): $55.00
-// - Oxidante (3x): $60.00
-// Total: $285.00
+### **Errores de Estado:**
+```json
+{
+  "success": false,
+  "message": "No se puede editar un detalle de servicio que ya está pagado. Solo se permite anular."
+}
 ```
 
-## Códigos de Error Comunes
+```json
+{
+  "success": false,
+  "message": "No se puede cambiar el estado a \"En ejecución\" desde \"Pagada\""
+}
+```
 
-### 400 - Datos Inválidos
+```json
+{
+  "success": false,
+  "message": "El detalle de servicio ya está anulado"
+}
+```
+
+### **Errores de Validación:**
 ```json
 {
   "success": false,
@@ -367,61 +391,61 @@ const detalle4 = {
 }
 ```
 
-### 400 - Producto No Encontrado
 ```json
 {
   "success": false,
-  "message": "El producto especificado no existe"
+  "message": "El empleado es obligatorio cuando se especifica un servicio"
 }
 ```
 
-### 400 - Empleado Requerido
-```json
-{
-  "success": false,
-  "message": "Debe especificar un empleado para el servicio"
-}
-```
+## 🔧 **Configuración y Dependencias**
 
-### 400 - Cantidad Inválida
-```json
-{
-  "success": false,
-  "message": "Debe especificar una cantidad válida (mínimo 1)"
-}
-```
+### **Asociaciones de Base de Datos:**
+- `ServiceDetail` → `Service` (servicios)
+- `ServiceDetail` → `Product` (productos)
+- `ServiceDetail` → `Employee` (empleados)
+- `ServiceDetail` → `ServiceClient` (servicios cliente)
 
-## Scripts de Ejemplo
+### **Middleware Requerido:**
+- `AuthMiddleware.verifyToken` - Autenticación JWT
+- `ServiceDetailValidationMiddleware` - Validaciones específicas
 
-### Script General
-Puedes usar el script `scripts/ejemplo-crear-detalle-servicio.js` para probar todas las funcionalidades:
+### **Hooks Automáticos:**
+- Cálculo automático de subtotal
+- Asignación automática de estado por defecto
 
-```bash
-node scripts/ejemplo-crear-detalle-servicio.js
-```
+## 📝 **Notas de Implementación**
 
-### Script Específico de Productos
-Para ejemplos específicos de productos, usa `scripts/ejemplo-productos-detalle-servicio.js`:
+### **Seguridad:**
+- Todas las operaciones requieren autenticación JWT
+- Validaciones de estado en capa de servicio
+- Mensajes de error descriptivos para el usuario
 
-```bash
-node scripts/ejemplo-productos-detalle-servicio.js
-```
+### **Performance:**
+- Respuestas incluyen datos anidados en una sola consulta
+- Índices en campos de búsqueda frecuente
+- Paginación disponible para listas grandes
 
-Este script incluye ejemplos de:
-- Agregar un solo producto
-- Agregar múltiples productos diferentes
-- Agregar productos con cantidades variables
-- Agregar productos con precios personalizados
-- Obtener productos por servicio cliente
-- Obtener productos por empleado
+### **Mantenibilidad:**
+- Reglas de negocio centralizadas en el servicio
+- Validaciones consistentes en middleware
+- Mensajes de error estandarizados
 
-## Notas Importantes
+---
 
-1. **Precio Automático**: Si no especificas `unitPrice`, el sistema lo obtiene automáticamente del servicio o producto
-2. **Subtotal Automático**: El subtotal se calcula automáticamente (precio × cantidad)
-3. **Validaciones**: El sistema valida que existan todos los elementos referenciados
-4. **Estados**: Los detalles comienzan en "En ejecución" por defecto
-5. **Empleados**: Cada detalle puede tener un empleado diferente asignado
-6. **Flexibilidad**: Puedes mezclar servicios y productos en la misma orden
-7. **Productos**: Puedes agregar tantos productos como necesites, cada uno con su cantidad específica
-8. **Cantidades**: Cada producto puede tener una cantidad diferente (mínimo 1)
+## 🎉 **Resumen de Características**
+
+✅ **Gestión completa de estados** con reglas de negocio  
+✅ **Validaciones robustas** por estado y operación  
+✅ **Respuestas anidadas** con datos completos  
+✅ **Respuestas organizadas** por servicios y productos  
+✅ **Control de transiciones** de estado  
+✅ **Mensajes de error descriptivos**  
+✅ **Autenticación JWT** en todos los endpoints  
+✅ **Hooks automáticos** para cálculos y asignaciones  
+✅ **Gestión granular** de servicios y productos individuales  
+✅ **Eliminación y adición** de elementos del detalle  
+
+---
+
+*Documentación actualizada para incluir la gestión de servicios y productos individuales del módulo ServiceDetail.*

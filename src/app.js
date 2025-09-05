@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const setupAssociations = require('./config/associations');
-const initializeRoles = require('./config/initRoles');
+const { setupAssociations } = require('./config/associations');
+const { initializeRoles } = require('./config/initRoles');
 
 // Importar rutas
 const productRoutes = require('./routes/productRoutes');
