@@ -112,6 +112,7 @@ class ServiceCategoryController {
         message: result.message
       });
     } catch (error) {
+      // 👇 Si la categoría tiene servicios asociados o no existe, llega aquí
       res.status(400).json({
         success: false,
         error: error.message
@@ -120,28 +121,21 @@ class ServiceCategoryController {
   }
 
   async search(req, res) {
-    try {
-      const { q } = req.query;
-      if (!q) {
-        return res.status(400).json({
-          success: false,
-          error: 'Término de búsqueda requerido'
-        });
-      }
-
-      const categories = await serviceCategoryService.searchCategories(q);
-      res.json({
-        success: true,
-        data: categories,
-        count: categories.length
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
+  try {
+    const categorias = await serviceCategoryService.searchCategories(req.query);
+    res.status(200).json({
+      success: true,
+      data: categorias,
+      message: 'Categorías encontradas correctamente'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al buscar categorías',
+      error: error.message
+    });
   }
+}
 
   async changeStatus(req, res) {
     try {
