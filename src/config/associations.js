@@ -6,6 +6,8 @@ const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
+const Services = require('../models/Services');
+const Appointment = require('../models/Appointment');
 
 /**
  * Configurar todas las asociaciones entre modelos
@@ -125,6 +127,32 @@ function setupAssociations() {
   Product.belongsTo(ProductCategory, {
     foreignKey: 'id_categoria_producto',
     as: 'categoria'
+  });
+
+  // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
+  
+  // Un usuario puede tener muchas citas
+  Usuario.hasMany(Appointment, {
+    foreignKey: 'id_usuario',
+    as: 'citas'
+  });
+
+  // Una cita pertenece a un usuario
+  Appointment.belongsTo(Usuario, {
+    foreignKey: 'id_usuario',
+    as: 'usuario'
+  });
+
+  // Un servicio puede estar en muchas citas
+  Services.hasMany(Appointment, {
+    foreignKey: 'id_servicio',
+    as: 'citas'
+  });
+
+  // Una cita pertenece a un servicio
+  Appointment.belongsTo(Services, {
+    foreignKey: 'id_servicio',
+    as: 'servicio'
   });
 
   console.log('✅ Asociaciones configuradas correctamente');
