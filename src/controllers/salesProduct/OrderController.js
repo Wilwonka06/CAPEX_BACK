@@ -1,21 +1,20 @@
-const compraService = require('../services/PurchaseService');
+const pedidoService = require('../../services/salesProducts/OrderServices');
 
-// Obtener todas las compras
-const getAllOrders = async (req, res) => {
+// Obtener todos los pedidos
+const getAllPedidos = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const includeDetalles = req.query.includeDetalles !== 'false';
-
-    const result = await compraService.getAllOrders(page, limit, includeDetalles);
+    
+    const result = await pedidoService.getAllPedidos(page, limit);
     
     res.status(200).json({
       success: true,
-      data: result.compras,
+      data: result.pedidos,
       pagination: result.pagination
     });
   } catch (error) {
-    console.error('Error al obtener compras:', error);
+    console.error('Error al obtener pedidos:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -24,27 +23,25 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-// Obtener una compra por ID
-const getCompraById = async (req, res) => {
+// Obtener un pedido por ID
+const getPedidoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const includeDetalles = req.query.includeDetalles !== 'false';
-    
-    const compra = await compraService.getCompraById(id, includeDetalles);
+    const pedido = await pedidoService.getPedidoById(id);
 
-    if (!compra) {
+    if (!pedido) {
       return res.status(404).json({
         success: false,
-        message: 'Compra no encontrada'
+        message: 'Pedido no encontrado'
       });
     }
 
     res.status(200).json({
       success: true,
-      data: compra
+      data: pedido
     });
   } catch (error) {
-    console.error('Error al obtener compra:', error);
+    console.error('Error al obtener pedido:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -53,19 +50,27 @@ const getCompraById = async (req, res) => {
   }
 };
 
-// Crear una nueva compra
-const createCompra = async (req, res) => {
+// Crear un nuevo pedido
+const createPedido = async (req, res) => {
   try {
-    const compraData = req.body;
-    const nuevaCompra = await compraService.createCompra(compraData);
+    const pedidoData = req.body;
+    const newPedido = await pedidoService.createPedido(pedidoData);
 
     res.status(201).json({
       success: true,
-      message: 'Compra creada exitosamente',
-      data: nuevaCompra
+      message: 'Pedido creado exitosamente',
+      data: newPedido
     });
   } catch (error) {
-    console.error('Error al crear compra:', error);
+    console.error('Error al crear pedido:', error);
+    
+    if (error.message.includes('no existe') || 
+        error.message.includes('debe tener al menos un producto')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
     
     if (error.name === 'SequelizeValidationError') {
       return res.status(400).json({
@@ -78,49 +83,44 @@ const createCompra = async (req, res) => {
       });
     }
 
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Error interno del servidor',
+      error: error.message
     });
   }
 };
 
-// Cancelar una compra
-const cancelarCompra = async (req, res) => {
+// Actualizar un pedido
+const updatePedido = async (req, res) => {
   try {
     const { id } = req.params;
-    const compra = await compraService.cancelarCompra(id);
+    const updateData = req.body;
+
+    const pedido = await pedidoService.updatePedido(id, updateData);
 
     res.status(200).json({
       success: true,
-      message: 'Compra cancelada exitosamente',
-      data: compra
+      message: 'Pedido actualizado exitosamente',
+      data: pedido
     });
   } catch (error) {
-    console.error('Error al cancelar compra:', error);
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Obtener compras por proveedor
-const getComprasByProveedor = async (req, res) => {
-  try {
-    const { idProveedor } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const result = await compraService.getComprasByProveedor(idProveedor, page, limit);
+    console.error('Error al actualizar pedido:', error);
     
-    res.status(200).json({
-      success: true,
-      data: result.compras,
-      pagination: result.pagination
-    });
-  } catch (error) {
-    console.error('Error al obtener compras por proveedor:', error);
+    if (error.message === 'Pedido no encontrado') {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    if (error.message.includes('no existe')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -129,22 +129,27 @@ const getComprasByProveedor = async (req, res) => {
   }
 };
 
-// Filtrar compras por fecha
-const getComprasByFecha = async (req, res) => {
+// Eliminar un pedido
+const deletePedido = async (req, res) => {
   try {
-    const { fecha_inicio, fecha_fin } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const result = await compraService.getComprasByFecha(fecha_inicio, fecha_fin, page, limit);
+    const { id } = req.params;
     
+    await pedidoService.deletePedido(id);
+
     res.status(200).json({
       success: true,
-      data: result.compras,
-      pagination: result.pagination
+      message: 'Pedido eliminado exitosamente'
     });
   } catch (error) {
-    console.error('Error al filtrar compras por fecha:', error);
+    console.error('Error al eliminar pedido:', error);
+    
+    if (error.message === 'Pedido no encontrado') {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
@@ -153,11 +158,106 @@ const getComprasByFecha = async (req, res) => {
   }
 };
 
-// Obtener estadísticas de compras
-const getEstadisticasCompras = async (req, res) => {
+// Búsqueda global de pedidos
+const searchPedidos = async (req, res) => {
   try {
-    const estadisticas = await compraService.getEstadisticas();
+    const { q } = req.query; // Parámetro de búsqueda
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     
+    if (!q) {
+      return res.status(400).json({
+        success: false,
+        message: 'El parámetro de búsqueda "q" es requerido'
+      });
+    }
+
+    const result = await pedidoService.searchPedidos(q, page, limit);
+
+    res.status(200).json({
+      success: true,
+      data: result.pedidos,
+      pagination: result.pagination,
+      searchTerm: q
+    });
+  } catch (error) {
+    console.error('Error al buscar pedidos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
+// Obtener pedidos por estado
+const getPedidosByEstado = async (req, res) => {
+  try {
+    const { estado } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const estadosValidos = ['Pendiente', 'En proceso', 'Enviado', 'Entregado', 'Cancelado'];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        message: `El estado debe ser uno de: ${estadosValidos.join(', ')}`
+      });
+    }
+
+    const result = await pedidoService.getPedidosByEstado(estado, page, limit);
+
+    res.status(200).json({
+      success: true,
+      data: result.pedidos,
+      pagination: result.pagination
+    });
+  } catch (error) {
+    console.error('Error al obtener pedidos por estado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
+// Cambiar estado del pedido
+const cambiarEstadoPedido = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    const pedido = await pedidoService.cambiarEstadoPedido(id, estado);
+
+    res.status(200).json({
+      success: true,
+      message: 'Estado del pedido actualizado exitosamente',
+      data: pedido
+    });
+  } catch (error) {
+    console.error('Error al cambiar estado del pedido:', error);
+    
+    if (error.message === 'Pedido no encontrado') {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
+// Obtener estadísticas de pedidos
+const getEstadisticas = async (req, res) => {
+  try {
+    const estadisticas = await pedidoService.getEstadisticas();
+
     res.status(200).json({
       success: true,
       data: estadisticas
@@ -172,12 +272,46 @@ const getEstadisticasCompras = async (req, res) => {
   }
 };
 
+// Obtener pedidos por rango de fechas
+const getPedidosByFechas = async (req, res) => {
+  try {
+    const { fecha_inicio, fecha_fin } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    if (!fecha_inicio || !fecha_fin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Los parámetros fecha_inicio y fecha_fin son requeridos'
+      });
+    }
+
+    const result = await pedidoService.getPedidosByFechas(fecha_inicio, fecha_fin, page, limit);
+
+    res.status(200).json({
+      success: true,
+      data: result.pedidos,
+      pagination: result.pagination
+    });
+  } catch (error) {
+    console.error('Error al obtener pedidos por fechas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
-  getAllOrders,
-  getCompraById,
-  createCompra,
-  cancelarCompra,
-  getComprasByProveedor,
-  getComprasByFecha,
-  getEstadisticasCompras
+  getAllPedidos,
+  getPedidoById,
+  createPedido,
+  updatePedido,
+  deletePedido,
+  searchPedidos,
+  getPedidosByEstado,
+  cambiarEstadoPedido,
+  getEstadisticas,
+  getPedidosByFechas
 };

@@ -1,296 +1,373 @@
-const Pedido = require('../models/SalesProducts/Order');
-const DetailPedidos = require('../models/SalesProducts/OrderDetail');
-const Product = require('../models/Product');
-const { sequelize } = require('../config/database');
+const Pedido = require('../../models/salesProducts/Order');
+const DetallePedido = require('../../models/salesProducts/OrderDetail');
+const Product = require('../../models/Product');
 const { Op } = require('sequelize');
+const { sequelize } = require('../../config/database');
 
-class OrderService {
-    // Obtener todas las compras con paginación
-    async getAllPedidos(page = 1, limit = 10, includeDetail = true) {
-        const offset = (page - 1) * limit;
+class PedidoService {
+  // Obtener todos los pedidos con paginación
+  async getAllPedidos(page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    
+    const { count, rows } = await Pedido.findAndCountAll({
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto',
+              attributes: ['id_producto', 'nombre', 'precio_venta', 'url_foto']
+            }
+          ]
+        }
+      ],
+      limit,
+      offset,
+      order: [['fecha_creacion', 'DESC']]
+    });
+    
+    return {
+      pedidos: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page < Math.ceil(count / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
 
-        const options = {
-            limit,
-            offset,
-            order: [['fecha_pedido', 'DESC']],
-        };
+  // Obtener pedido por ID
+  async getPedidoById(id) {
+    return await Pedido.findByPk(id, {
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto'
+            }
+          ]
+        }
+      ]
+    });
+  }
 
-        if (includeDetail) {
-            options.include.push({
-                model: DetailPedidos,
-                as: 'detalles',
-                include: [
-                    {
-                        model: Product,
-                        as: 'producto',
-                        attributes: ['id_producto', 'nombre', 'precio_venta']
-                    }
+  // Crear nuevo pedido
+  async createPedido(pedidoData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const { fecha, productos } = pedidoData;
+
+      // Validar que hay productos
+      if (!productos || !Array.isArray(productos) || productos.length === 0) {
+        throw new Error('El pedido debe tener al menos un producto');
+      }
+
+      // Crear el pedido
+      const nuevoPedido = await Pedido.create({
+        fecha,
+        total: 0,
+        estado: 'Pendiente'
+      }, { transaction });
+
+      let totalGeneral = 0;
+
+      // Crear los detalles del pedido
+      for (const item of productos) {
+        const { id_producto, cantidad, precio_unitario } = item;
+
+        // Validar que el producto existe
+        const producto = await Product.findByPk(id_producto);
+        if (!producto) {
+          throw new Error(`El producto con ID ${id_producto} no existe`);
+        }
+
+        const subtotal = cantidad * precio_unitario;
+        totalGeneral += subtotal;
+
+        await DetallePedido.create({
+          id_pedido: nuevoPedido.id_pedido,
+          id_producto,
+          cantidad,
+          precio_unitario,
+          subtotal
+        }, { transaction });
+      }
+
+      // Actualizar el total del pedido
+      await nuevoPedido.update({ total: totalGeneral }, { transaction });
+
+      await transaction.commit();
+
+      // Retornar el pedido completo
+      return await this.getPedidoById(nuevoPedido.id_pedido);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  // Actualizar pedido
+  async updatePedido(id, updateData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const pedido = await Pedido.findByPk(id);
+      if (!pedido) {
+        throw new Error('Pedido no encontrado');
+      }
+
+      const { fecha, estado, productos } = updateData;
+
+      // Actualizar datos básicos del pedido
+      const updateFields = {};
+      if (fecha) updateFields.fecha = fecha;
+      if (estado) updateFields.estado = estado;
+
+      await pedido.update(updateFields, { transaction });
+
+      // Si se proporcionan productos, actualizar detalles
+      if (productos && Array.isArray(productos)) {
+        // Eliminar detalles existentes
+        await DetallePedido.destroy({ 
+          where: { id_pedido: id }, 
+          transaction 
+        });
+
+        let totalGeneral = 0;
+
+        // Crear nuevos detalles
+        for (const item of productos) {
+          const { id_producto, cantidad, precio_unitario } = item;
+
+          // Validar que el producto existe
+          const producto = await Product.findByPk(id_producto);
+          if (!producto) {
+            throw new Error(`El producto con ID ${id_producto} no existe`);
+          }
+
+          const subtotal = cantidad * precio_unitario;
+          totalGeneral += subtotal;
+
+          await DetallePedido.create({
+            id_pedido: id,
+            id_producto,
+            cantidad,
+            precio_unitario,
+            subtotal
+          }, { transaction });
+        }
+
+        // Actualizar el total
+        await pedido.update({ total: totalGeneral }, { transaction });
+      }
+
+      await transaction.commit();
+      return await this.getPedidoById(id);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  // Eliminar pedido
+  async deletePedido(id) {
+    const pedido = await Pedido.findByPk(id);
+    if (!pedido) {
+      throw new Error('Pedido no encontrado');
+    }
+
+    await pedido.destroy();
+    return { message: 'Pedido eliminado exitosamente' };
+  }
+
+  // Búsqueda global en pedidos
+  async searchPedidos(searchTerm, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    
+    // Construir condiciones de búsqueda para múltiples campos
+    const whereCondition = {
+      [Op.or]: [
+        // Buscar por ID del pedido
+        sequelize.where(
+          sequelize.cast(sequelize.col('Pedido.id_pedido'), 'CHAR'),
+          { [Op.like]: `%${searchTerm}%` }
+        ),
+        // Buscar por estado
+        { estado: { [Op.like]: `%${searchTerm}%` } },
+        // Buscar por total (convertido a string)
+        sequelize.where(
+          sequelize.cast(sequelize.col('Pedido.total'), 'CHAR'),
+          { [Op.like]: `%${searchTerm}%` }
+        ),
+        // Buscar por fecha (convertida a string)
+        sequelize.where(
+          sequelize.cast(sequelize.col('Pedido.fecha'), 'CHAR'),
+          { [Op.like]: `%${searchTerm}%` }
+        )
+      ]
+    };
+
+    const { count, rows } = await Pedido.findAndCountAll({
+      where: whereCondition,
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto',
+              where: {
+                [Op.or]: [
+                  { nombre: { [Op.like]: `%${searchTerm}%` } }
                 ]
-            });
+              },
+              required: false // LEFT JOIN para que no excluya pedidos sin productos que coincidan
+            }
+          ]
         }
+      ],
+      limit,
+      offset,
+      order: [['fecha_creacion', 'DESC']],
+      distinct: true
+    });
 
-        const { count, rows } = await Pedido.findAndCountAll(options);
+    return {
+      pedidos: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page < Math.ceil(count / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
 
-        return {
-            Pedidos: rows,
-            pagination: {
-                page,
-                limit,
-                total: count,
-                totalPages: Math.ceil(count / limit),
-                hasNext: page < Math.ceil(count / limit),
-                hasPrev: page > 1
+  // Obtener pedidos por estado
+  async getPedidosByEstado(estado, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    
+    const { count, rows } = await Pedido.findAndCountAll({
+      where: { estado },
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto',
+              attributes: ['id_producto', 'nombre', 'precio_venta']
             }
-        };
-    }
-
-    // Obtener compra por ID
-    async getPedidoById(id, includeDetail = true) {
-        const options = {
-            where: { id_pedido: id },
-        };
-
-        if (includeDetail) {
-            options.include.push({
-                model: DetailPedidos,
-                as: 'detalles',
-                include: [
-                    {
-                        model: Product,
-                        as: 'producto',
-                        attributes: ['id_producto', 'nombre', 'precio_venta', 'stock']
-                    }
-                ]
-            });
+          ]
         }
+      ],
+      limit,
+      offset,
+      order: [['fecha_creacion', 'DESC']]
+    });
 
-        return await Compra.findOne(options);
+    return {
+      pedidos: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page < Math.ceil(count / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
+
+  // Cambiar estado del pedido
+  async cambiarEstadoPedido(id, nuevoEstado) {
+    const pedido = await Pedido.findByPk(id);
+    if (!pedido) {
+      throw new Error('Pedido no encontrado');
     }
 
-    // Crear nueva compra con transacción
-    async createPedido(pedidoData) {
-        return await sequelize.transaction(async (t) => {
-            const { detalles, ...pedidoInfo } = pedidoData;
+    await pedido.update({ estado: nuevoEstado });
+    return await this.getPedidoById(id);
+  }
 
-            if (!detalles || !Array.isArray(detalles) || detalles.length === 0) {
-                throw new Error('El pedido debe tener al menos un detalle');
-            }
+  // Obtener estadísticas de pedidos
+  async getEstadisticas() {
+    const totalPedidos = await Pedido.count();
+    const pedidosPendientes = await Pedido.count({ where: { estado: 'Pendiente' } });
+    const pedidosEnProceso = await Pedido.count({ where: { estado: 'En proceso' } });
+    const pedidosEntregados = await Pedido.count({ where: { estado: 'Entregado' } });
+    const pedidosCancelados = await Pedido.count({ where: { estado: 'Cancelado' } });
+    
+    // Total en ventas (solo pedidos entregados)
+    const totalVentas = await Pedido.findOne({
+      attributes: [[sequelize.fn('SUM', sequelize.col('total')), 'total']],
+      where: { estado: 'Entregado' }
+    });
 
-            let subtotalCalculado = 0;
-            const detallesValidados = [];
+    return {
+      totalPedidos,
+      pedidosPendientes,
+      pedidosEnProceso,
+      pedidosEntregados,
+      pedidosCancelados,
+      totalVentas: parseFloat(totalVentas?.dataValues?.total || 0).toFixed(2),
+      porcentajeEntregados: totalPedidos > 0 ? ((pedidosEntregados / totalPedidos) * 100).toFixed(2) : 0
+    };
+  }
 
-            for (const detalle of detalles) {
-                const producto = await Product.findByPk(detalle.id_producto, { transaction: t });
-                if (!producto) {
-                    throw new Error(`Producto con ID ${detalle.id_producto} no encontrado`);
-                }
-
-                if (!detalle.cantidad || detalle.cantidad <= 0) {
-                    throw new Error(`La cantidad debe ser mayor a 0 para el producto ${producto.nombre}`);
-                }
-
-                if (!detalle.precio_unitario || detalle.precio_unitario <= 0) {
-                    throw new Error(`El precio unitario debe ser mayor a 0 para el producto ${producto.nombre}`);
-                }
-
-                const subtotalDetalle = detalle.cantidad * detalle.precio_unitario;
-
-                subtotalCalculado += subtotalDetalle;
-
-                detallesValidados.push({
-                    id_producto: detalle.id_producto,
-                    cantidad: detalle.cantidad,
-                    precio_unitario: detalle.precio_unitario,
-                    subtotal: subtotalDetalle
-                });
-            }
-
-            const totalCalculado = subtotalCalculado
-
-            const nuevoPedido = await Pedido.create({
-                fecha_registro: new Date(),
-                fecha_pedido: pedidoInfo.fecha_pedido,
-                subtotal: subtotalCalculado,
-                total: totalCalculado,
-                estado: 'Completada'
-            }, { transaction: t });
-
-            for (const detalle of detallesValidados) {
-                await DetailPedidos.create({
-                    id_pedido: nuevoPedido.id_pedido,
-                    ...detalle
-                }, { transaction: t });
-
-                await Product.increment('stock', {
-                    by: detalle.cantidad,
-                    where: { id_producto: detalle.id_producto },
-                    transaction: t
-                });
-            }
-
-            // Ojo 👀: devolvemos aquí mismo la compra recién creada
-            return await this.getpediById(nuevoPedido.id_pedido);
-        });
-    }
-
-    // Cancelar compra
-    async cancelarCompra(id) {
-        const transaction = await sequelize.transaction();
-
-        try {
-            const compra = await Compra.findByPk(id, {
-                include: [
-                    {
-                        model: DetailPedidos,
-                        as: 'detalles'
-                    }
-                ],
-                transaction
-            });
-
-            if (!compra) {
-                throw new Error('Compra no encontrada');
-            }
-
-            if (compra.estado === 'Cancelada') {
-                throw new Error('La compra ya está cancelada');
-            }
-
-            // Revertir el stock de los productos
-            for (const detalle of compra.detalles) {
-                await Product.decrement('stock', {
-                    by: detalle.cantidad,
-                    where: { id_producto: detalle.id_producto },
-                    transaction
-                });
-            }
-
-            // Cambiar estado a cancelada
-            await compra.update({ estado: 'Cancelada' }, { transaction });
-
-            await transaction.commit();
-
-            return await this.getCompraById(id);
-
-        } catch (error) {
-            await transaction.rollback();
-            throw error;
+  // Obtener pedidos por rango de fechas
+  async getPedidosByFechas(fechaInicio, fechaFin, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    
+    const { count, rows } = await Pedido.findAndCountAll({
+      where: {
+        fecha: {
+          [Op.between]: [fechaInicio, fechaFin]
         }
-    }
-
-    // Buscar compras por proveedor
-    async getComprasByProveedor(idProveedor, page = 1, limit = 10) {
-        const offset = (page - 1) * limit;
-
-        const { count, rows } = await Compra.findAndCountAll({
-            where: { id_proveedor: idProveedor },
-            include: [
-                {
-                    model: Proveedor,
-                    as: 'proveedor',
-                    attributes: ['id_proveedor', 'nombre', 'telefono']
-                },
-                {
-                    model: DetailPedidos,
-                    as: 'detalles',
-                    include: [
-                        {
-                            model: Product,
-                            as: 'producto',
-                            attributes: ['id_producto', 'nombre']
-                        }
-                    ]
-                }
-            ],
-            limit,
-            offset,
-            order: [['fecha_pedido', 'DESC']]
-        });
-
-        return {
-            compras: rows,
-            pagination: {
-                page,
-                limit,
-                total: count,
-                totalPages: Math.ceil(count / limit),
-                hasNext: page < Math.ceil(count / limit),
-                hasPrev: page > 1
+      },
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto',
+              attributes: ['id_producto', 'nombre', 'precio_venta']
             }
-        };
-    }
-
-    // Filtrar compras por fecha
-    async getComprasByFecha(fechaInicio, fechaFin, page = 1, limit = 10) {
-        const offset = (page - 1) * limit;
-        const whereClause = {};
-
-        if (fechaInicio && fechaFin) {
-            whereClause.fecha_pedido = {
-                [Op.between]: [fechaInicio, fechaFin]
-            };
-        } else if (fechaInicio) {
-            whereClause.fecha_pedido = {
-                [Op.gte]: fechaInicio
-            };
-        } else if (fechaFin) {
-            whereClause.fecha_pedido = {
-                [Op.lte]: fechaFin
-            };
+          ]
         }
+      ],
+      limit,
+      offset,
+      order: [['fecha', 'DESC']]
+    });
 
-        const { count, rows } = await Compra.findAndCountAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Proveedor,
-                    as: 'proveedor',
-                    attributes: ['id_proveedor', 'nombre']
-                }
-            ],
-            limit,
-            offset,
-            order: [['fecha_pedido', 'DESC']]
-        });
-
-        return {
-            compras: rows,
-            pagination: {
-                page,
-                limit,
-                total: count,
-                totalPages: Math.ceil(count / limit),
-                hasNext: page < Math.ceil(count / limit),
-                hasPrev: page > 1
-            }
-        };
-    }
-
-    // Obtener estadísticas de compras
-    async getEstadisticas() {
-        const totalCompras = await Compra.count();
-        const comprasCompletadas = await Compra.count({ where: { estado: 'Completada' } });
-        const comprasCanceladas = await Compra.count({ where: { estado: 'Cancelada' } });
-
-        const montoTotal = await Compra.sum('total', { where: { estado: 'Completada' } });
-
-        const comprasMesActual = await Compra.count({
-            where: {
-                estado: 'Completada',
-                fecha_pedido: {
-                    [Op.gte]: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-                }
-            }
-        });
-
-        return {
-            totalCompras,
-            comprasCompletadas,
-            comprasCanceladas,
-            montoTotal: parseFloat(montoTotal || 0).toFixed(2),
-            comprasMesActual
-        };
-    }
+    return {
+      pedidos: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page < Math.ceil(count / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
 }
 
-module.exports = new CompraService();
+module.exports = new PedidoService();
