@@ -6,13 +6,13 @@ const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
+const Compra = require('../models/Purchase');
+const DetalleCompra = require('../models/PurchaseDetail');
+const Proveedor = require('../models/Supplier');
+const Services = require('../models/Services');
+const Appointment = require('../models/Appointment');
 
-/**
- * Configurar todas las asociaciones entre modelos
- */
 function setupAssociations() {
-  console.log('🔗 Configurando asociaciones entre modelos...');
-
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
   
   // Relación directa entre Usuario y Role (para el campo roleId)
@@ -127,7 +127,68 @@ function setupAssociations() {
     as: 'categoria'
   });
 
-  console.log('✅ Asociaciones configuradas correctamente');
+  // ===== ASOCIACIONES COMPRAS =====
+
+  // Relación entre Proveedor y Compra
+  Proveedor.hasMany(Compra, {
+    foreignKey: 'id_proveedor',
+    as: 'compras'
+  });
+
+  Compra.belongsTo(Proveedor, {
+    foreignKey: 'id_proveedor',
+    as: 'proveedor'
+  });
+
+  // Relación entre Compra y DetalleCompra
+  Compra.hasMany(DetalleCompra, {
+    foreignKey: 'id_compra',
+    as: 'detalles'
+  });
+
+  DetalleCompra.belongsTo(Compra, {
+    foreignKey: 'id_compra',
+    as: 'compra'
+  });
+
+  // Relación entre Producto y DetalleCompra
+  Product.hasMany(DetalleCompra, {
+    foreignKey: 'id_producto',
+    as: 'detallesCompras'
+  });
+
+  DetalleCompra.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+  
+  // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
+  
+  // Un usuario puede tener muchas citas
+  Usuario.hasMany(Appointment, {
+    foreignKey: 'id_usuario',
+    as: 'citas'
+  });
+
+  // Una cita pertenece a un usuario
+  Appointment.belongsTo(Usuario, {
+    foreignKey: 'id_usuario',
+    as: 'usuario'
+  });
+
+  // Un servicio puede estar en muchas citas
+  Services.hasMany(Appointment, {
+    foreignKey: 'id_servicio',
+    as: 'citas'
+  });
+
+  // Una cita pertenece a un servicio
+  Appointment.belongsTo(Services, {
+    foreignKey: 'id_servicio',
+    as: 'servicio'
+  });
+
+  console.log('Asociaciones configuradas correctamente');
 }
 
 module.exports = { setupAssociations };

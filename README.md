@@ -60,6 +60,7 @@ http://localhost:3000
 - **Categorías:** `/api/categorias-productos`
 - **Usuarios:** `/api/usuarios`
 - **Agendamiento:** `/api/scheduling`
+- **Editar Perfil:** `/api/users/:id/profile`
 
 ## 📚 Documentación de Endpoints
 
@@ -95,6 +96,35 @@ http://localhost:3000
 | POST | `/api/proveedores` | Crear nuevo proveedor |
 | PUT | `/api/proveedores/:id` | Actualizar proveedor |
 | DELETE | `/api/proveedores/:id` | Eliminar proveedor |
+
+### Editar Perfil de Usuario
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| PUT | `/api/users/:id/profile` | Editar perfil de usuario |
+
+**Campos editables:**
+- `nombre` (opcional): Nombre completo del usuario
+- `tipo_documento` (opcional): Tipo de documento de identidad
+- `documento` (opcional): Número de documento
+- `telefono` (opcional): Número de teléfono
+- `correo` (opcional): Dirección de correo electrónico
+- `foto` (opcional): URL de la foto de perfil
+- `direccion` (opcional): Dirección del usuario
+- `contrasena` (opcional): Nueva contraseña
+
+**Ejemplo de uso:**
+```bash
+curl -X PUT http://localhost:3000/api/users/1/profile \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "María González",
+    "telefono": "+573001234567",
+    "correo": "maria.gonzalez@ejemplo.com"
+  }'
+```
+
+**Documentación completa:** Ver [EDIT_PROFILE_API.md](docs/EDIT_PROFILE_API.md)
 
 ### Categorías de Productos
 
