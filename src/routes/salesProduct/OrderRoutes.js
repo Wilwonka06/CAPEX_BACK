@@ -11,7 +11,7 @@ const {
   cambiarEstadoPedido,
   getEstadisticas,
   getPedidosByFechas
-} = require('../../controllers/salesProducts/OrderController');
+} = require('../../controllers/salesProduct/OrderController');
 const {
   validateCreatePedido,
   validateUpdatePedido,
@@ -20,7 +20,7 @@ const {
   validateEstadoParam,
   validateFechasQuery,
   validatePagination
-} = require('../../middlewares/salesProducts/OrderMiddleware');
+} = require('../../middlewares/salesProduct/OrderMiddleware');
 
 // Rutas específicas (deben ir antes de las rutas con parámetros)
 router.get('/search', validateSearchPedidos, searchPedidos);

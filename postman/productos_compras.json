@@ -1,0 +1,583 @@
+{
+  "info": {
+    "name": "CAPEX Compras y Proveedores",
+    "description": "Colección completa para testear la API de gestión de productos capilares, extensiones, compras y proveedores",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏷️ Categorías de Productos",
+      "description": "Gestión de categorías para productos capilares",
+      "item": [
+        {
+          "name": "Listar todas las categorías",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categorias-productos",
+            "description": "Obtener todas las categorías de productos"
+          }
+        },
+        {
+          "name": "Obtener categoría por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categorias-productos/1"
+          }
+        },
+        {
+          "name": "Crear categoría - Extensiones",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/categorias-productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones de Cabello\",\n  \"estado\": \"Activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear categoría - Tratamientos",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/categorias-productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tratamientos Capilares\",\n  \"estado\": \"Activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear categoría - Herramientas",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/categorias-productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Herramientas de Peinado\",\n  \"estado\": \"Activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/categorias-productos/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones Premium\",\n  \"estado\": \"Activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/categorias-productos/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💄 Productos Capilares",
+      "description": "Gestión de productos para extensiones y cuidado capilar",
+      "item": [
+        {
+          "name": "Listar todos los productos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Obtener producto por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/1"
+          }
+        },
+        {
+          "name": "Buscar productos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/search?q=extensiones&page=1&limit=10",
+            "description": "Buscar productos por nombre o categoría"
+          }
+        },
+        {
+          "name": "Productos por categoría",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/categoria/1?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Productos con stock bajo",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/stock-bajo?limite=10"
+          }
+        },
+        {
+          "name": "Crear producto - Extensiones Naturales",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones Cabello Natural Rubio 60cm\",\n  \"id_categoria_producto\": 1,\n  \"costo\": 85000,\n  \"iva\": 19,\n  \"precio_venta\": 120000,\n  \"stock\": 15,\n  \"url_foto\": \"https://example.com/extensiones-rubio-60cm.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear producto - Shampoo Profesional",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Shampoo Profesional Hidratante 500ml\",\n  \"id_categoria_producto\": 2,\n  \"costo\": 25000,\n  \"iva\": 19,\n  \"precio_venta\": 35000,\n  \"stock\": 50,\n  \"url_foto\": \"https://example.com/shampoo-hidratante.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear producto - Plancha Profesional",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plancha Profesional Cerámica Titanio\",\n  \"id_categoria_producto\": 3,\n  \"costo\": 180000,\n  \"iva\": 19,\n  \"precio_venta\": 250000,\n  \"stock\": 8,\n  \"url_foto\": \"https://example.com/plancha-ceramica.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear producto - Keratina",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tratamiento Keratina Brasileña 1L\",\n  \"id_categoria_producto\": 2,\n  \"costo\": 95000,\n  \"iva\": 19,\n  \"precio_venta\": 140000,\n  \"stock\": 12,\n  \"url_foto\": \"https://example.com/keratina-brasilena.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/productos/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones Cabello Natural Rubio Premium 60cm\",\n  \"precio_venta\": 135000,\n  \"stock\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar stock del producto",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/productos/1/stock",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 25,\n  \"operacion\": \"incrementar\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/productos/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Proveedores",
+      "description": "Gestión de proveedores de productos capilares",
+      "item": [
+        {
+          "name": "Listar todos los proveedores",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/proveedores?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Obtener proveedor por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/proveedores/1"
+          }
+        },
+        {
+          "name": "Buscar proveedores",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/proveedores/search?q=extensiones&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Proveedores activos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/proveedores/activos"
+          }
+        },
+        {
+          "name": "Crear proveedor - Extensiones Premium",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/proveedores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones Premium SAS\",\n  \"contacto\": \"Maria Rodriguez\",\n  \"telefono\": \"3001234567\",\n  \"email\": \"ventas@extensionespremium.com\",\n  \"direccion\": \"Cra 15 #85-32, Bogotá\",\n  \"ciudad\": \"Bogotá\",\n  \"nit\": \"900123456-1\",\n  \"estado\": \"Activo\",\n  \"productos_principales\": \"Extensiones naturales, sintéticas, pelucas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear proveedor - Productos Profesionales",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/proveedores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Distribuidora Capilaris Ltda\",\n  \"contacto\": \"Carlos Mendoza\",\n  \"telefono\": \"3209876543\",\n  \"email\": \"pedidos@capilaris.com\",\n  \"direccion\": \"Av 68 #42-15, Medellín\",\n  \"ciudad\": \"Medellín\",\n  \"nit\": \"800987654-2\",\n  \"estado\": \"Activo\",\n  \"productos_principales\": \"Shampoos, acondicionadores, tratamientos, keratina\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear proveedor - Herramientas",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/proveedores",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Beauty Tools Internacional\",\n  \"contacto\": \"Ana Patricia Gómez\",\n  \"telefono\": \"3155432109\",\n  \"email\": \"info@beautytools.com\",\n  \"direccion\": \"Calle 100 #15-20, Barranquilla\",\n  \"ciudad\": \"Barranquilla\",\n  \"nit\": \"700654321-5\",\n  \"estado\": \"Activo\",\n  \"productos_principales\": \"Planchas, secadores, rizadores, tijeras profesionales\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar proveedor",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/proveedores/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Extensiones Premium Internacional SAS\",\n  \"telefono\": \"3001234568\",\n  \"email\": \"ventas@extensionespremium.co\",\n  \"estado\": \"Activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado proveedor",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/proveedores/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar proveedor",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/proveedores/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛒 Compras de Productos",
+      "description": "Gestión de compras a proveedores",
+      "item": [
+        {
+          "name": "Listar todas las compras",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Obtener compra por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/1"
+          }
+        },
+        {
+          "name": "Buscar compras",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/search?q=Premium&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Compras por proveedor",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/proveedor/1?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Compras por estado",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/estado/Completada?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Compras por rango de fechas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/fechas?fechaInicio=2024-01-01&fechaFin=2024-12-31&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Crear compra - Extensiones y Tratamientos",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/compras",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_proveedor\": 1,\n  \"fecha_compra\": \"2024-01-15\",\n  \"productos\": [\n    {\n      \"id_producto\": 1,\n      \"cantidad\": 10,\n      \"precio_unitario\": 85000\n    },\n    {\n      \"id_producto\": 2,\n      \"cantidad\": 20,\n      \"precio_unitario\": 25000\n    },\n    {\n      \"id_producto\": 4,\n      \"cantidad\": 5,\n      \"precio_unitario\": 95000\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear compra - Herramientas Profesionales",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/compras",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_proveedor\": 3,\n  \"fecha_compra\": \"2024-01-16\",\n  \"productos\": [\n    {\n      \"id_producto\": 3,\n      \"cantidad\": 3,\n      \"precio_unitario\": 180000\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar compra",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/compras/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha_compra\": \"2024-01-17\",\n  \"estado\": \"Completada\",\n  \"productos\": [\n    {\n      \"id_producto\": 1,\n      \"cantidad\": 12,\n      \"precio_unitario\": 83000\n    },\n    {\n      \"id_producto\": 2,\n      \"cantidad\": 25,\n      \"precio_unitario\": 24000\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado de compra",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/compras/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Completada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar compra",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/compras/1"
+          }
+        },
+        {
+          "name": "Estadísticas de compras",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/estadisticas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Reportes y Estadísticas",
+      "description": "Endpoints para reportes y análisis",
+      "item": [
+        {
+          "name": "Reporte de productos más vendidos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/mas-vendidos?limit=10"
+          }
+        },
+        {
+          "name": "Reporte de inventario actual",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/inventario"
+          }
+        },
+        {
+          "name": "Productos por categoría",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/reporte-categorias"
+          }
+        },
+        {
+          "name": "Proveedores más activos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/proveedores/mas-activos?limit=5"
+          }
+        },
+        {
+          "name": "Resumen de compras mensuales",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/compras/resumen-mensual?año=2024"
+          }
+        },
+        {
+          "name": "Análisis de costos vs precios",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/productos/analisis-precios"
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  }
+}

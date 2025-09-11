@@ -12,6 +12,12 @@ const Proveedor = require('../models/Supplier');
 const Services = require('../models/Services');
 const Appointment = require('../models/Appointment');
 
+// Importar nuevos modelos de ventas
+const VentaProducto = require('../models/salesProduct/Sales');
+const DetalleVentaProducto = require('../models/salesProduct/SalesDetail');
+const Pedido = require('../models/salesProduct/Order');
+const DetallePedido = require('../models/salesProduct/OrderDetail');
+
 function setupAssociations() {
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
   
@@ -162,6 +168,76 @@ function setupAssociations() {
     as: 'producto'
   });
   
+  // ===== ASOCIACIONES PEDIDOS =====
+  
+  // Relación entre Pedido y DetallePedido
+  Pedido.hasMany(DetallePedido, {
+    foreignKey: 'id_pedido',
+    as: 'detalles'
+  });
+
+  DetallePedido.belongsTo(Pedido, {
+    foreignKey: 'id_pedido',
+    as: 'pedido'
+  });
+
+  // Relación entre Producto y DetallePedido
+  Product.hasMany(DetallePedido, {
+    foreignKey: 'id_producto',
+    as: 'detallesPedidos'
+  });
+
+  DetallePedido.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+
+  // ===== ASOCIACIONES VENTAS DE PRODUCTOS =====
+  
+  // Relación entre Cliente y VentaProducto
+  Client.hasMany(VentaProducto, {
+    foreignKey: 'id_cliente',
+    as: 'ventas'
+  });
+
+  VentaProducto.belongsTo(Client, {
+    foreignKey: 'id_cliente',
+    as: 'cliente'
+  });
+
+  // Relación entre Pedido y VentaProducto (una venta puede originarse de un pedido)
+  Pedido.hasOne(VentaProducto, {
+    foreignKey: 'id_pedido',
+    as: 'venta'
+  });
+
+  VentaProducto.belongsTo(Pedido, {
+    foreignKey: 'id_pedido',
+    as: 'pedido'
+  });
+
+  // Relación entre VentaProducto y DetalleVentaProducto
+  VentaProducto.hasMany(DetalleVentaProducto, {
+    foreignKey: 'id_venta_producto',
+    as: 'detalles'
+  });
+
+  DetalleVentaProducto.belongsTo(VentaProducto, {
+    foreignKey: 'id_venta_producto',
+    as: 'venta'
+  });
+
+  // Relación entre Producto y DetalleVentaProducto
+  Product.hasMany(DetalleVentaProducto, {
+    foreignKey: 'id_producto',
+    as: 'detallesVentas'
+  });
+
+  DetalleVentaProducto.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+
   // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
   
   // Un usuario puede tener muchas citas

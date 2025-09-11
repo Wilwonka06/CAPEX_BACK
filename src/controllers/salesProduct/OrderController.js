@@ -1,4 +1,4 @@
-const pedidoService = require('../../services/salesProducts/OrderServices');
+const pedidoService = require('../../services/salesProduct/OrderService');
 
 // Obtener todos los pedidos
 const getAllPedidos = async (req, res) => {

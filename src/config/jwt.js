@@ -11,9 +11,9 @@ function getJWTSecret() {
   const secret = process.env.JWT_SECRET;
   
   if (!secret) {
-    console.error('❌ ERROR: JWT_SECRET no está configurado en las variables de entorno');
-    console.error('   Por favor, configura JWT_SECRET en tu archivo .env');
-    console.error('   Ejemplo: JWT_SECRET=mi_secreto_super_seguro_y_unico_123456789');
+    console.error('ERROR: JWT_SECRET no está configurado en las variables de entorno');
+    console.error('Por favor, configura JWT_SECRET en tu archivo .env');
+    console.error('Ejemplo: JWT_SECRET=mi_secreto_super_seguro_y_unico_123456789');
     
     // En desarrollo, usar un secreto temporal pero más seguro
     if (process.env.NODE_ENV === 'development') {

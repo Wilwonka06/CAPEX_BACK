@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const { sequelize } = require('../../config/database');
 
 const Pedido = sequelize.define('Pedido', {
   id_pedido: {
@@ -10,7 +10,7 @@ const Pedido = sequelize.define('Pedido', {
   },
   fecha: {
     type: DataTypes.DATEONLY,
-    allowNull: true,
+    allowNull: false,
     field: 'fecha'
   },
   total: {
@@ -18,21 +18,27 @@ const Pedido = sequelize.define('Pedido', {
     allowNull: true
   },
   estado: {
-    type: DataTypes.STRING(10),
-    allowNull: true,
+    type: DataTypes.ENUM('Pendiente', 'En proceso', 'Enviado', 'Entregado', 'Cancelado'),
+    allowNull: false,
+    defaultValue: 'Pendiente',
     validate: {
-      isIn: [['Pendiente','En proceso', 'Enviado', 'Entregado', 'Cancelado']]
+      isIn: [['Pendiente', 'En proceso', 'Enviado', 'Entregado', 'Cancelado']]
     }
   }
 }, {
   tableName: 'pedidos',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'fecha_creacion',
+  updatedAt: 'fecha_actualizacion',
   indexes: [
     {
-      fields: ['fecha_compra']
+      fields: ['fecha']
     },
     {
       fields: ['estado']
+    },
+    {
+      fields: ['fecha_creacion']
     }
   ]
 });

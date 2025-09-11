@@ -1,10 +1,10 @@
-const Pedido = require('../../models/salesProducts/Order');
-const DetallePedido = require('../../models/salesProducts/OrderDetail');
+const Pedido = require('../../models/salesProduct/Order');
+const DetallePedido = require('../../models/salesProduct/OrderDetail');
 const Product = require('../../models/Product');
 const { Op } = require('sequelize');
 const { sequelize } = require('../../config/database');
 
-class PedidoService {
+class OrderService {
   // Obtener todos los pedidos con paginación
   async getAllPedidos(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
@@ -25,7 +25,7 @@ class PedidoService {
       ],
       limit,
       offset,
-      order: [['fecha_creacion', 'DESC']]
+      order: [['fecha', 'DESC']]
     });
     
     return {
@@ -238,7 +238,7 @@ class PedidoService {
       ],
       limit,
       offset,
-      order: [['fecha_creacion', 'DESC']],
+      order: [['fecha', 'DESC']],
       distinct: true
     });
 
@@ -276,7 +276,7 @@ class PedidoService {
       ],
       limit,
       offset,
-      order: [['fecha_creacion', 'DESC']]
+      order: [['fecha', 'DESC']]
     });
 
     return {
@@ -300,6 +300,19 @@ class PedidoService {
     }
 
     await pedido.update({ estado: nuevoEstado });
+
+    // Si el estado cambia a "Enviado", crear automáticamente la venta
+    if (nuevoEstado === 'Enviado') {
+      try {
+        const SalesService = require('./SalesService');
+        await SalesService.createSaleFromOrder(id);
+        console.log(`✅ Venta creada automáticamente para pedido #${id}`);
+      } catch (error) {
+        console.error(`❌ Error al crear venta automática para pedido #${id}:`, error.message);
+        // No lanzar error aquí para no fallar el cambio de estado
+      }
+    }
+
     return await this.getPedidoById(id);
   }
 
@@ -308,6 +321,7 @@ class PedidoService {
     const totalPedidos = await Pedido.count();
     const pedidosPendientes = await Pedido.count({ where: { estado: 'Pendiente' } });
     const pedidosEnProceso = await Pedido.count({ where: { estado: 'En proceso' } });
+    const pedidosEnviados = await Pedido.count({ where: { estado: 'Enviado' } });
     const pedidosEntregados = await Pedido.count({ where: { estado: 'Entregado' } });
     const pedidosCancelados = await Pedido.count({ where: { estado: 'Cancelado' } });
     
@@ -321,6 +335,7 @@ class PedidoService {
       totalPedidos,
       pedidosPendientes,
       pedidosEnProceso,
+      pedidosEnviados,
       pedidosEntregados,
       pedidosCancelados,
       totalVentas: parseFloat(totalVentas?.dataValues?.total || 0).toFixed(2),
@@ -370,4 +385,4 @@ class PedidoService {
   }
 }
 
-module.exports = new PedidoService();
+module.exports = new OrderService();

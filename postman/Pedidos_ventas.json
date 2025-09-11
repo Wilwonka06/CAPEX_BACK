@@ -1,0 +1,222 @@
+{
+  "info": {
+    "name": "CAPEX Pedidos y Ventas",
+    "description": "Colección para testear los endpoints de pedidos y ventas de productos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Obtener todos los pedidos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Obtener pedido por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos/1"
+          }
+        },
+        {
+          "name": "Crear nuevo pedido",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"2024-01-15\",\n  \"productos\": [\n    {\n      \"id_producto\": 1,\n      \"cantidad\": 2,\n      \"precio_unitario\": 75.25\n    },\n    {\n      \"id_producto\": 2,\n      \"cantidad\": 1,\n      \"precio_unitario\": 50.00\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar pedido",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/pedidos/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"2024-01-16\",\n  \"estado\": \"En proceso\",\n  \"productos\": [\n    {\n      \"id_producto\": 1,\n      \"cantidad\": 3,\n      \"precio_unitario\": 75.25\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado del pedido",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/pedidos/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Enviado\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Buscar pedidos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos/search?q=Pendiente&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Pedidos por estado",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos/estado/Pendiente?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Estadísticas de pedidos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos/estadisticas"
+          }
+        },
+        {
+          "name": "Pedidos por fechas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/pedidos/fechas?fechaInicio=2024-01-01&fechaFin=2024-01-31&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Eliminar pedido",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/pedidos/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Obtener todas las ventas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Obtener venta por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/1"
+          }
+        },
+        {
+          "name": "Crear nueva venta",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/ventas-productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": 1,\n  \"metodo_pago\": \"Tarjeta\",\n  \"descuento\": 10.00,\n  \"observaciones\": \"Venta con descuento especial\",\n  \"productos\": [\n    {\n      \"id_producto\": 1,\n      \"cantidad\": 2,\n      \"precio_unitario\": 75.00,\n      \"descuento_unitario\": 5.00\n    },\n    {\n      \"id_producto\": 2,\n      \"cantidad\": 1,\n      \"precio_unitario\": 50.00,\n      \"descuento_unitario\": 0\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear venta desde pedido",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/ventas-productos/desde-pedido/1"
+          }
+        },
+        {
+          "name": "Cancelar venta",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/ventas-productos/1/cancelar"
+          }
+        },
+        {
+          "name": "Buscar ventas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/search?q=Juan&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Ventas por estado",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/estado/Completado?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Ventas por cliente",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/cliente/1?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Ventas por fechas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/fechas?fechaInicio=2024-01-01&fechaFin=2024-01-31&page=1&limit=10"
+          }
+        },
+        {
+          "name": "Estadísticas de ventas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas-productos/estadisticas"
+          }
+        },
+        {
+          "name": "Actualizar método de pago",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/ventas-productos/1/metodo-pago",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metodo_pago\": \"Transferencia\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

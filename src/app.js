@@ -14,9 +14,13 @@ const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
 const clientRoutes = require('./routes/clients/ClienteRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
-const purchaseRoutes = require('./routes/PurchaseRoutes')
+const purchaseRoutes = require('./routes/PurchaseRoutes');
 const authRoutes = require('./routes/auth/AuthRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+
+// Nuevas rutas para módulos de ventas
+const orderRoutes = require('./routes/salesProduct/OrderRoutes');
+const salesRoutes = require('./routes/salesProduct/SalesRoutes');
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/errorMiddleware');
@@ -46,7 +50,7 @@ initializeRoles();
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -69,8 +73,12 @@ app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/clientes', clientRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
-app.use('/api/compras', purchaseRoutes)
+app.use('/api/compras', purchaseRoutes);
 app.use('/api/appointments', appointmentRoutes);
+
+// Nuevas rutas para módulos de ventas
+app.use('/api/pedidos', orderRoutes);
+app.use('/api/ventas-productos', salesRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
