@@ -505,6 +505,49 @@ class UsersService {
       throw new Error(`Error al obtener estadísticas: ${error.message}`);
     }
   }
+
+  /**
+   * Cambiar estado de un usuario
+   * @param {number} userId - ID del usuario
+   * @param {string} nuevoEstado - Nuevo estado (Activo, Inactivo, Suspendido)
+   * @returns {Promise<Object>} Usuario actualizado
+   */
+  static async cambiarEstado(userId, nuevoEstado) {
+    try {
+      // Verificar que el usuario existe
+      const existingUser = await Usuario.findByPk(userId);
+      if (!existingUser) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      // Validar el nuevo estado
+      const estadosValidos = ['Activo', 'Inactivo', 'Suspendido'];
+      if (!estadosValidos.includes(nuevoEstado)) {
+        throw new Error('Estado no válido. Estados permitidos: Activo, Inactivo, Suspendido');
+      }
+
+      // Verificar que no se esté cambiando al mismo estado
+      if (existingUser.estado === nuevoEstado) {
+        throw new Error(`El usuario ya se encuentra en estado: ${nuevoEstado}`);
+      }
+
+      // Actualizar el estado
+      await Usuario.update(
+        { estado: nuevoEstado },
+        { where: { id_usuario: userId } }
+      );
+
+      // Obtener el usuario actualizado
+      const updatedUser = await Usuario.findByPk(userId, {
+        attributes: { exclude: ['contrasena'] }
+      });
+
+      return updatedUser;
+
+    } catch (error) {
+      throw new Error(`Error al cambiar estado del usuario: ${error.message}`);
+    }
+  }
 }
 
 module.exports = UsersService;

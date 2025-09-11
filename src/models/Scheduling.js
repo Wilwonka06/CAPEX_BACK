@@ -1,12 +1,13 @@
+// src/models/Scheduling.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');  // 👈 asegúrate de que User.js exporta un modelo real
+const { Usuario } = require('./User');
 
 const Scheduling = sequelize.define('Scheduling', {
   id_programacion: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    primaryKey: true
   },
   fecha_inicio: {
     type: DataTypes.DATEONLY,
@@ -26,13 +27,12 @@ const Scheduling = sequelize.define('Scheduling', {
   }
 }, {
   tableName: 'programaciones',
-  timestamps: false,
-  underscored: true
+  timestamps: false
 });
 
-// 🔗 Asociación con User
-if (User && User.associations !== undefined) {
-  Scheduling.belongsTo(User, { foreignKey: 'id_usuario', as: 'usuario' });
+// ✅ Definir asociación con alias correcto
+if (Usuario && Usuario.associations !== undefined) {
+  Scheduling.belongsTo(Usuario, { foreignKey: 'id_usuario', as: 'usuario' });
 }
 
 module.exports = Scheduling;

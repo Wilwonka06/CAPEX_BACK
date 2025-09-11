@@ -1,0 +1,217 @@
+{
+  "info": {
+    "name": "CAPEX Auth Module",
+    "description": "Colección para probar el módulo de autenticación de CAPEX Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+             "name": "1. Registro de Usuario",
+       "request": {
+         "method": "POST",
+         "header": [
+           {
+             "key": "Content-Type",
+             "value": "application/json"
+           }
+         ],
+         "body": {
+           "mode": "raw",
+           "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"1234567890\",\n  \"telefono\": \"+573001234567\",\n  \"correo\": \"juan.perez@email.com\",\n  \"contrasena\": \"Password123@\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.token) {",
+              "        pm.environment.set('token', response.data.token);",
+              "        console.log('Token guardado:', response.data.token);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+                 "body": {
+           "mode": "raw",
+           "raw": "{\n  \"correo\": \"juan.perez@email.com\",\n  \"contrasena\": \"Password123@\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Verificar Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{token}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/verify",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "verify"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Obtener Usuario Actual",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "me"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/logout",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "logout"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Prueba - Registro Duplicado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"1234567890\",\n  \"telefono\": \"+573001234567\",\n  \"correo\": \"juan.perez@email.com\",\n  \"contrasena\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Prueba - Credenciales Incorrectas",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo\": \"juan.perez@email.com\",\n  \"contrasena\": \"ContraseñaIncorrecta123!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Prueba - Acceso Sin Token",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "me"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. Prueba - Validación de Campos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"TEST123\",\n  \"telefono\": \"123456\",\n  \"correo\": \"email-invalido\",\n  \"contrasena\": \"123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
