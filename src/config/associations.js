@@ -1,7 +1,6 @@
 const { Usuario } = require('../models/User');
 const { Role, Permission, Privilege, RolePermissionPrivilege } = require('../models/roles');
 const UserRole = require('../models/UserRole');
-const Client = require('../models/clients/Client');
 const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
@@ -10,7 +9,9 @@ const Compra = require('../models/Purchase');
 const DetalleCompra = require('../models/PurchaseDetail');
 const Proveedor = require('../models/Supplier');
 const Services = require('../models/Services');
-const Appointment = require('../models/Appointment');
+const Citas = require('../models/Appointment');
+const ServiceDetail = require('../models/serviceDetails/ServiceDetail');
+const Scheduling = require('../models/Scheduling');
 
 function setupAssociations() {
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
@@ -60,19 +61,6 @@ function setupAssociations() {
   Role.hasMany(UserRole, {
     foreignKey: 'id_rol',
     as: 'userRoles'
-  });
-
-  // ===== ASOCIACIONES USUARIOS Y CLIENTES =====
-  
-  // Establecer relación Usuario-Cliente
-  Usuario.hasOne(Client, {
-    foreignKey: 'id_usuario',
-    as: 'cliente'
-  });
-
-  Client.belongsTo(Usuario, {
-    foreignKey: 'id_usuario',
-    as: 'usuario'
   });
 
   // ===== ASOCIACIONES PRODUCTOS =====
@@ -164,28 +152,66 @@ function setupAssociations() {
   
   // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
   
-  // Un usuario puede tener muchas citas
-  Usuario.hasMany(Appointment, {
-    foreignKey: 'id_usuario',
+  // Relación entre Citas y Usuario (cliente)
+  Citas.belongsTo(Usuario, {
+    foreignKey: 'id_cliente',
+    as: 'cliente'
+  });
+
+  Usuario.hasMany(Citas, {
+    foreignKey: 'id_cliente',
     as: 'citas'
   });
 
-  // Una cita pertenece a un usuario
-  Appointment.belongsTo(Usuario, {
-    foreignKey: 'id_usuario',
-    as: 'usuario'
+  // Relación entre Citas y ServiceDetail
+  Citas.hasMany(ServiceDetail, {
+    foreignKey: 'id_cita',
+    as: 'servicios'
   });
 
-  // Un servicio puede estar en muchas citas
-  Services.hasMany(Appointment, {
-    foreignKey: 'id_servicio',
-    as: 'citas'
+  ServiceDetail.belongsTo(Citas, {
+    foreignKey: 'id_cita',
+    as: 'cita'
   });
 
-  // Una cita pertenece a un servicio
-  Appointment.belongsTo(Services, {
+  // Relación entre ServiceDetail y Usuario (empleado)
+  ServiceDetail.belongsTo(Usuario, {
+    foreignKey: 'id_empleado',
+    as: 'empleado'
+  });
+
+  Usuario.hasMany(ServiceDetail, {
+    foreignKey: 'id_empleado',
+    as: 'serviciosAsignados'
+  });
+
+  // Relación entre ServiceDetail y Usuario (cliente) - para compatibilidad
+  ServiceDetail.belongsTo(Usuario, {
+    foreignKey: 'id_cliente',
+    as: 'cliente'
+  });
+
+  Usuario.hasMany(ServiceDetail, {
+    foreignKey: 'id_cliente',
+    as: 'serviciosSolicitados'
+  });
+
+  // Relación entre ServiceDetail y Services
+  ServiceDetail.belongsTo(Services, {
     foreignKey: 'id_servicio',
     as: 'servicio'
+  });
+
+  Services.hasMany(ServiceDetail, {
+    foreignKey: 'id_servicio',
+    as: 'detallesServicios'
+  });
+
+  // Relación entre Scheduling y Usuario (ya definida en el modelo Scheduling)
+  // Solo definimos la relación inversa aquí
+  Usuario.hasMany(Scheduling, {
+    foreignKey: 'id_usuario',
+    as: 'programaciones'
   });
 
   console.log('Asociaciones configuradas correctamente');

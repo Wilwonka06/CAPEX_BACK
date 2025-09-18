@@ -4,8 +4,6 @@ const ClientController = require('../../controllers/clients/ClientController');
 const {
   validateCreateClient,
   validateUpdateClient,
-  validateClientId,
-  validateUserId,
   validateDeleteClient,
   validateCreateUserAndClient
 } = require('../../middlewares/clients/ClientValidationMiddleware');
@@ -13,7 +11,6 @@ const {
   authenticateToken,
   requirePermission
 } = require('../../middlewares/AuthMiddleware');
-
 
 // ===== SPECIFIC CLIENT OPERATIONS PRIMERO =====
 router.get('/stats', 
@@ -38,7 +35,6 @@ router.get('/',
 router.get('/:id', 
   authenticateToken,
   requirePermission('read'),
-  validateClientId,
   ClientController.getClientById
 );
 
@@ -46,7 +42,6 @@ router.get('/:id',
 router.get('/user/:userId', 
   authenticateToken,
   requirePermission('read'),
-  validateUserId,
   ClientController.getClientByUserId
 );
 
@@ -70,7 +65,6 @@ router.post('/user-client',
 router.put('/:id', 
   authenticateToken,
   requirePermission('update'),
-  validateClientId,
   validateUpdateClient,
   ClientController.updateClient
 );
@@ -79,12 +73,8 @@ router.put('/:id',
 router.delete('/:id', 
   authenticateToken,
   requirePermission('delete'),
-  validateClientId,
   validateDeleteClient,
   ClientController.deleteClient
 );
-
-
-
 
 module.exports = router;

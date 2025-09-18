@@ -1,4 +1,5 @@
 const { body, param, validationResult } = require('express-validator');
+
 // Middleware to handle validation errors
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -12,8 +13,8 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Validations for creating client
-const validateCreateClient = [
+// Validations for creating employee
+const validateCreateEmployee = [
   // Datos del usuario (requeridos)
   body('tipo_documento')
     .isIn(['Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'])
@@ -50,7 +51,7 @@ const validateCreateClient = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/)
     .withMessage('La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas, números y caracteres especiales'),
   
-  // Datos del usuario (opcionales)
+  // Datos del empleado (opcionales)
   body('direccion')
     .optional()
     .isLength({ max: 1000 })
@@ -61,6 +62,7 @@ const validateCreateClient = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
+  // Para empleados, el concepto_estado es requerido cuando se cambia el estado
   body('concepto_estado')
     .optional()
     .isLength({ max: 1000 })
@@ -69,11 +71,11 @@ const validateCreateClient = [
   handleValidationErrors
 ];
 
-// Validations for updating client
-const validateUpdateClient = [
+// Validations for updating employee
+const validateUpdateEmployee = [
   param('id')
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo'),
+    .withMessage('ID del empleado debe ser un entero positivo'),
   
   // Datos del usuario (opcionales)
   body('tipo_documento')
@@ -133,6 +135,7 @@ const validateUpdateClient = [
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
+  // Para empleados, el concepto_estado es requerido cuando se cambia el estado
   body('concepto_estado')
     .optional()
     .isLength({ max: 1000 })
@@ -141,84 +144,29 @@ const validateUpdateClient = [
   handleValidationErrors
 ];
 
-// Validations for getting client by ID
-const validateClientId = [
+// Validations for deleting employee
+const validateDeleteEmployee = [
   param('id')
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo'),
+    .withMessage('ID del empleado debe ser un entero positivo'),
   
   handleValidationErrors
 ];
 
-// Validations for deleting client
-const validateDeleteClient = [
+// Validations for changing employee status
+const validateChangeEmployeeStatus = [
   param('id')
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo'),
+    .withMessage('ID del empleado debe ser un entero positivo'),
   
-  handleValidationErrors
-];
-
-// Validations for getting client by user ID
-const validateUserId = [
-  param('userId')
-    .isInt({ min: 1 })
-    .withMessage('ID del usuario debe ser un entero positivo'),
-  
-  handleValidationErrors
-];
-
-// Validations for creating user and client in one transaction
-const validateCreateUserAndClient = [
-  // Datos del usuario (requeridos)
-  body('userData.tipo_documento')
-    .isIn(['Pasaporte', 'Cedula de ciudadania', 'Cedula de extranjeria'])
-    .withMessage('El tipo de documento debe ser: Pasaporte, Cedula de ciudadania, o Cedula de extranjeria'),
-  
-  body('userData.documento')
-    .isString()
-    .isLength({ min: 1, max: 20 })
-    .matches(/^[A-Za-z0-9]+$/)
-    .withMessage('El número de documento debe tener entre 1 y 20 caracteres alfanuméricos'),
-  
-  body('userData.primer_nombre')
-    .isString()
-    .isLength({ min: 1, max: 50 })
-    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
-    .withMessage('El primer nombre debe tener entre 1 y 50 caracteres y solo letras'),
-  
-  body('userData.apellido')
-    .isString()
-    .isLength({ min: 1, max: 50 })
-    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/)
-    .withMessage('El apellido debe tener entre 1 y 50 caracteres y solo letras'),
-  
-  body('userData.correo')
-    .isEmail()
-    .withMessage('El correo electrónico debe ser válido'),
-  
-  body('userData.telefono')
-    .matches(/^\+[0-9]{7,15}$/)
-    .withMessage('El teléfono debe tener formato internacional (+1234567890)'),
-  
-  body('userData.contrasena')
-    .isLength({ min: 8 })
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/)
-    .withMessage('La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas, números y caracteres especiales'),
-  
-  // Datos del cliente (opcionales)
-  body('clientData.direccion')
-    .optional()
-    .isLength({ max: 1000 })
-    .withMessage('La dirección no puede exceder 1000 caracteres'),
-  
-  body('clientData.estado')
-    .optional()
+  body('estado')
     .isIn(['Activo', 'Inactivo'])
     .withMessage('El estado debe ser Activo o Inactivo'),
   
-  body('clientData.concepto_estado')
-    .optional()
+  // El concepto_estado es requerido cuando se cambia el estado de un empleado
+  body('concepto_estado')
+    .notEmpty()
+    .withMessage('El concepto del estado es requerido para empleados')
     .isLength({ max: 1000 })
     .withMessage('El concepto del estado no puede exceder 1000 caracteres'),
   
@@ -226,10 +174,8 @@ const validateCreateUserAndClient = [
 ];
 
 module.exports = {
-  validateCreateClient,
-  validateUpdateClient,
-  validateClientId,
-  validateUserId,
-  validateDeleteClient,
-  validateCreateUserAndClient
+  validateCreateEmployee,
+  validateUpdateEmployee,
+  validateDeleteEmployee,
+  validateChangeEmployeeStatus
 };

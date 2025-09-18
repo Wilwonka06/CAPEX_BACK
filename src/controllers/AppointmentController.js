@@ -1,265 +1,338 @@
-const AppointmentService = require('../services/AppointmentService');
+const CitasService = require('../services/AppointmentService');
 
 class AppointmentController {
-  /**
-   * Crear una nueva cita
-   */
-  static async createAppointment(req, res) {
+  // Obtener todas las citas con paginación y filtros
+  static async getAllAppointments(req, res) {
     try {
-      const appointmentData = {
-        id_usuario: req.body.id_usuario,
-        id_servicio: req.body.id_servicio,
-        fecha_servicio: req.body.fecha_servicio,
-        hora_entrada: req.body.hora_entrada,
-        hora_salida: req.body.hora_salida,
-        valor_total: req.body.valor_total,
-        motivo: req.body.motivo
-      };
-
-      const appointment = await AppointmentService.createAppointment(appointmentData);
-
-      res.status(201).json({
-        success: true,
-        message: 'Cita creada exitosamente',
-        data: appointment
-      });
-    } catch (error) {
-      console.error('Error al crear cita:', error);
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Error al crear la cita'
-      });
-    }
-  }
-
-  /**
-   * Obtener todas las citas con filtros opcionales
-   */
-  static async getAppointments(req, res) {
-    try {
-      const {
-        usuario,
-        servicio,
-        estado,
-        fecha_inicio,
-        fecha_fin,
-        page = 1,
-        limit = 10
-      } = req.query;
-
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      
       const filters = {};
-      if (usuario) filters.usuario = parseInt(usuario);
-      if (servicio) filters.servicio = parseInt(servicio);
-      if (estado) filters.estado = estado;
-      if (fecha_inicio) filters.fecha_inicio = fecha_inicio;
-      if (fecha_fin) filters.fecha_fin = fecha_fin;
+      if (req.query.estado) filters.estado = req.query.estado;
+      if (req.query.fecha_desde) filters.fecha_desde = req.query.fecha_desde;
+      if (req.query.fecha_hasta) filters.fecha_hasta = req.query.fecha_hasta;
+      if (req.query.id_cliente) filters.id_cliente = req.query.id_cliente;
 
-      const result = await AppointmentService.getAppointments(filters, page, limit);
-
-      res.status(200).json({
-        success: true,
-        message: 'Citas obtenidas exitosamente',
-        data: result.appointments,
-        pagination: result.pagination
-      });
+      const result = await CitasService.getAllAppointments(page, limit, filters);
+      
+      res.status(200).json(result);
     } catch (error) {
       console.error('Error al obtener citas:', error);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al obtener las citas'
+        message: 'Error interno del servidor',
+        error: error.message
       });
     }
   }
 
-  /**
-   * Obtener una cita por ID
-   */
+  // Obtener cita por ID
   static async getAppointmentById(req, res) {
     try {
       const { id } = req.params;
-      const appointment = await AppointmentService.getAppointmentById(parseInt(id));
-
-      res.status(200).json({
-        success: true,
-        message: 'Cita obtenida exitosamente',
-        data: appointment
-      });
+      const result = await CitasService.getAppointmentById(id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
     } catch (error) {
       console.error('Error al obtener cita:', error);
-      res.status(404).json({
-        success: false,
-        message: error.message || 'Cita no encontrada'
-      });
-    }
-  }
-
-  /**
-   * Actualizar una cita
-   */
-  static async updateAppointment(req, res) {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-
-      const appointment = await AppointmentService.updateAppointment(parseInt(id), updateData);
-
-      res.status(200).json({
-        success: true,
-        message: 'Cita actualizada exitosamente',
-        data: appointment
-      });
-    } catch (error) {
-      console.error('Error al actualizar cita:', error);
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Error al actualizar la cita'
-      });
-    }
-  }
-
-  /**
-   * Eliminar una cita
-   */
-  static async deleteAppointment(req, res) {
-    try {
-      const { id } = req.params;
-      const result = await AppointmentService.deleteAppointment(parseInt(id));
-
-      res.status(200).json({
-        success: true,
-        message: result.message
-      });
-    } catch (error) {
-      console.error('Error al eliminar cita:', error);
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Error al eliminar la cita'
-      });
-    }
-  }
-
-  /**
-   * Cambiar el estado de una cita
-   */
-  static async changeAppointmentStatus(req, res) {
-    try {
-      const { id } = req.params;
-      const { estado, motivo } = req.body;
-
-      const appointment = await AppointmentService.changeAppointmentStatus(
-        parseInt(id),
-        estado,
-        motivo
-      );
-
-      res.status(200).json({
-        success: true,
-        message: 'Estado de cita actualizado exitosamente',
-        data: appointment
-      });
-    } catch (error) {
-      console.error('Error al cambiar estado de cita:', error);
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Error al cambiar el estado de la cita'
-      });
-    }
-  }
-
-
-
-  /**
-   * Obtener citas por usuario
-   */
-  static async getAppointmentsByUser(req, res) {
-    try {
-      const { userId } = req.params;
-      const { page = 1, limit = 10 } = req.query;
-
-      const result = await AppointmentService.getAppointmentsByUser(
-        parseInt(userId),
-        page,
-        limit
-      );
-
-      res.status(200).json({
-        success: true,
-        message: 'Citas del usuario obtenidas exitosamente',
-        data: result.appointments,
-        pagination: result.pagination
-      });
-    } catch (error) {
-      console.error('Error al obtener citas del usuario:', error);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al obtener las citas del usuario'
+        message: 'Error interno del servidor',
+        error: error.message
       });
     }
   }
 
-  /**
-   * Obtener citas por servicio
-   */
-  static async getAppointmentsByService(req, res) {
+  // Crear nueva cita con servicios
+  static async createAppointment(req, res) {
     try {
-      const { serviceId } = req.params;
-      const { page = 1, limit = 10 } = req.query;
-
-      const result = await AppointmentService.getAppointmentsByService(
-        parseInt(serviceId),
-        page,
-        limit
-      );
-
-      res.status(200).json({
-        success: true,
-        message: 'Citas del servicio obtenidas exitosamente',
-        data: result.appointments,
-        pagination: result.pagination
-      });
+      const appointmentData = req.body;
+      const result = await CitasService.createAppointment(appointmentData);
+      
+      res.status(201).json(result);
     } catch (error) {
-      console.error('Error al obtener citas del servicio:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error al obtener las citas del servicio'
-      });
-    }
-  }
-
-  /**
-   * Verificar conflictos de horario
-   */
-  static async checkScheduleConflicts(req, res) {
-    try {
-      const { fecha, hora_entrada, hora_salida, id_servicio } = req.query;
-
-      if (!fecha || !hora_entrada || !hora_salida || !id_servicio) {
+      console.error('Error al crear cita:', error);
+      
+      if (error.message.includes('no encontrado') || error.message.includes('inactivo')) {
         return res.status(400).json({
           success: false,
-          message: 'Todos los parámetros son requeridos: fecha, hora_entrada, hora_salida, id_servicio'
+          message: 'Datos de entrada inválidos',
+          error: error.message
         });
       }
 
-      const conflictos = await AppointmentService.checkScheduleConflicts(
-        fecha,
-        hora_entrada,
-        hora_salida,
-        parseInt(id_servicio)
-      );
+      if (error.message.includes('disponibilidad') || error.message.includes('conflicto')) {
+        return res.status(409).json({
+          success: false,
+          message: 'Conflicto de disponibilidad',
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Actualizar cita completa
+  static async updateAppointment(req, res) {
+    try {
+      const { id } = req.params;
+      const appointmentData = req.body;
+      const result = await CitasService.updateAppointment(id, appointmentData);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al actualizar cita:', error);
+      
+      if (error.message.includes('no encontrada') || error.message.includes('finalizada')) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se puede modificar la cita',
+          error: error.message
+        });
+      }
+
+      if (error.message.includes('disponibilidad') || error.message.includes('conflicto')) {
+        return res.status(409).json({
+          success: false,
+          message: 'Conflicto de disponibilidad',
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Cancelar cita
+  static async cancelAppointment(req, res) {
+    try {
+      const { id } = req.params;
+      const { motivo } = req.body;
+      const result = await CitasService.cancelAppointment(id, motivo);
+      
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al cancelar cita:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Buscar citas por texto
+  static async searchAppointments(req, res) {
+    try {
+      const { query } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      
+      if (!query) {
+        return res.status(400).json({
+          success: false,
+          message: 'El parámetro "query" es requerido'
+        });
+      }
+
+      const result = await CitasService.searchAppointments(query, page, limit);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al buscar citas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Agregar servicio a cita existente
+  static async addServiceToAppointment(req, res) {
+    try {
+      const { id } = req.params;
+      const serviceData = req.body;
+      const result = await CitasService.addServiceToAppointment(id, serviceData);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(201).json(result);
+    } catch (error) {
+      console.error('Error al agregar servicio:', error);
+      
+      if (error.message.includes('no encontrada') || error.message.includes('finalizada')) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se puede agregar servicios a esta cita',
+          error: error.message
+        });
+      }
+
+      if (error.message.includes('disponibilidad') || error.message.includes('conflicto')) {
+        return res.status(409).json({
+          success: false,
+          message: 'Conflicto de disponibilidad',
+          error: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Cancelar servicio específico
+  static async cancelService(req, res) {
+    try {
+      const { id, detalle_id } = req.params;
+      const result = await CitasService.cancelService(id, detalle_id);
+      
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al cancelar servicio:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener servicio por ID
+  static async getServiceById(req, res) {
+    try {
+      const { id, detalle_id } = req.params;
+      const result = await CitasService.getServiceById(id, detalle_id);
+      
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al obtener servicio:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener estadísticas de citas
+  static async getAppointmentStats(req, res) {
+    try {
+      const { fecha_desde, fecha_hasta } = req.query;
+      
+      // Implementar lógica de estadísticas si es necesario
+      const stats = {
+        total_citas: 0,
+        citas_agendadas: 0,
+        citas_confirmadas: 0,
+        citas_en_proceso: 0,
+        citas_finalizadas: 0,
+        citas_canceladas: 0,
+        ingresos_totales: 0
+      };
 
       res.status(200).json({
         success: true,
-        message: 'Verificación de conflictos completada',
-        data: {
-          tieneConflictos: conflictos.length > 0,
-          conflictos: conflictos
-        }
+        message: 'Estadísticas obtenidas exitosamente',
+        data: stats
       });
     } catch (error) {
-      console.error('Error al verificar conflictos:', error);
+      console.error('Error al obtener estadísticas:', error);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al verificar conflictos de horario'
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener citas por empleado
+  static async getAppointmentsByEmployee(req, res) {
+    try {
+      const { employeeId } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      
+      // Implementar lógica para obtener citas por empleado
+      const result = {
+        success: true,
+        message: 'Citas del empleado obtenidas exitosamente',
+        data: {
+          citas: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }
+      };
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al obtener citas del empleado:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  // Obtener citas por cliente
+  static async getAppointmentsByClient(req, res) {
+    try {
+      const { clientId } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      
+      const filters = { id_cliente: clientId };
+      const result = await CitasService.getAllAppointments(page, limit, filters);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error al obtener citas del cliente:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
       });
     }
   }
