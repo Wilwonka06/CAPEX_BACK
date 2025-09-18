@@ -1,18 +1,16 @@
-const Client = require('../../models/clients/Client');
 const { Usuario } = require('../../models/User');
 const { sequelize } = require('../../config/database');
 
 class ClientService {
-  // Get all clients with user data
+  // Get all clients (users with client role)
   static async getAllClients() {
     try {
-      const clients = await Client.findAll({
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          attributes: { exclude: ['contrasena'] }
-        }],
-        where: { estado: true }
+      const clients = await Usuario.findAll({
+        where: { 
+          roleId: 1, // Rol de cliente
+          estado: 'Activo'
+        },
+        attributes: { exclude: ['contrasena'] }
       });
 
       return {
@@ -28,12 +26,12 @@ class ClientService {
   // Get client by ID
   static async getClientById(id) {
     try {
-      const client = await Client.findByPk(id, {
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          attributes: { exclude: ['contrasena'] }
-        }]
+      const client = await Usuario.findOne({
+        where: { 
+          id_usuario: id,
+          roleId: 1 // Rol de cliente
+        },
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!client) {
@@ -56,13 +54,12 @@ class ClientService {
   // Get client by user ID
   static async getClientByUserId(userId) {
     try {
-      const client = await Client.findOne({
-        where: { id_usuario: userId },
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          attributes: { exclude: ['contrasena'] }
-        }]
+      const client = await Usuario.findOne({
+        where: { 
+          id_usuario: userId,
+          roleId: 1 // Rol de cliente
+        },
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!client) {
@@ -85,13 +82,12 @@ class ClientService {
   // Get client by email
   static async getClientByEmail(email) {
     try {
-      const client = await Client.findOne({
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          where: { correo: email },
-          attributes: { exclude: ['contrasena'] }
-        }]
+      const client = await Usuario.findOne({
+        where: { 
+          correo: email,
+          roleId: 1 // Rol de cliente
+        },
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!client) {
@@ -114,13 +110,12 @@ class ClientService {
   // Get client by document number
   static async getClientByDocument(documentNumber) {
     try {
-      const client = await Client.findOne({
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          where: { documento: documentNumber },
-          attributes: { exclude: ['contrasena'] }
-        }]
+      const client = await Usuario.findOne({
+        where: { 
+          documento: documentNumber,
+          roleId: 1 // Rol de cliente
+        },
+        attributes: { exclude: ['contrasena'] }
       });
 
       if (!client) {
@@ -142,8 +137,6 @@ class ClientService {
 
   // Create new client
   static async createClient(clientData) {
-    const transaction = await sequelize.transaction();
-    
     try {
       const {
         tipo_documento,
@@ -153,34 +146,28 @@ class ClientService {
         correo,
         telefono,
         contrasena,
-        direccion,
-        estado
+        direccion
       } = clientData;
 
       // Mapear los campos del request a los campos del modelo Usuario
       const nombre_completo = `${primer_nombre} ${apellido}`;
       
-      // Create user first
-      const newUser = await Usuario.create({
+      // Create user with client role
+      const newClient = await Usuario.create({
         nombre: nombre_completo,
         tipo_documento: tipo_documento,
         documento: documento,
         correo: correo,
         telefono: telefono,
-        contrasena: contrasena
-      }, { transaction });
-
-      // Then create client
-      const newClient = await Client.create({
-        id_usuario: newUser.id_usuario,
+        contrasena: contrasena,
+        roleId: 1, // Rol de cliente
         direccion: direccion || null,
-        estado: estado !== undefined ? estado : true
-      }, { transaction });
-
-      await transaction.commit();
+        estado: 'Activo'
+        // concepto_estado es opcional para clientes
+      });
 
       // Get the complete client data
-      const createdClient = await this.getClientById(newClient.id_cliente);
+      const createdClient = await this.getClientById(newClient.id_usuario);
 
       return {
         success: true,
@@ -188,8 +175,6 @@ class ClientService {
         data: createdClient.data
       };
     } catch (error) {
-      await transaction.rollback();
-      
       // Manejar errores específicos de validación
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => `${err.path}: ${err.message}`).join(', ');
@@ -213,8 +198,6 @@ class ClientService {
 
   // Update client
   static async updateClient(id, clientData) {
-    const transaction = await sequelize.transaction();
-    
     try {
       const {
         tipo_documento,
@@ -225,19 +208,19 @@ class ClientService {
         telefono,
         contrasena,
         direccion,
-        estado
+        estado,
+        concepto_estado
       } = clientData;
 
-      // Find the client with user data
-      const existingClient = await Client.findByPk(id, {
-        include: [{
-          model: Usuario,
-          as: 'usuario'
-        }]
+      // Find the client
+      const existingClient = await Usuario.findOne({
+        where: { 
+          id_usuario: id,
+          roleId: 1 // Rol de cliente
+        }
       });
 
       if (!existingClient) {
-        await transaction.rollback();
         return {
           success: false,
           message: 'Cliente no encontrado',
@@ -246,31 +229,21 @@ class ClientService {
       }
 
       // Update user data if provided
-      const userUpdateData = {};
+      const updateData = {};
       if (primer_nombre !== undefined || apellido !== undefined) {
-        const nombre_completo = `${primer_nombre || existingClient.usuario.nombre.split(' ')[0]} ${apellido || existingClient.usuario.nombre.split(' ')[1] || ''}`;
-        userUpdateData.nombre = nombre_completo.trim();
+        const nombre_completo = `${primer_nombre || existingClient.nombre.split(' ')[0]} ${apellido || existingClient.nombre.split(' ')[1] || ''}`;
+        updateData.nombre = nombre_completo.trim();
       }
-      if (tipo_documento !== undefined) userUpdateData.tipo_documento = tipo_documento;
-      if (documento !== undefined) userUpdateData.documento = documento;
-      if (correo !== undefined) userUpdateData.correo = correo;
-      if (telefono !== undefined) userUpdateData.telefono = telefono;
-      if (contrasena !== undefined) userUpdateData.contrasena = contrasena;
+      if (tipo_documento !== undefined) updateData.tipo_documento = tipo_documento;
+      if (documento !== undefined) updateData.documento = documento;
+      if (correo !== undefined) updateData.correo = correo;
+      if (telefono !== undefined) updateData.telefono = telefono;
+      if (contrasena !== undefined) updateData.contrasena = contrasena;
+      if (direccion !== undefined) updateData.direccion = direccion;
+      if (estado !== undefined) updateData.estado = estado;
+      if (concepto_estado !== undefined) updateData.concepto_estado = concepto_estado;
 
-      if (Object.keys(userUpdateData).length > 0) {
-        await existingClient.usuario.update(userUpdateData, { transaction });
-      }
-
-      // Update client-specific data
-      const clientUpdateData = {};
-      if (direccion !== undefined) clientUpdateData.direccion = direccion;
-      if (estado !== undefined) clientUpdateData.estado = estado;
-
-      if (Object.keys(clientUpdateData).length > 0) {
-        await existingClient.update(clientUpdateData, { transaction });
-      }
-
-      await transaction.commit();
+      await existingClient.update(updateData);
       
       // Get updated client data
       const updatedClient = await this.getClientById(id);
@@ -281,8 +254,6 @@ class ClientService {
         data: updatedClient.data
       };
     } catch (error) {
-      await transaction.rollback();
-      
       // Handle specific database errors
       if (error.name === 'SequelizeUniqueConstraintError') {
         if (error.fields && error.fields.correo) {
@@ -306,12 +277,15 @@ class ClientService {
 
   // Delete client (soft delete)
   static async deleteClient(id) {
-    const transaction = await sequelize.transaction();
-    
     try {
-      const client = await Client.findByPk(id, { transaction });      
+      const client = await Usuario.findOne({
+        where: { 
+          id_usuario: id,
+          roleId: 1 // Rol de cliente
+        }
+      });
+      
       if (!client) {
-        await transaction.rollback();
         return {
           success: false,
           message: 'Cliente no encontrado',
@@ -319,17 +293,17 @@ class ClientService {
         };
       }
 
-      // Soft delete by setting estado to false
-      await client.update({ estado: false }, { transaction });
-
-      await transaction.commit();
+      // Soft delete by setting estado to 'Inactivo'
+      await client.update({ 
+        estado: 'Inactivo'
+        // concepto_estado es opcional para clientes
+      });
 
       return {
         success: true,
         message: 'Cliente eliminado exitosamente'
       };
     } catch (error) {
-      await transaction.rollback();
       throw new Error(`Error al eliminar cliente: ${error.message}`);
     }
   }
@@ -337,9 +311,19 @@ class ClientService {
   // Get client statistics
   static async getClientStats() {
     try {
-      const totalClients = await Client.count();
-      const activeClients = await Client.count({ where: { estado: true } });
-      const inactiveClients = await Client.count({ where: { estado: false } });
+      const totalClients = await Usuario.count({ where: { roleId: 1 } });
+      const activeClients = await Usuario.count({ 
+        where: { 
+          roleId: 1,
+          estado: 'Activo'
+        } 
+      });
+      const inactiveClients = await Usuario.count({ 
+        where: { 
+          roleId: 1,
+          estado: 'Inactivo'
+        } 
+      });
 
       return {
         success: true,
@@ -359,34 +343,28 @@ class ClientService {
   static async searchClients(criteria) {
     try {
       const { estado, nombre, correo, documento } = criteria;
-      const whereClause = {};
-      const userWhereClause = {};
+      const whereClause = { roleId: 1 }; // Solo usuarios con rol de cliente
       
       if (estado !== undefined) {
         whereClause.estado = estado;
       }
       
       if (nombre) {
-        userWhereClause.nombre = { [sequelize.Op.like]: `%${nombre}%` };
+        whereClause.nombre = { [sequelize.Op.like]: `%${nombre}%` };
       }
       
       if (correo) {
-        userWhereClause.correo = { [sequelize.Op.like]: `%${correo}%` };
+        whereClause.correo = { [sequelize.Op.like]: `%${correo}%` };
       }
       
       if (documento) {
-        userWhereClause.documento = { [sequelize.Op.like]: `%${documento}%` };
+        whereClause.documento = { [sequelize.Op.like]: `%${documento}%` };
       }
       
-      const clients = await Client.findAll({
+      const clients = await Usuario.findAll({
         where: whereClause,
-        include: [{
-          model: Usuario,
-          as: 'usuario',
-          where: Object.keys(userWhereClause).length > 0 ? userWhereClause : undefined,
-          attributes: { exclude: ['contrasena'] }
-        }],
-        order: [['id_cliente', 'ASC']]
+        attributes: { exclude: ['contrasena'] },
+        order: [['id_usuario', 'ASC']]
       });
 
       return {
@@ -396,25 +374,6 @@ class ClientService {
       };
     } catch (error) {
       throw new Error(`Error al buscar clientes: ${error.message}`);
-    }
-  }
-
-  // Create user and client in one transaction (prepared for future integration)
-  static async createUserAndClient(userData, clientData) {
-    const transaction = await sequelize.transaction();
-    
-    try {
-      // TODO: When User model is available, implement this logic:
-      // 1. Create user in usuarios table
-      // 2. Assign 'Cliente' role in usuarios_roles table
-      // 3. Create client record in clientes table
-      
-      // For now, this is a placeholder that will be implemented later
-      throw new Error('Función createUserAndClient no implementada aún. Los modelos de usuario deben ser proporcionados primero.');
-      
-    } catch (error) {
-      await transaction.rollback();
-      throw new Error(`Error al crear usuario y cliente: ${error.message}`);
     }
   }
 }

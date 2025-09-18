@@ -1,13 +1,62 @@
 // controllers/serviceController.js
 const ServicesService = require("../services/ServicesService");
 
-// Create service
+// Helper function to handle Sequelize errors
+const handleSequelizeError = (error, res) => {
+  const timestamp = new Date().toISOString();
+  
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: "El valor ingresado no existe en la tabla relacionada",
+      error: "FOREIGN_KEY_CONSTRAINT_ERROR",
+      timestamp
+    });
+  }
+  
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: "El valor ingresado ya existe",
+      error: "UNIQUE_CONSTRAINT_ERROR",
+      timestamp
+    });
+  }
+  
+  if (error.name === 'SequelizeValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: "Errores de validación",
+      error: "VALIDATION_ERROR",
+      validationErrors: error.errors.map(err => ({
+        field: err.path,
+        message: err.message,
+        value: err.value
+      })),
+      timestamp
+    });
+  }
+  
+  // For other errors
+  return res.status(500).json({
+    success: false,
+    message: "Error interno del servidor",
+    error: "INTERNAL_SERVER_ERROR",
+    timestamp
+  });
+};
+
+
 exports.create = async (req, res) => {
   try {
     const service = await ServicesService.createService(req.body);
-    res.status(201).json(service);
+    res.status(201).json({
+      success: true,
+      message: "Servicio creado exitosamente",
+      data: service
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -15,9 +64,13 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const services = await ServicesService.getAllServices();
-    res.json(services);
+    res.status(200).json({
+      success: true,
+      message: "Servicios obtenidos exitosamente",
+      data: services
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -26,11 +79,20 @@ exports.getById = async (req, res) => {
   try {
     const service = await ServicesService.getServiceById(req.params.id);
     if (!service) {
-      return res.status(404).json({ error: "Service not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Servicio no encontrado",
+        error: "SERVICE_NOT_FOUND",
+        timestamp: new Date().toISOString()
+      });
     }
-    res.json(service);
+    res.status(200).json({
+      success: true,
+      message: "Servicio obtenido exitosamente",
+      data: service
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -38,9 +100,13 @@ exports.getById = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const service = await ServicesService.updateService(req.params.id, req.body);
-    res.json(service);
+    res.status(200).json({
+      success: true,
+      message: "Servicio actualizado exitosamente",
+      data: service
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -48,9 +114,13 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   try {
     const result = await ServicesService.deleteService(req.params.id);
-    res.json(result);
+    res.status(200).json({
+      success: true,
+      message: "Servicio eliminado exitosamente",
+      data: result
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -66,11 +136,7 @@ exports.search = async (req, res) => {
         : "No se encontraron servicios con esos criterios"
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error al buscar servicios",
-      error: error.message
-    });
+    handleSequelizeError(error, res);
   }
 };
 
@@ -83,20 +149,19 @@ exports.changeStatus = async (req, res) =>{
       if (!estado) {
         return res.status(400).json({
           success: false,
-          error: 'Nuevo estado requerido'
+          message: "Nuevo estado requerido",
+          error: "MISSING_STATUS",
+          timestamp: new Date().toISOString()
         });
       }
 
-      const category = await ServicesService.changeServiceStatus(id, estado);
-      res.json({
+      const service = await ServicesService.changeServiceStatus(id, estado);
+      res.status(200).json({
         success: true,
-        data: category,
+        data: service,
         message: `Estado del servicio cambiado a ${estado}`
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
-      });
+      handleSequelizeError(error, res);
     }
   }

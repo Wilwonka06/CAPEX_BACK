@@ -1,377 +1,658 @@
-const { Op } = require('sequelize');
-const Appointment = require('../models/Appointment');
-const Services = require('../models/Services');
+const Citas = require('../models/Appointment');
+const ServiceDetail = require('../models/serviceDetails/ServiceDetail');
 const { Usuario } = require('../models/User');
+const Services = require('../models/Services');
+const Scheduling = require('../models/Scheduling');
+const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-class AppointmentService {
-  /**
-   * Crear una nueva cita
-   */
-  static async createAppointment(appointmentData) {
-    try {
-      // Verificar que el usuario existe, está activo y tiene rol de cliente
-      const user = await Usuario.findByPk(appointmentData.id_usuario);
+class CitasService {
+  // Obtener todas las citas con paginación y filtros
+  async getAllAppointments(page = 1, limit = 10, filters = {}) {
+    const offset = (page - 1) * limit;
+    const whereClause = {};
 
-      if (!user) {
-        throw new Error('Usuario no encontrado');
-      }
-
-      if (user.estado !== 'Activo') {
-        throw new Error('El usuario está inactivo');
-      }
-
-      // Verificar que el usuario tenga rol de cliente (roleId = 2)
-      if (user.roleId !== 2) {
-        throw new Error('El usuario debe tener rol de cliente');
-      }
-
-      // Verificar que el servicio existe y está activo
-      const service = await Services.findByPk(appointmentData.id_servicio);
-      if (!service) {
-        throw new Error('Servicio no encontrado');
-      }
-
-      if (service.estado !== 'Activo') {
-        throw new Error('El servicio no está activo');
-      }
-
-      // Verificar conflictos de horario
-      const conflictos = await this.checkScheduleConflicts(
-        appointmentData.fecha_servicio,
-        appointmentData.hora_entrada,
-        appointmentData.hora_salida,
-        appointmentData.id_servicio
-      );
-
-      if (conflictos.length > 0) {
-        throw new Error('Existe un conflicto de horario para este servicio en la fecha y hora especificadas');
-      }
-
-      // Crear la cita
-      const appointment = await Appointment.create(appointmentData);
-
-      // Retornar la cita con información del cliente y servicio
-      return await this.getAppointmentById(appointment.id_servicio_cliente);
-    } catch (error) {
-      throw error;
+    // Aplicar filtros
+    if (filters.estado) {
+      whereClause.estado = filters.estado;
     }
-  }
 
-  /**
-   * Obtener todas las citas con filtros opcionales
-   */
-  static async getAppointments(filters = {}, page = 1, limit = 10) {
-    try {
-      const whereClause = {};
-      const includeClause = [
+    if (filters.fecha_desde || filters.fecha_hasta) {
+      whereClause.fecha_servicio = {};
+      if (filters.fecha_desde) whereClause.fecha_servicio[Op.gte] = filters.fecha_desde;
+      if (filters.fecha_hasta) whereClause.fecha_servicio[Op.lte] = filters.fecha_hasta;
+    }
+
+    if (filters.id_cliente) {
+      whereClause.id_cliente = filters.id_cliente;
+    }
+
+    const { count, rows } = await Citas.findAndCountAll({
+      where: whereClause,
+      include: [
         {
           model: Usuario,
-          as: 'usuario',
-          attributes: ['id_usuario', 'nombre', 'correo', 'telefono', 'estado', 'roleId']
+          as: 'cliente',
+          attributes: ['id_usuario', 'nombre', 'telefono', 'correo']
         },
         {
-          model: Services,
-          as: 'servicio',
-          attributes: ['id_servicio', 'nombre', 'descripcion', 'duracion', 'precio']
+          model: ServiceDetail,
+          as: 'servicios',
+          include: [
+            {
+              model: Usuario,
+              as: 'empleado',
+              attributes: ['id_usuario', 'nombre']
+            },
+            {
+              model: Services,
+              as: 'servicio',
+              attributes: ['id_servicio', 'nombre', 'descripcion']
+            }
+          ]
         }
-      ];
+      ],
+      limit,
+      offset,
+      order: [['fecha_servicio', 'ASC'], ['hora_entrada', 'ASC']]
+    });
 
-      // Aplicar filtros
-      if (filters.usuario) {
-        whereClause.id_usuario = filters.usuario;
-      }
-
-      if (filters.servicio) {
-        whereClause.id_servicio = filters.servicio;
-      }
-
-      if (filters.estado) {
-        whereClause.estado = filters.estado;
-      }
-
-      if (filters.fecha_inicio && filters.fecha_fin) {
-        whereClause.fecha_servicio = {
-          [Op.between]: [filters.fecha_inicio, filters.fecha_fin]
-        };
-      } else if (filters.fecha_inicio) {
-        whereClause.fecha_servicio = {
-          [Op.gte]: filters.fecha_inicio
-        };
-      } else if (filters.fecha_fin) {
-        whereClause.fecha_servicio = {
-          [Op.lte]: filters.fecha_fin
-        };
-      }
-
-      const offset = (page - 1) * limit;
-
-      const { count, rows } = await Appointment.findAndCountAll({
-        where: whereClause,
-        include: includeClause,
-        order: [['fecha_servicio', 'ASC'], ['hora_entrada', 'ASC']],
-        limit: parseInt(limit),
-        offset: offset
-      });
-
-      return {
-        appointments: rows,
+    return {
+      success: true,
+      message: 'Citas obtenidas exitosamente',
+      data: {
+        citas: rows,
         pagination: {
+          page,
+          limit,
           total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(count / limit)
+          totalPages: Math.ceil(count / limit),
+          hasNext: page < Math.ceil(count / limit),
+          hasPrev: page > 1
         }
-      };
-    } catch (error) {
-      throw error;
-    }
+      }
+    };
   }
 
-  /**
-   * Obtener una cita por ID
-   */
-  static async getAppointmentById(id) {
+  // Obtener cita por ID
+  async getAppointmentById(id) {
     try {
-      const appointment = await Appointment.findByPk(id, {
+      const appointment = await Citas.findByPk(id, {
         include: [
           {
             model: Usuario,
-            as: 'usuario',
-            attributes: ['id_usuario', 'nombre', 'correo', 'telefono', 'estado', 'roleId']
+            as: 'cliente',
+            attributes: ['id_usuario', 'nombre', 'telefono', 'correo', 'direccion']
+          },
+          {
+            model: ServiceDetail,
+            as: 'servicios',
+            include: [
+              {
+                model: Usuario,
+                as: 'empleado',
+                attributes: ['id_usuario', 'nombre', 'telefono']
+              },
+              {
+                model: Services,
+                as: 'servicio',
+                attributes: ['id_servicio', 'nombre', 'descripcion', 'duracion']
+              }
+            ]
+          }
+        ]
+      });
+
+      if (!appointment) {
+        return {
+          success: false,
+          message: 'Cita no encontrada'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Cita obtenida exitosamente',
+        data: appointment
+      };
+    } catch (error) {
+      throw new Error(`Error al obtener cita: ${error.message}`);
+    }
+  }
+
+  // Crear nueva cita con servicios
+  async createAppointment(appointmentData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const { cita, servicios } = appointmentData;
+
+      // Validar que el cliente existe y está activo
+      const cliente = await Usuario.findByPk(cita.id_cliente);
+      if (!cliente || cliente.estado !== 'Activo') {
+        throw new Error('Cliente no encontrado o inactivo');
+      }
+
+      // Validar servicios
+      if (!servicios || servicios.length === 0) {
+        throw new Error('Debe incluir al menos un servicio');
+      }
+
+      // Validar disponibilidad de empleados y servicios
+      await this.validateEmployeeAvailability(servicios, cita.fecha_servicio, transaction);
+
+      // Enriquecer servicios con precio_unitario, duracion y hora_finalizacion
+      const serviciosEnriquecidos = [];
+      for (const s of servicios) {
+        const svc = await Services.findByPk(s.id_servicio, { transaction });
+        const hora_finalizacion = this.calculateEndTime(s.hora_inicio, svc.duracion);
+        serviciosEnriquecidos.push({
+          ...s,
+          precio_unitario: svc.precio,
+          duracion: svc.duracion,
+          hora_finalizacion
+        });
+      }
+
+      // Calcular hora_salida y valor_total en base a servicios enriquecidos
+      const { horaSalida, valorTotal } = await this.calculateAppointmentTotals(serviciosEnriquecidos);
+
+      // Crear la cita
+      const newCitas = await Citas.create({
+        ...cita,
+        hora_salida: horaSalida,
+        valor_total: valorTotal
+      }, { transaction });
+
+      // Crear los servicios
+      const createdServices = [];
+      for (const servicio of serviciosEnriquecidos) {
+        const serviceData = await this.prepareServiceData(
+          servicio,
+          newCitas.id_cita,
+          cita.id_cliente,
+          cita.fecha_servicio
+        );
+        const newService = await ServiceDetail.create(serviceData, { transaction });
+        createdServices.push(newService);
+      }
+
+      await transaction.commit();
+
+      // Obtener la cita completa con servicios
+      const completeCitas = await this.getAppointmentById(newCitas.id_cita);
+
+      return {
+        success: true,
+        message: 'Cita creada exitosamente',
+        data: completeCitas.data
+      };
+    } catch (error) {
+      try {
+        if (transaction && transaction.finished !== 'commit') {
+          await transaction.rollback();
+        }
+      } catch(_) {}
+      throw new Error(`Error al crear cita: ${error.message}`);
+    }
+  }
+
+  // Actualizar cita completa
+  async updateAppointment(id, appointmentData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const appointment = await Citas.findByPk(id);
+      if (!appointment) {
+        throw new Error('Cita no encontrada');
+      }
+
+      // Validar que la cita no esté finalizada o cancelada
+      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+        throw new Error('No se puede modificar una cita finalizada, pagada o cancelada');
+      }
+
+      const { cita, servicios } = appointmentData;
+
+      // Si se están actualizando servicios, validar disponibilidad
+      if (servicios && servicios.length > 0) {
+        await this.validateEmployeeAvailability(servicios, cita.fecha_servicio, transaction);
+        
+        // Eliminar servicios existentes
+        await ServiceDetail.destroy({
+          where: { id_cita: id },
+          transaction
+        });
+
+        // Enriquecer servicios para guardar completos y calcular totales
+        const serviciosEnriquecidos = [];
+        for (const s of servicios) {
+          const svc = await Services.findByPk(s.id_servicio, { transaction });
+          const hora_finalizacion = this.calculateEndTime(s.hora_inicio, svc.duracion);
+          serviciosEnriquecidos.push({
+            ...s,
+            precio_unitario: svc.precio,
+            duracion: svc.duracion,
+            hora_finalizacion
+          });
+        }
+
+        // Crear nuevos servicios
+        for (const servicio of serviciosEnriquecidos) {
+          const serviceData = await this.prepareServiceData(
+            servicio,
+            id,
+            cita.id_cliente,
+            cita.fecha_servicio
+          );
+          await ServiceDetail.create(serviceData, { transaction });
+        }
+
+        // Recalcular totales
+        const { horaSalida, valorTotal } = await this.calculateAppointmentTotals(serviciosEnriquecidos);
+        cita.hora_salida = horaSalida;
+        cita.valor_total = valorTotal;
+      }
+
+      // Actualizar la cita
+      await appointment.update(cita, { transaction });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: 'Cita actualizada exitosamente',
+        data: await this.getAppointmentById(id)
+      };
+    } catch (error) {
+      try {
+        if (transaction && transaction.finished !== 'commit') {
+          await transaction.rollback();
+        }
+      } catch(_) {}
+      throw new Error(`Error al actualizar cita: ${error.message}`);
+    }
+  }
+
+  // Cancelar cita
+  async cancelAppointment(id, motivo = 'Cancelada por el cliente') {
+    try {
+      const appointment = await Citas.findByPk(id);
+      if (!appointment) {
+        return {
+          success: false,
+          message: 'Cita no encontrada'
+        };
+      }
+
+      // Validar que se puede cancelar
+      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+        return {
+          success: false,
+          message: 'No se puede cancelar una cita que ya está finalizada, pagada o cancelada'
+        };
+      }
+
+      await appointment.update({ 
+        estado: 'Cancelada por el cliente',
+        motivo: motivo
+      });
+
+      // Cancelar todos los servicios asociados
+      await ServiceDetail.update(
+        { estado: 'Cancelada por el cliente' },
+        { where: { id_cita: id } }
+      );
+
+      return {
+        success: true,
+        message: 'Cita cancelada exitosamente',
+        data: await this.getCitasById(id)
+      };
+    } catch (error) {
+      throw new Error(`Error al cancelar cita: ${error.message}`);
+    }
+  }
+
+  // Buscar citas por texto
+  async searchAppointments(query, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Citas.findAndCountAll({
+      include: [
+        {
+          model: Usuario,
+          as: 'cliente',
+          where: {
+            [Op.or]: [
+              { nombre: { [Op.like]: `%${query}%` } },
+              { correo: { [Op.like]: `%${query}%` } },
+              { telefono: { [Op.like]: `%${query}%` } }
+            ]
+          },
+          attributes: ['id_usuario', 'nombre', 'telefono', 'correo']
+        },
+        {
+          model: ServiceDetail,
+          as: 'servicios',
+          include: [
+            {
+              model: Usuario,
+              as: 'empleado',
+              attributes: ['id_usuario', 'nombre']
+            },
+            {
+              model: Services,
+              as: 'servicio',
+              attributes: ['id_servicio', 'nombre', 'descripcion']
+            }
+          ]
+        }
+      ],
+      where: {
+        [Op.or]: [
+          { motivo: { [Op.like]: `%${query}%` } },
+          { estado: { [Op.like]: `%${query}%` } }
+        ]
+      },
+      limit,
+      offset,
+      order: [['fecha_servicio', 'ASC'], ['hora_entrada', 'ASC']]
+    });
+
+    return {
+      success: true,
+      message: 'Búsqueda completada exitosamente',
+      data: {
+        citas: rows,
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages: Math.ceil(count / limit),
+          hasNext: page < Math.ceil(count / limit),
+          hasPrev: page > 1
+        }
+      }
+    };
+  }
+
+  // Agregar servicio a cita existente
+  async addServiceToAppointment(id, serviceData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const appointment = await Citas.findByPk(id);
+      if (!appointment) {
+        throw new Error('Cita no encontrada');
+      }
+
+      // Validar que la cita no esté finalizada o cancelada
+      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+        throw new Error('No se puede agregar servicios a una cita finalizada, pagada o cancelada');
+      }
+
+      // Validar disponibilidad del empleado
+      await this.validateEmployeeAvailability([serviceData], appointment.fecha_servicio, transaction);
+
+      // Preparar datos del servicio
+      const preparedServiceData = await this.prepareServiceData(
+        serviceData,
+        id,
+        appointment.id_cliente,
+        appointment.fecha_servicio
+      );
+      const newService = await ServiceDetail.create(preparedServiceData, { transaction });
+
+      // Recalcular totales de la cita
+      const allServices = await ServiceDetail.findAll({
+        where: { id_cita: id },
+        transaction
+      });
+
+      const { horaSalida, valorTotal } = await this.calculateAppointmentTotals(allServices);
+      await appointment.update({
+        hora_salida: horaSalida,
+        valor_total: valorTotal
+      }, { transaction });
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        message: 'Servicio agregado exitosamente',
+        data: await this.getAppointmentById(id)
+      };
+    } catch (error) {
+      try {
+        if (transaction && transaction.finished !== 'commit') {
+          await transaction.rollback();
+        }
+      } catch(_) {}
+      throw new Error(`Error al agregar servicio: ${error.message}`);
+    }
+  }
+
+  // Cancelar servicio específico
+  async cancelService(id, detalleId) {
+    try {
+      const appointment = await Citas.findByPk(id);
+      if (!appointment) {
+        return {
+          success: false,
+          message: 'Cita no encontrada'
+        };
+      }
+
+      const service = await ServiceDetail.findOne({
+        where: { 
+          id_detalle_servicio: detalleId,
+          id_cita: id 
+        }
+      });
+
+      if (!service) {
+        return {
+          success: false,
+          message: 'Servicio no encontrado en esta cita'
+        };
+      }
+
+      // Validar que se puede cancelar
+      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(service.estado)) {
+        return {
+          success: false,
+          message: 'No se puede cancelar un servicio que ya está finalizado, pagado o cancelado'
+        };
+      }
+
+      await service.update({ estado: 'Cancelada por el cliente' });
+
+      // Recalcular totales si hay servicios activos
+      const activeServices = await ServiceDetail.findAll({
+        where: { 
+          id_cita: id,
+          estado: { [Op.notIn]: ['Finalizada', 'Pagada', 'Cancelada por el cliente'] }
+        }
+      });
+
+      if (activeServices.length === 0) {
+        // Si no hay servicios activos, cancelar toda la cita
+        await appointment.update({ estado: 'Cancelada por el cliente' });
+      } else {
+        // Recalcular totales
+        const { horaSalida, valorTotal } = await this.calculateAppointmentTotals(activeServices);
+        await appointment.update({
+          hora_salida: horaSalida,
+          valor_total: valorTotal
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Servicio cancelado exitosamente',
+        data: await this.getAppointmentById(id)
+      };
+    } catch (error) {
+      throw new Error(`Error al cancelar servicio: ${error.message}`);
+    }
+  }
+
+  // Obtener servicio por ID
+  async getServiceById(id, detalleId) {
+    try {
+      const service = await ServiceDetail.findOne({
+        where: { 
+          id_detalle_servicio: detalleId,
+          id_cita: id 
+        },
+        include: [
+          {
+            model: Usuario,
+            as: 'empleado',
+            attributes: ['id_usuario', 'nombre', 'telefono']
           },
           {
             model: Services,
             as: 'servicio',
-            attributes: ['id_servicio', 'nombre', 'descripcion', 'duracion', 'precio']
+            attributes: ['id_servicio', 'nombre', 'descripcion', 'duracion']
           }
         ]
       });
 
-      if (!appointment) {
-        throw new Error('Cita no encontrada');
-      }
-
-      return appointment;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Actualizar una cita
-   */
-  static async updateAppointment(id, updateData) {
-    try {
-      const appointment = await Appointment.findByPk(id);
-      if (!appointment) {
-        throw new Error('Cita no encontrada');
-      }
-
-      // Si se está actualizando fecha, hora o servicio, verificar conflictos
-      if (updateData.fecha_servicio || updateData.hora_entrada || updateData.hora_salida || updateData.id_servicio) {
-        const fecha = updateData.fecha_servicio || appointment.fecha_servicio;
-        const horaEntrada = updateData.hora_entrada || appointment.hora_entrada;
-        const horaSalida = updateData.hora_salida || appointment.hora_salida;
-        const idServicio = updateData.id_servicio || appointment.id_servicio;
-
-        const conflictos = await this.checkScheduleConflicts(
-          fecha,
-          horaEntrada,
-          horaSalida,
-          idServicio,
-          id // Excluir la cita actual
-        );
-
-        if (conflictos.length > 0) {
-          throw new Error('Existe un conflicto de horario para este servicio en la fecha y hora especificadas');
-        }
-      }
-
-      await appointment.update(updateData);
-
-      return await this.getAppointmentById(id);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Eliminar una cita
-   */
-  static async deleteAppointment(id) {
-    try {
-      const appointment = await Appointment.findByPk(id);
-      if (!appointment) {
-        throw new Error('Cita no encontrada');
-      }
-
-      // Solo permitir eliminar citas en estado 'Agendada' o 'Cancelada por el cliente'
-      if (!['Agendada', 'Cancelada por el cliente'].includes(appointment.estado)) {
-        throw new Error('No se puede eliminar una cita que no esté en estado Agendada o Cancelada por el cliente');
-      }
-
-      await appointment.destroy();
-      return { message: 'Cita eliminada correctamente' };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Cambiar el estado de una cita
-   */
-  static async changeAppointmentStatus(id, newStatus, motivo = null) {
-    try {
-      const appointment = await Appointment.findByPk(id);
-      if (!appointment) {
-        throw new Error('Cita no encontrada');
-      }
-
-      // Validar transiciones de estado permitidas
-      const validTransitions = {
-        'Agendada': ['Confirmada', 'Reprogramada', 'Cancelada por el cliente'],
-        'Confirmada': ['En proceso', 'Reprogramada', 'Cancelada por el cliente'],
-        'Reprogramada': ['Confirmada', 'Cancelada por el cliente'],
-        'En proceso': ['Finalizada', 'Cancelada por el cliente'],
-        'Finalizada': ['Pagada'],
-        'Pagada': [],
-        'Cancelada por el cliente': [],
-        'No asistio': []
-      };
-
-      const allowedTransitions = validTransitions[appointment.estado] || [];
-      if (!allowedTransitions.includes(newStatus)) {
-        throw new Error(`No se puede cambiar el estado de '${appointment.estado}' a '${newStatus}'`);
-      }
-
-      const updateData = { estado: newStatus };
-      if (motivo) {
-        updateData.motivo = motivo;
-      }
-
-      await appointment.update(updateData);
-
-      return await this.getAppointmentById(id);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Verificar conflictos de horario
-   */
-  static async checkScheduleConflicts(fecha, horaEntrada, horaSalida, idServicio, excludeId = null) {
-    try {
-      const whereClause = {
-        fecha_servicio: fecha,
-        id_servicio: idServicio,
-        estado: {
-          [Op.notIn]: ['Cancelada por el cliente', 'No asistio']
-        },
-        [Op.or]: [
-          {
-            hora_entrada: {
-              [Op.lt]: horaSalida
-            },
-            hora_salida: {
-              [Op.gt]: horaEntrada
-            }
-          }
-        ]
-      };
-
-      if (excludeId) {
-        whereClause.id_servicio_cliente = {
-          [Op.ne]: excludeId
+      if (!service) {
+        return {
+          success: false,
+          message: 'Servicio no encontrado'
         };
       }
 
-      return await Appointment.findAll({
-        where: whereClause,
-        include: [
-          {
-            model: Usuario,
-            as: 'usuario',
-            attributes: ['id_usuario', 'nombre', 'correo', 'telefono']
-          }
-        ]
-      });
+      return {
+        success: true,
+        message: 'Servicio obtenido exitosamente',
+        data: service
+      };
     } catch (error) {
-      throw error;
+      throw new Error(`Error al obtener servicio: ${error.message}`);
     }
   }
 
+  // Métodos auxiliares privados
 
+  // Validar disponibilidad de empleados
+  async validateEmployeeAvailability(servicios, fechaServicio, transaction) {
+    for (const servicio of servicios) {
+      // Validar que el empleado existe y está activo
+      const empleado = await Usuario.findByPk(servicio.id_empleado, { transaction });
+      if (!empleado || empleado.estado !== 'Activo') {
+        throw new Error(`Empleado con ID ${servicio.id_empleado} no encontrado o inactivo`);
+      }
 
-  /**
-   * Obtener citas por usuario
-   */
-  static async getAppointmentsByUser(userId, page = 1, limit = 10) {
-    try {
-      const offset = (page - 1) * limit;
+      // Validar que el servicio existe y está activo
+      const service = await Services.findByPk(servicio.id_servicio, { transaction });
+      if (!service || service.estado !== 'Activo') {
+        throw new Error(`Servicio con ID ${servicio.id_servicio} no encontrado o inactivo`);
+      }
 
-      const { count, rows } = await Appointment.findAndCountAll({
-        where: { id_usuario: userId },
-        include: [
-          {
-            model: Services,
-            as: 'servicio',
-            attributes: ['id_servicio', 'nombre', 'descripcion', 'duracion', 'precio']
-          }
-        ],
-        order: [['fecha_servicio', 'DESC'], ['hora_entrada', 'DESC']],
-        limit: parseInt(limit),
-        offset: offset
+      // Validar disponibilidad en programaciones
+      const programacion = await Scheduling.findOne({
+        where: {
+          id_usuario: servicio.id_empleado,
+          fecha_inicio: fechaServicio
+        },
+        transaction
       });
 
-      return {
-        appointments: rows,
-        pagination: {
-          total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(count / limit)
-        }
-      };
-    } catch (error) {
-      throw error;
+      if (!programacion) {
+        throw new Error(`Empleado ${empleado.nombre} no tiene programación para la fecha ${fechaServicio}`);
+      }
+
+      // Validar que el horario del servicio esté dentro de la programación del empleado
+      const horaInicio = servicio.hora_inicio;
+      const horaFin = this.calculateEndTime(horaInicio, service.duracion);
+
+      if (horaInicio < programacion.hora_entrada || horaFin > programacion.hora_salida) {
+        throw new Error(`El horario del servicio no está dentro de la programación del empleado ${empleado.nombre}`);
+      }
+
+      // Validar que no hay conflictos con otros servicios
+      const conflictingServices = await ServiceDetail.findAll({
+        where: {
+          id_empleado: servicio.id_empleado,
+          fecha_programada: fechaServicio,
+          estado: { [Op.notIn]: ['Cancelada por el cliente', 'No asistio'] },
+          [Op.or]: [
+            {
+              hora_inicio: {
+                [Op.between]: [horaInicio, horaFin]
+              }
+            },
+            {
+              hora_finalizacion: {
+                [Op.between]: [horaInicio, horaFin]
+              }
+            }
+          ]
+        },
+        transaction
+      });
+
+      if (conflictingServices.length > 0) {
+        throw new Error(`El empleado ${empleado.nombre} ya tiene un servicio programado en ese horario`);
+      }
     }
   }
 
-  /**
-   * Obtener citas por servicio
-   */
-  static async getAppointmentsByService(serviceId, page = 1, limit = 10) {
-    try {
-      const offset = (page - 1) * limit;
+  // Calcular totales de la cita
+  async calculateAppointmentTotals(servicios) {
+    let valorTotal = 0;
+    let horaSalidaMaxima = '00:00:00';
 
-      const { count, rows } = await Appointment.findAndCountAll({
-        where: { id_servicio: serviceId },
-        include: [
-          {
-            model: Usuario,
-            as: 'usuario',
-            attributes: ['id_usuario', 'nombre', 'correo', 'telefono', 'estado', 'roleId']
-          }
-        ],
-        order: [['fecha_servicio', 'ASC'], ['hora_entrada', 'ASC']],
-        limit: parseInt(limit),
-        offset: offset
-      });
+    for (const servicio of servicios) {
+      if (servicio.precio_unitario && servicio.cantidad) {
+        valorTotal += parseFloat(servicio.precio_unitario) * parseInt(servicio.cantidad);
+      }
 
-      return {
-        appointments: rows,
-        pagination: {
-          total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(count / limit)
-        }
-      };
-    } catch (error) {
-      throw error;
+      if (servicio.hora_finalizacion && servicio.hora_finalizacion > horaSalidaMaxima) {
+        horaSalidaMaxima = servicio.hora_finalizacion;
+      }
     }
+
+    return {
+      horaSalida: horaSalidaMaxima,
+      valorTotal: valorTotal
+    };
+  }
+
+  // Preparar datos del servicio
+  async prepareServiceData(servicio, idCita, idCliente, fechaProgramada) {
+    const service = await Services.findByPk(servicio.id_servicio);
+    
+    return {
+      id_empleado: servicio.id_empleado,
+      id_servicio: servicio.id_servicio,
+      id_cita: idCita,
+      id_cliente: idCliente || null,
+      precio_unitario: servicio.precio_unitario ?? service.precio,
+      cantidad: servicio.cantidad || 1,
+      hora_inicio: servicio.hora_inicio,
+      hora_finalizacion: servicio.hora_finalizacion || this.calculateEndTime(servicio.hora_inicio, service.duracion ?? service.duracion),
+      duracion: servicio.duracion ?? service.duracion,
+      fecha_programada: fechaProgramada || null,
+      estado: 'Agendada',
+      observaciones: servicio.observaciones || null
+    };
+  }
+
+  // Calcular hora de finalización
+  calculateEndTime(horaInicio, duracion) {
+    const [horas, minutos] = horaInicio.split(':').map(Number);
+    const totalMinutos = horas * 60 + minutos + duracion;
+    const nuevasHoras = Math.floor(totalMinutos / 60);
+    const nuevosMinutos = totalMinutos % 60;
+    
+    return `${nuevasHoras.toString().padStart(2, '0')}:${nuevosMinutos.toString().padStart(2, '0')}:00`;
   }
 }
 
-module.exports = AppointmentService;
+module.exports = new CitasService();

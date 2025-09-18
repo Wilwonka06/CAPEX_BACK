@@ -4,75 +4,84 @@ const AppointmentController = require('../controllers/AppointmentController');
 const {
   validateCreateAppointment,
   validateUpdateAppointment,
-  validateGetAppointments,
-  validateGetAppointment,
-  validateDeleteAppointment,
-  validateChangeAppointmentStatus
-} = require('../middlewares/AppointmentMiddleware');
+  validateAppointmentId,
+  validateCancelAppointment,
+  validateSearchAppointments,
+  validateAddServiceToAppointment,
+  validateCancelService,
+  validateServiceId,
+  validateAppointmentFilters,
+  validateEmployeeId,
+  validateClientId,
+  validateAppointmentNotFinalized
+} = require('../middlewares/AppointmentValidationMiddleware');
 
-/**
- * @route POST /api/appointments
- * @desc Crear una nueva cita
- * @access Private
- */
+// Rutas principales de citas
+
+// GET /api/citas - Obtener todas las citas con paginación y filtros
+router.get('/', validateAppointmentFilters, AppointmentController.getAllAppointments);
+
+// GET /api/citas/buscar - Buscar citas por texto
+router.get('/buscar', validateSearchAppointments, AppointmentController.searchAppointments);
+
+// GET /api/citas/:id - Obtener cita por ID
+router.get('/:id', validateAppointmentId, AppointmentController.getAppointmentById);
+
+// POST /api/citas - Crear nueva cita con servicios
 router.post('/', validateCreateAppointment, AppointmentController.createAppointment);
 
-/**
- * @route GET /api/appointments
- * @desc Obtener todas las citas con filtros opcionales
- * @access Private
- */
-router.get('/', validateGetAppointments, AppointmentController.getAppointments);
+// PUT /api/citas/:id - Editar cita completa
+router.put('/:id', 
+  validateAppointmentId, 
+  validateAppointmentNotFinalized, 
+  validateUpdateAppointment, 
+  AppointmentController.updateAppointment
+);
 
+// PATCH /api/citas/:id/cancelar - Cancelar cita
+router.patch('/:id/cancelar', 
+  validateAppointmentId, 
+  validateCancelAppointment, 
+  AppointmentController.cancelAppointment
+);
 
+// Rutas de servicios dentro de citas
 
-/**
- * @route GET /api/appointments/conflicts
- * @desc Verificar conflictos de horario
- * @access Private
- */
-router.get('/conflicts', AppointmentController.checkScheduleConflicts);
+// POST /api/citas/:id/servicios - Agregar servicio a cita existente
+router.post('/:id/servicios', 
+  validateAppointmentId, 
+  validateAppointmentNotFinalized, 
+  validateAddServiceToAppointment, 
+  AppointmentController.addServiceToAppointment
+);
 
-/**
- * @route GET /api/appointments/:id
- * @desc Obtener una cita específica por ID
- * @access Private
- */
-router.get('/:id', validateGetAppointment, AppointmentController.getAppointmentById);
+// GET /api/citas/:id/servicios/:detalle_id - Obtener servicio por ID
+router.get('/:id/servicios/:detalle_id', 
+  validateServiceId, 
+  AppointmentController.getServiceById
+);
 
-/**
- * @route PUT /api/appointments/:id
- * @desc Actualizar una cita
- * @access Private
- */
-router.put('/:id', validateUpdateAppointment, AppointmentController.updateAppointment);
+// PATCH /api/citas/:id/servicios/:detalle_id/cancelar - Cancelar servicio específico
+router.patch('/:id/servicios/:detalle_id/cancelar', 
+  validateCancelService, 
+  AppointmentController.cancelService
+);
 
-/**
- * @route DELETE /api/appointments/:id
- * @desc Eliminar una cita
- * @access Private
- */
-router.delete('/:id', validateDeleteAppointment, AppointmentController.deleteAppointment);
+// Rutas adicionales
 
-/**
- * @route PATCH /api/appointments/:id/status
- * @desc Cambiar el estado de una cita
- * @access Private
- */
-router.patch('/:id/status', validateChangeAppointmentStatus, AppointmentController.changeAppointmentStatus);
+// GET /api/citas/empleado/:employeeId - Obtener citas por empleado
+router.get('/empleado/:employeeId', 
+  validateEmployeeId, 
+  AppointmentController.getAppointmentsByEmployee
+);
 
-/**
- * @route GET /api/appointments/user/:userId
- * @desc Obtener citas por usuario
- * @access Private
- */
-router.get('/user/:userId', validateGetAppointments, AppointmentController.getAppointmentsByUser);
+// GET /api/citas/cliente/:clientId - Obtener citas por cliente
+router.get('/cliente/:clientId', 
+  validateClientId, 
+  AppointmentController.getAppointmentsByClient
+);
 
-/**
- * @route GET /api/appointments/service/:serviceId
- * @desc Obtener citas por servicio
- * @access Private
- */
-router.get('/service/:serviceId', validateGetAppointments, AppointmentController.getAppointmentsByService);
+// GET /api/citas/estadisticas - Obtener estadísticas de citas
+router.get('/estadisticas', AppointmentController.getAppointmentStats);
 
 module.exports = router;
