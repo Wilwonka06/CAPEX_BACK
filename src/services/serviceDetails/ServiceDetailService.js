@@ -337,8 +337,8 @@ class ServiceDetailService {
     }
   }
 
-  // Cancel by client
-  static async cancelByClient(id) {
+  // Cancel by user
+  static async cancelByUser(id) {
     try {
       const serviceDetail = await ServiceDetail.findByPk(id);
       
@@ -349,16 +349,16 @@ class ServiceDetailService {
         };
       }
 
-      serviceDetail.status = 'Cancelada por el cliente';
+      serviceDetail.status = 'Cancelada por el usuario';
       await serviceDetail.save();
       
       return {
         success: true,
-        message: 'Service cancelled by client successfully',
+        message: 'Service cancelled by user successfully',
         data: serviceDetail
       };
     } catch (error) {
-      throw new Error(`Error cancelling service by client: ${error.message}`);
+      throw new Error(`Error cancelling service by user: ${error.message}`);
     }
   }
 

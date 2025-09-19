@@ -152,10 +152,10 @@ function setupAssociations() {
   
   // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
   
-  // Relación entre Citas y Usuario (cliente)
+  // Relación entre Citas y Usuario
   Citas.belongsTo(Usuario, {
     foreignKey: 'id_cliente',
-    as: 'cliente'
+    as: 'usuario'
   });
 
   Usuario.hasMany(Citas, {
@@ -185,10 +185,10 @@ function setupAssociations() {
     as: 'serviciosAsignados'
   });
 
-  // Relación entre ServiceDetail y Usuario (cliente) - para compatibilidad
+  // Relación entre ServiceDetail y Usuario - para compatibilidad
   ServiceDetail.belongsTo(Usuario, {
     foreignKey: 'id_cliente',
-    as: 'cliente'
+    as: 'usuario'
   });
 
   Usuario.hasMany(ServiceDetail, {
@@ -214,7 +214,7 @@ function setupAssociations() {
     as: 'programaciones'
   });
 
-  console.log('Asociaciones configuradas correctamente');
+  console.log('Asociaciones configuradas correctamente. Nota: Referencias a "cliente" reemplazadas con "usuario" para consistencia.');
 }
 
 module.exports = { setupAssociations };

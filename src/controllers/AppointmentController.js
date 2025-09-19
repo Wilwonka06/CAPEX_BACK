@@ -11,7 +11,7 @@ class AppointmentController {
       if (req.query.estado) filters.estado = req.query.estado;
       if (req.query.fecha_desde) filters.fecha_desde = req.query.fecha_desde;
       if (req.query.fecha_hasta) filters.fecha_hasta = req.query.fecha_hasta;
-      if (req.query.id_cliente) filters.id_cliente = req.query.id_cliente;
+      if (req.query.id_usuario) filters.id_cliente = req.query.id_usuario; // Mantener foreignKey id_cliente para compatibilidad BD
 
       const result = await CitasService.getAllAppointments(page, limit, filters);
       
@@ -316,19 +316,19 @@ class AppointmentController {
     }
   }
 
-  // Obtener citas por cliente
-  static async getAppointmentsByClient(req, res) {
+  // Obtener citas por usuario
+  static async getAppointmentsByUser(req, res) {
     try {
-      const { clientId } = req.params;
+      const { userId } = req.params;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       
-      const filters = { id_cliente: clientId };
+      const filters = { id_cliente: userId }; // Mantener foreignKey id_cliente para compatibilidad BD
       const result = await CitasService.getAllAppointments(page, limit, filters);
       
       res.status(200).json(result);
     } catch (error) {
-      console.error('Error al obtener citas del cliente:', error);
+      console.error('Error al obtener citas del usuario:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',

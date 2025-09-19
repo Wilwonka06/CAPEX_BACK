@@ -300,11 +300,11 @@ class ServiceDetailController {
     }
   }
 
-  // Cancel by client
-  static async cancelByClient(req, res) {
+  // Cancel by user
+  static async cancelByUser(req, res) {
     try {
       const { id } = req.params;
-      const result = await ServiceDetailService.cancelByClient(id);
+      const result = await ServiceDetailService.cancelByUser(id);
       
       if (!result.success) {
         return res.status(404).json(result);

@@ -12,7 +12,7 @@ const {
   validateServiceId,
   validateAppointmentFilters,
   validateEmployeeId,
-  validateClientId,
+  validateUserId,
   validateAppointmentNotFinalized
 } = require('../middlewares/AppointmentValidationMiddleware');
 
@@ -75,10 +75,10 @@ router.get('/empleado/:employeeId',
   AppointmentController.getAppointmentsByEmployee
 );
 
-// GET /api/citas/cliente/:clientId - Obtener citas por cliente
-router.get('/cliente/:clientId', 
-  validateClientId, 
-  AppointmentController.getAppointmentsByClient
+// GET /api/citas/usuario/:userId - Obtener citas por usuario
+router.get('/usuario/:userId',
+  validateUserId,
+  AppointmentController.getAppointmentsByUser
 );
 
 // GET /api/citas/estadisticas - Obtener estadísticas de citas

@@ -53,6 +53,16 @@ class SchedulingController {
     }
   }
 
+  async searchSchedulings(req, res) {
+    try {
+      const { query, page = 1, limit = 10 } = req.query;
+      const result = await SchedulingService.searchSchedulings(query, page, limit);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async update(req, res) {
     try {
       const updated = await SchedulingService.updateScheduling(req.params.id, req.body);
