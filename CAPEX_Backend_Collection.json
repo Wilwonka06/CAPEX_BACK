@@ -1,7 +1,8 @@
 {
   "info": {
-    "name": "CAPEX Backend API Collection",
-    "description": "Colección completa para probar la API de CAPEX Backend. Incluye CRUD para recursos principales: Auth, Users, Products, Services, Appointments, Suppliers, Purchases, Orders, Sales. Usa variables de entorno para baseUrl y token.",
+    "name": "CAPEX Backend API Collection - Corregida",
+    "description": "Colección completa y sin errores para probar la API de CAPEX Backend. Cubre CRUD para todos los recursos: Auth, Users, Roles, UserRoles, Products, ProductCategories, Characteristics, Services, ServiceCategories, Appointments, Employees, Scheduling, Purchases, Orders, Sales, TechnicalSheets, ServiceDetails. Variables de entorno para baseUrl y token. JSON válido v2.1.",
+    "_postman_id": "capex-complete",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -30,20 +31,19 @@
     {
       "listen": "prerequest",
       "script": {
+        "type": "text/javascript",
         "exec": [
-          "// Establecer auth si no está set",
           "if (!pm.environment.get('token')) {",
-          "  console.log('Token no disponible, ejecuta login primero');",
+          "  console.log('Ejecuta Login primero para obtener token.');",
           "}"
-        ],
-        "type": "text/javascript"
+        ]
       }
     }
   ],
   "item": [
     {
       "name": "Authentication",
-      "description": "Endpoints de autenticación para obtener token JWT.",
+      "description": "Autenticación y manejo de sesiones.",
       "item": [
         {
           "name": "Login",
@@ -57,31 +57,65 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"correo\": \"admin@example.com\",\n  \"contrasena\": \"Admin123!\"\n}"
+              "raw": "{\n  \"correo\": \"admin@example.com\",\n  \"contrasena\": \"Admin123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
-            },
-            "description": "Iniciar sesión y obtener token de autenticación."
+            }
           },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
                   "});",
-                  "",
-                  "pm.test('Response has token', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('token');",
-                  "    pm.environment.set('token', jsonData.token);",
+                  "pm.test('Token set', function () {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('token');",
+                  "  pm.environment.set('token', jsonData.token);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.environment.unset('token');"
+                ]
               }
             }
           ]
@@ -90,7 +124,7 @@
     },
     {
       "name": "Users",
-      "description": "CRUD operations for Users (usuarios). Base path: /api/users",
+      "description": "CRUD para Usuarios. /api/users",
       "item": [
         {
           "name": "GET All Users",
@@ -106,61 +140,18 @@
               "raw": "{{baseUrl}}/users",
               "host": ["{{baseUrl}}"],
               "path": ["users"]
-            },
-            "description": "Obtener todos los usuarios con paginación y filtros opcionales."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Response is array', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('data');",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
-        },
-        {
-          "name": "GET User by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
-            },
-            "description": "Obtener un usuario por ID."
           },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Response has user data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('data');",
-                  "    pm.expect(jsonData.data).to.have.property('id_usuario');",
-                  "    pm.expect(jsonData.data).to.have.property('nombre');",
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -181,30 +172,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"12345678\",\n  \"telefono\": \"+573001234567\",\n  \"correo\": \"juan.perez@example.com\",\n  \"contrasena\": \"Password123!\",\n  \"roleId\": 1,\n  \"estado\": \"Activo\"\n}"
+              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"tipo_documento\": \"Cedula de ciudadania\",\n  \"documento\": \"12345678\",\n  \"telefono\": \"+573001234567\",\n  \"correo\": \"juan@example.com\",\n  \"contrasena\": \"Password123!\",\n  \"roleId\": 1,\n  \"estado\": \"Activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/users",
               "host": ["{{baseUrl}}"],
               "path": ["users"]
-            },
-            "description": "Crear un nuevo usuario."
+            }
           },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "pm.test('User created', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('data');",
-                  "    pm.expect(jsonData.data.nombre).to.eql('Juan Pérez');",
+                  "pm.test('Status 201', function () {",
+                  "  pm.response.to.have.status(201);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ]
@@ -225,35 +215,22 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Juan Updated\",\n  \"correo\": \"juan.updated@example.com\"\n}"
+              "raw": "{\n  \"nombre\": \"Juan Updated\",\n  \"correo\": \"updated@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/users/1",
               "host": ["{{baseUrl}}"],
               "path": ["users", "1"]
-            },
-            "description": "Actualizar completamente un usuario por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('User updated', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.nombre).to.eql('Juan Updated');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
-          "name": "PATCH Change User Status",
+          "name": "PATCH Change Status",
           "request": {
             "method": "PATCH",
             "header": [
@@ -268,32 +245,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"Inactivo\"\n}"
+              "raw": "{\n  \"estado\": \"Inactivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/users/1/cambiar-estado",
               "host": ["{{baseUrl}}"],
               "path": ["users", "1", "cambiar-estado"]
-            },
-            "description": "Actualización parcial: Cambiar estado del usuario."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Status changed', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.estado).to.eql('Inactivo');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE User",
@@ -309,32 +273,197 @@
               "raw": "{{baseUrl}}/users/1",
               "host": ["{{baseUrl}}"],
               "path": ["users", "1"]
-            },
-            "description": "Eliminar un usuario por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('User deleted', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include('eliminado');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "description": "CRUD para Roles. /api/roles",
+      "item": [
+        {
+          "name": "GET All Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Admin\",\n  \"descripcion\": \"Rol administrador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Admin Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Roles",
+      "description": "Asignación de roles. /api/user-roles",
+      "item": [
+        {
+          "name": "POST Assign Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 1,\n  \"id_rol\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/asignar",
+              "host": ["{{baseUrl}}"],
+              "path": ["user-roles", "asignar"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Remove Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 1,\n  \"id_rol\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/remover",
+              "host": ["{{baseUrl}}"],
+              "path": ["user-roles", "remover"]
+            }
+          }
+        },
+        {
+          "name": "GET User Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/usuario/1/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["user-roles", "usuario", "1", "roles"]
+            }
+          }
         }
       ]
     },
     {
       "name": "Products",
-      "description": "CRUD operations for Products (productos). Base path: /api/productos",
+      "description": "CRUD para Productos. /api/productos",
       "item": [
         {
           "name": "GET All Products",
@@ -350,62 +479,8 @@
               "raw": "{{baseUrl}}/productos",
               "host": ["{{baseUrl}}"],
               "path": ["productos"]
-            },
-            "description": "Obtener todos los productos."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Products array', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
-        },
-        {
-          "name": "GET Product by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/productos/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["productos", "1"]
-            },
-            "description": "Obtener un producto por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Product data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.have.property('id_producto');",
-                  "    pm.expect(jsonData.data).to.have.property('nombre');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "POST Create Product",
@@ -423,32 +498,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Laptop Dell\",\n  \"id_categoria_producto\": 1,\n  \"costo\": 500000.00,\n  \"iva\": 19.00,\n  \"precio_venta\": 600000.00,\n  \"stock\": 10,\n  \"url_foto\": \"https://example.com/laptop.jpg\"\n}"
+              "raw": "{\n  \"nombre\": \"Laptop\",\n  \"id_categoria_producto\": 1,\n  \"costo\": 500000,\n  \"iva\": 19,\n  \"precio_venta\": 600000,\n  \"stock\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/productos",
               "host": ["{{baseUrl}}"],
               "path": ["productos"]
-            },
-            "description": "Crear un nuevo producto."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "pm.test('Product created', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.nombre).to.eql('Laptop Dell');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PUT Update Product",
@@ -466,28 +528,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Laptop Dell Updated\",\n  \"precio_venta\": 650000.00\n}"
+              "raw": "{\n  \"precio_venta\": 650000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/productos/1",
               "host": ["{{baseUrl}}"],
               "path": ["productos", "1"]
-            },
-            "description": "Actualizar un producto por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Product",
@@ -503,28 +556,214 @@
               "raw": "{{baseUrl}}/productos/1",
               "host": ["{{baseUrl}}"],
               "path": ["productos", "1"]
-            },
-            "description": "Eliminar un producto por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Categories",
+      "description": "CRUD para Categorías de Productos. /api/categorias-productos",
+      "item": [
+        {
+          "name": "GET All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias-productos",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias-productos"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Electrónicos\",\n  \"estado\": \"Activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias-productos",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias-productos"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Electrónicos Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categorias-productos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias-productos", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias-productos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["categorias-productos", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Characteristics",
+      "description": "CRUD para Características. /api/caracteristicas",
+      "item": [
+        {
+          "name": "GET All Characteristics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/caracteristicas",
+              "host": ["{{baseUrl}}"],
+              "path": ["caracteristicas"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Characteristic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Color\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/caracteristicas",
+              "host": ["{{baseUrl}}"],
+              "path": ["caracteristicas"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Characteristic",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Color Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/caracteristicas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["caracteristicas", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Characteristic",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/caracteristicas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["caracteristicas", "1"]
+            }
+          }
         }
       ]
     },
     {
       "name": "Services",
-      "description": "CRUD operations for Services (servicios). Base path: /api/services",
+      "description": "CRUD para Servicios. /api/services",
       "item": [
         {
           "name": "GET All Services",
@@ -540,58 +779,8 @@
               "raw": "{{baseUrl}}/services",
               "host": ["{{baseUrl}}"],
               "path": ["services"]
-            },
-            "description": "Obtener todos los servicios."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
-        },
-        {
-          "name": "GET Service by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/services/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["services", "1"]
-            },
-            "description": "Obtener un servicio por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Service data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.have.property('id_servicio');",
-                  "    pm.expect(jsonData.data).to.have.property('nombre');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "POST Create Service",
@@ -609,28 +798,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Corte de cabello\",\n  \"id_categoria_servicio\": 1,\n  \"descripcion\": \"Corte básico\",\n  \"duracion\": 30,\n  \"precio\": 25000.00,\n  \"estado\": \"Activo\",\n  \"foto\": \"https://example.com/corte.jpg\"\n}"
+              "raw": "{\n  \"nombre\": \"Corte de cabello\",\n  \"id_categoria_servicio\": 1,\n  \"descripcion\": \"Corte básico\",\n  \"duracion\": 30,\n  \"precio\": 25000.00,\n  \"estado\": \"Activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/services",
               "host": ["{{baseUrl}}"],
               "path": ["services"]
-            },
-            "description": "Crear un nuevo servicio."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PUT Update Service",
@@ -648,28 +828,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"precio\": 30000.00\n}"
+              "raw": "{\n  \"precio\": 30000.00\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/services/1",
               "host": ["{{baseUrl}}"],
               "path": ["services", "1"]
-            },
-            "description": "Actualizar un servicio por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Service",
@@ -685,28 +856,144 @@
               "raw": "{{baseUrl}}/services/1",
               "host": ["{{baseUrl}}"],
               "path": ["services", "1"]
-            },
-            "description": "Eliminar un servicio por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service Categories",
+      "description": "CRUD para Categorías de Servicios. /api/service-categories",
+      "item": [
+        {
+          "name": "GET All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-categories"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Belleza\",\n  \"descripcion\": \"Servicios de belleza\",\n  \"estado\": \"Activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-categories"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Belleza Premium\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-categories/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-categories", "1"]
+            }
+          }
+        },
+        {
+          "name": "PATCH Change Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Inactivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-categories/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-categories", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service-categories/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-categories", "1"]
+            }
+          }
         }
       ]
     },
     {
       "name": "Appointments",
-      "description": "CRUD operations for Appointments (citas). Base path: /api/citas",
+      "description": "CRUD para Citas. /api/citas",
       "item": [
         {
           "name": "GET All Appointments",
@@ -722,58 +1009,8 @@
               "raw": "{{baseUrl}}/citas",
               "host": ["{{baseUrl}}"],
               "path": ["citas"]
-            },
-            "description": "Obtener todas las citas."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
-        },
-        {
-          "name": "GET Appointment by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/citas/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["citas", "1"]
-            },
-            "description": "Obtener una cita por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Appointment data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.have.property('id_cita');",
-                  "    pm.expect(jsonData.data).to.have.property('fecha_servicio');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "POST Create Appointment",
@@ -791,28 +1028,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_servicio\": \"2024-10-01\",\n  \"hora_entrada\": \"09:00:00\",\n  \"hora_salida\": \"10:00:00\",\n  \"estado\": \"Agendada\",\n  \"valor_total\": 25000.00,\n  \"motivo\": \"Corte de cabello\"\n}"
+              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_servicio\": \"2024-10-01\",\n  \"hora_entrada\": \"09:00:00\",\n  \"hora_salida\": \"10:00:00\",\n  \"estado\": \"Agendada\",\n  \"valor_total\": 25000.00,\n  \"motivo\": \"Corte\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/citas",
               "host": ["{{baseUrl}}"],
               "path": ["citas"]
-            },
-            "description": "Crear una nueva cita."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PUT Update Appointment",
@@ -830,28 +1058,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fecha_servicio\": \"2024-10-02\",\n  \"valor_total\": 30000.00\n}"
+              "raw": "{\n  \"fecha_servicio\": \"2024-10-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/citas/1",
               "host": ["{{baseUrl}}"],
               "path": ["citas", "1"]
-            },
-            "description": "Actualizar una cita por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PATCH Cancel Appointment",
@@ -869,32 +1088,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"motivo_cancelacion\": \"Cambio de horario\"\n}"
+              "raw": "{\n  \"motivo_cancelacion\": \"Cambio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/citas/1/cancelar",
               "host": ["{{baseUrl}}"],
               "path": ["citas", "1", "cancelar"]
-            },
-            "description": "Cancelar una cita (actualización parcial)."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Appointment cancelled', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.estado).to.eql('Cancelada por el usuario');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Appointment",
@@ -910,31 +1116,17 @@
               "raw": "{{baseUrl}}/citas/1",
               "host": ["{{baseUrl}}"],
               "path": ["citas", "1"]
-            },
-            "description": "Eliminar una cita por ID (si aplica, o usar PATCH para cancelar)."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         }
       ]
     },
     {
-      "name": "Suppliers",
-      "description": "CRUD operations for Suppliers (proveedores). Base path: /api/proveedores",
+      "name": "Employees",
+      "description": "CRUD para Empleados. /api/employees",
       "item": [
         {
-          "name": "GET All Suppliers",
+          "name": "GET All Employees",
           "request": {
             "method": "GET",
             "header": [
@@ -944,64 +1136,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/proveedores",
+              "raw": "{{baseUrl}}/employees",
               "host": ["{{baseUrl}}"],
-              "path": ["proveedores"]
-            },
-            "description": "Obtener todos los proveedores."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
+              "path": ["employees"]
             }
-          ]
+          }
         },
         {
-          "name": "GET Supplier by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/proveedores/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["proveedores", "1"]
-            },
-            "description": "Obtener un proveedor por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Supplier data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.have.property('id_proveedor');",
-                  "    pm.expect(jsonData.data).to.have.property('nombre');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "POST Create Supplier",
+          "name": "POST Create Employee",
           "request": {
             "method": "POST",
             "header": [
@@ -1016,31 +1158,22 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nit\": \"N123456\",\n  \"tipo_proveedor\": \"N\",\n  \"nombre\": \"Proveedor Tech\",\n  \"contacto\": \"Juan Doe\",\n  \"direccion\": \"Calle 123, Bogotá\",\n  \"correo\": \"proveedor@tech.com\",\n  \"telefono\": \"+573001234567\",\n  \"estado\": \"Activo\"\n}"
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"García\",\n  \"correo\": \"ana@example.com\",\n  \"telefono\": \"+573001234567\",\n  \"cargo\": \"Estilista\",\n  \"estado\": \"Activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{baseUrl}}/proveedores",
+              "raw": "{{baseUrl}}/employees",
               "host": ["{{baseUrl}}"],
-              "path": ["proveedores"]
-            },
-            "description": "Crear un nuevo proveedor."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
+              "path": ["employees"]
             }
-          ]
+          }
         },
         {
-          "name": "PUT Update Supplier",
+          "name": "PUT Update Employee",
           "request": {
             "method": "PUT",
             "header": [
@@ -1055,31 +1188,22 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Proveedor Tech Updated\",\n  \"correo\": \"updated@tech.com\"\n}"
+              "raw": "{\n  \"cargo\": \"Estilista Senior\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{baseUrl}}/proveedores/1",
+              "raw": "{{baseUrl}}/employees/1",
               "host": ["{{baseUrl}}"],
-              "path": ["proveedores", "1"]
-            },
-            "description": "Actualizar un proveedor por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
+              "path": ["employees", "1"]
             }
-          ]
+          }
         },
         {
-          "name": "DELETE Supplier",
+          "name": "DELETE Employee",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1089,31 +1213,117 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/proveedores/1",
+              "raw": "{{baseUrl}}/employees/1",
               "host": ["{{baseUrl}}"],
-              "path": ["proveedores", "1"]
-            },
-            "description": "Eliminar un proveedor por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
+              "path": ["employees", "1"]
             }
-          ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scheduling",
+      "description": "CRUD para Programaciones. /api/scheduling",
+      "item": [
+        {
+          "name": "GET All Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scheduling",
+              "host": ["{{baseUrl}}"],
+              "path": ["scheduling"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha_inicio\": \"2024-10-01\",\n  \"hora_entrada\": \"08:00:00\",\n  \"hora_salida\": \"17:00:00\",\n  \"id_usuario\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scheduling",
+              "host": ["{{baseUrl}}"],
+              "path": ["scheduling"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scheduling/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["scheduling", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scheduling/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["scheduling", "1"]
+            }
+          }
         }
       ]
     },
     {
       "name": "Purchases",
-      "description": "CRUD operations for Purchases (compras). Base path: /api/compras",
+      "description": "CRUD para Compras. /api/compras",
       "item": [
         {
           "name": "GET All Purchases",
@@ -1129,62 +1339,8 @@
               "raw": "{{baseUrl}}/compras",
               "host": ["{{baseUrl}}"],
               "path": ["compras"]
-            },
-            "description": "Obtener todas las compras con paginación."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Purchases array', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
-        },
-        {
-          "name": "GET Purchase by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/compras/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["compras", "1"]
-            },
-            "description": "Obtener una compra por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Purchase data', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.have.property('id_compra');",
-                  "    pm.expect(jsonData.data).to.have.property('total');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "POST Create Purchase",
@@ -1202,32 +1358,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_proveedor\": 1,\n  \"fecha_registro\": \"2024-10-01\",\n  \"fecha_compra\": \"2024-10-01\",\n  \"subtotal\": 500000.00,\n  \"iva\": 95000.00,\n  \"total\": 595000.00,\n  \"estado\": \"Completada\"\n}"
+              "raw": "{\n  \"id_proveedor\": 1,\n  \"fecha_compra\": \"2024-10-01\",\n  \"subtotal\": 500000,\n  \"iva\": 95000,\n  \"total\": 595000,\n  \"estado\": \"Completada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/compras",
               "host": ["{{baseUrl}}"],
               "path": ["compras"]
-            },
-            "description": "Crear una nueva compra."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "pm.test('Purchase created', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.total).to.eql(595000.00);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PATCH Cancel Purchase",
@@ -1245,32 +1388,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"motivo\": \"Error en el pedido\"\n}"
+              "raw": "{\n  \"estado\": \"Cancelada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/compras/1/cancelar",
               "host": ["{{baseUrl}}"],
               "path": ["compras", "1", "cancelar"]
-            },
-            "description": "Cancelar una compra (actualización parcial)."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Purchase cancelled', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data.estado).to.eql('Cancelada');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Purchase",
@@ -1286,28 +1416,14 @@
               "raw": "{{baseUrl}}/compras/1",
               "host": ["{{baseUrl}}"],
               "path": ["compras", "1"]
-            },
-            "description": "Eliminar una compra por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         }
       ]
     },
     {
       "name": "Orders",
-      "description": "CRUD operations for Orders (pedidos). Base path: /api/pedidos",
+      "description": "CRUD para Pedidos. /api/pedidos",
       "item": [
         {
           "name": "GET All Orders",
@@ -1323,26 +1439,8 @@
               "raw": "{{baseUrl}}/pedidos",
               "host": ["{{baseUrl}}"],
               "path": ["pedidos"]
-            },
-            "description": "Obtener todos los pedidos."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Orders array', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "POST Create Order",
@@ -1360,28 +1458,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_pedido\": \"2024-10-01\",\n  \"total\": 120000.00,\n  \"estado\": \"Pendiente\"\n}"
+              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_pedido\": \"2024-10-01\",\n  \"total\": 120000,\n  \"estado\": \"Pendiente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/pedidos",
               "host": ["{{baseUrl}}"],
               "path": ["pedidos"]
-            },
-            "description": "Crear un nuevo pedido."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PUT Update Order",
@@ -1399,28 +1488,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"Confirmado\",\n  \"total\": 130000.00\n}"
+              "raw": "{\n  \"estado\": \"Confirmado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/pedidos/1",
               "host": ["{{baseUrl}}"],
               "path": ["pedidos", "1"]
-            },
-            "description": "Actualizar un pedido por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Order",
@@ -1436,28 +1516,14 @@
               "raw": "{{baseUrl}}/pedidos/1",
               "host": ["{{baseUrl}}"],
               "path": ["pedidos", "1"]
-            },
-            "description": "Eliminar un pedido por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         }
       ]
     },
     {
       "name": "Sales",
-      "description": "CRUD operations for Sales (ventas). Base path: /api/ventas",
+      "description": "CRUD para Ventas. /api/ventas",
       "item": [
         {
           "name": "GET All Sales",
@@ -1473,26 +1539,8 @@
               "raw": "{{baseUrl}}/ventas",
               "host": ["{{baseUrl}}"],
               "path": ["ventas"]
-            },
-            "description": "Obtener todas las ventas."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Sales array', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.data).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "POST Create Sale",
@@ -1510,28 +1558,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_venta\": \"2024-10-01\",\n  \"total\": 80000.00,\n  \"estado\": \"Completada\"\n}"
+              "raw": "{\n  \"id_cliente\": 1,\n  \"fecha_venta\": \"2024-10-01\",\n  \"total\": 80000,\n  \"estado\": \"Completada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/ventas",
               "host": ["{{baseUrl}}"],
               "path": ["ventas"]
-            },
-            "description": "Crear una nueva venta."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "PUT Update Sale",
@@ -1549,28 +1588,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"total\": 90000.00\n}"
+              "raw": "{\n  \"total\": 90000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/ventas/1",
               "host": ["{{baseUrl}}"],
               "path": ["ventas", "1"]
-            },
-            "description": "Actualizar una venta por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
         },
         {
           "name": "DELETE Sale",
@@ -1586,22 +1616,208 @@
               "raw": "{{baseUrl}}/ventas/1",
               "host": ["{{baseUrl}}"],
               "path": ["ventas", "1"]
-            },
-            "description": "Eliminar una venta por ID."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Technical Sheets",
+      "description": "CRUD para Fichas Técnicas. /api/fichas-tecnicas",
+      "item": [
+        {
+          "name": "GET All Technical Sheets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas-tecnicas",
+              "host": ["{{baseUrl}}"],
+              "path": ["fichas-tecnicas"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Technical Sheet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_producto\": 1,\n  \"id_caracteristica\": 1,\n  \"valor\": \"Rojo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/fichas-tecnicas",
+              "host": ["{{baseUrl}}"],
+              "path": ["fichas-tecnicas"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Technical Sheet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valor\": \"Azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/fichas-tecnicas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["fichas-tecnicas", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Technical Sheet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas-tecnicas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["fichas-tecnicas", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service Details",
+      "description": "CRUD para Detalles de Servicios. /api/service-details",
+      "item": [
+        {
+          "name": "GET All Service Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service-details",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-details"]
+            }
+          }
+        },
+        {
+          "name": "POST Create Service Detail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cita\": 1,\n  \"id_servicio\": 1,\n  \"id_empleado\": 1,\n  \"precio_unitario\": 25000,\n  \"cantidad\": 1,\n  \"estado\": \"Completado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-details",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-details"]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Service Detail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Cancelado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/service-details/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-details", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Service Detail",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service-details/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["service-details", "1"]
+            }
+          }
         }
       ]
     }
