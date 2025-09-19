@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const productRoutes = require('./routes/ProductRoutes');
-const characteristicRoutes = require('./routes/CharacteristicRoutes');
+const productRoutes = require('./routes/productRoutes'); //Cambiado
+const characteristicRoutes = require('./routes/characteristicRoutes'); // cambiado
 const supplierRoutes = require('./routes/supplierRoutes');
 const productCategoryRoutes = require('./routes/productCategoryRoutes');
 const usersRoutes = require('./routes/UsersRoutes');
@@ -15,7 +15,7 @@ const roleRoutes = require('./routes/roles/RoleRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
 const purchaseRoutes = require('./routes/PurchaseRoutes')
 const authRoutes = require('./routes/auth/AuthRoutes');
-const appointmentRoutes = require('./routes/AppointmentRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes'); //Cambiado
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/errorMiddleware');
@@ -68,9 +68,7 @@ app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
 app.use('/api/citas', appointmentRoutes);
-app.use('/api/compras', purchaseRoutes)
-app.use('/api/appointments', appointmentRoutes);
-
+app.use('/api/compras', purchaseRoutes)|
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
