@@ -31,8 +31,14 @@ router.get('/:id', UsersMiddleware.validateUserId, UsersController.getUserById);
 // PUT /api/users/:id - Actualizar usuario
 router.put('/:id', UsersMiddleware.validateUpdateUser, UserRoleValidationMiddleware.validateRoleId, UsersController.updateUser);
 
+// PUT /api/users/:id/profile - Editar perfil de usuario
+router.put('/:id/profile', UsersMiddleware.validateEditProfile, UsersController.editProfile);
+
 // PATCH /api/users/:id/password - Cambiar contraseña
 router.patch('/:id/password', UsersMiddleware.validateChangePassword, UsersController.changePassword);
+
+// PATCH /api/users/:id/cambiar-estado - Cambiar estado de usuario
+router.patch('/:id/cambiar-estado', UsersMiddleware.validateCambiarEstado, UsersController.cambiarEstado);
 
 // DELETE /api/users/:id - Eliminar usuario
 router.delete('/:id', UsersMiddleware.validateUserId, UsersController.deleteUser);

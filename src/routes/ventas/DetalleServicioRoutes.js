@@ -156,13 +156,13 @@ router.patch('/:id/convertir-venta',
 
 // ===== RUTAS DE CANCELACIÓN =====
 
-// PATCH /api/ventas/detalles-servicios/:id/cancelar-cliente - Cancelar por cliente
-router.patch('/:id/cancelar-cliente', 
+// PATCH /api/ventas/detalles-servicios/:id/cancelar-usuario - Cancelar por usuario
+router.patch('/:id/cancelar-usuario',
   authenticateToken,
   requirePermission('update'),
   validateServiceDetailId,
   validatePaidServiceStatusChange,
-  ServiceDetailController.cancelByClient
+  ServiceDetailController.cancelByUser
 );
 
 // PATCH /api/ventas/detalles-servicios/:id/no-asistio - Marcar como no asistió

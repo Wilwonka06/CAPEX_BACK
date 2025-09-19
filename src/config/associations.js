@@ -1,18 +1,19 @@
 const { Usuario } = require('../models/User');
 const { Role, Permission, Privilege, RolePermissionPrivilege } = require('../models/roles');
 const UserRole = require('../models/UserRole');
-const Client = require('../models/clients/Client');
 const Product = require('../models/Product');
 const Characteristic = require('../models/Characteristic');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const ProductCategory = require('../models/ProductCategory');
+const Compra = require('../models/Purchase');
+const DetalleCompra = require('../models/PurchaseDetail');
+const Proveedor = require('../models/Supplier');
+const Services = require('../models/Services');
+const Citas = require('../models/Appointment');
+const ServiceDetail = require('../models/serviceDetails/ServiceDetail');
+const Scheduling = require('../models/Scheduling');
 
-/**
- * Configurar todas las asociaciones entre modelos
- */
 function setupAssociations() {
-  console.log('🔗 Configurando asociaciones entre modelos...');
-
   // ===== ASOCIACIONES USUARIOS Y ROLES =====
   
   // Relación directa entre Usuario y Role (para el campo roleId)
@@ -60,19 +61,6 @@ function setupAssociations() {
   Role.hasMany(UserRole, {
     foreignKey: 'id_rol',
     as: 'userRoles'
-  });
-
-  // ===== ASOCIACIONES USUARIOS Y CLIENTES =====
-  
-  // Establecer relación Usuario-Cliente
-  Usuario.hasOne(Client, {
-    foreignKey: 'id_usuario',
-    as: 'cliente'
-  });
-
-  Client.belongsTo(Usuario, {
-    foreignKey: 'id_usuario',
-    as: 'usuario'
   });
 
   // ===== ASOCIACIONES PRODUCTOS =====
@@ -127,7 +115,106 @@ function setupAssociations() {
     as: 'categoria'
   });
 
-  console.log('✅ Asociaciones configuradas correctamente');
+  // ===== ASOCIACIONES COMPRAS =====
+
+  // Relación entre Proveedor y Compra
+  Proveedor.hasMany(Compra, {
+    foreignKey: 'id_proveedor',
+    as: 'compras'
+  });
+
+  Compra.belongsTo(Proveedor, {
+    foreignKey: 'id_proveedor',
+    as: 'proveedor'
+  });
+
+  // Relación entre Compra y DetalleCompra
+  Compra.hasMany(DetalleCompra, {
+    foreignKey: 'id_compra',
+    as: 'detalles'
+  });
+
+  DetalleCompra.belongsTo(Compra, {
+    foreignKey: 'id_compra',
+    as: 'compra'
+  });
+
+  // Relación entre Producto y DetalleCompra
+  Product.hasMany(DetalleCompra, {
+    foreignKey: 'id_producto',
+    as: 'detallesCompras'
+  });
+
+  DetalleCompra.belongsTo(Product, {
+    foreignKey: 'id_producto',
+    as: 'producto'
+  });
+  
+  // ===== ASOCIACIONES CITAS (APPOINTMENTS) =====
+  
+  // Relación entre Citas y Usuario
+  Citas.belongsTo(Usuario, {
+    foreignKey: 'id_cliente',
+    as: 'usuario'
+  });
+
+  Usuario.hasMany(Citas, {
+    foreignKey: 'id_cliente',
+    as: 'citas'
+  });
+
+  // Relación entre Citas y ServiceDetail
+  Citas.hasMany(ServiceDetail, {
+    foreignKey: 'id_cita',
+    as: 'servicios'
+  });
+
+  ServiceDetail.belongsTo(Citas, {
+    foreignKey: 'id_cita',
+    as: 'cita'
+  });
+
+  // Relación entre ServiceDetail y Usuario (empleado)
+  ServiceDetail.belongsTo(Usuario, {
+    foreignKey: 'id_empleado',
+    as: 'empleado'
+  });
+
+  Usuario.hasMany(ServiceDetail, {
+    foreignKey: 'id_empleado',
+    as: 'serviciosAsignados'
+  });
+
+  // Relación entre ServiceDetail y Usuario - para compatibilidad
+  ServiceDetail.belongsTo(Usuario, {
+    foreignKey: 'id_cliente',
+    as: 'usuario'
+  });
+
+  Usuario.hasMany(ServiceDetail, {
+    foreignKey: 'id_cliente',
+    as: 'serviciosSolicitados'
+  });
+
+  // Relación entre ServiceDetail y Services
+  ServiceDetail.belongsTo(Services, {
+    foreignKey: 'id_servicio',
+    as: 'servicio'
+  });
+
+  Services.hasMany(ServiceDetail, {
+    foreignKey: 'id_servicio',
+    as: 'detallesServicios'
+  });
+
+  // Relación entre Scheduling y Usuario (ya definida en el modelo Scheduling)
+  // Solo definimos la relación inversa aquí
+  Usuario.hasMany(Scheduling, {
+    foreignKey: 'id_usuario',
+    as: 'programaciones'
+  });
+
+  console.log('Asociaciones configuradas correctamente. Nota: Referencias a "cliente" reemplazadas con "usuario" para consistencia.');
 }
 
 module.exports = { setupAssociations };

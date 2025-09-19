@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDB, sequelize } = require('./config/database');
-const productRoutes = require('./routes/ProductRoutes');
-const characteristicRoutes = require('./routes/CharacteristicRoutes');
+const productRoutes = require('./routes/productRoutes'); //Cambiado
+const characteristicRoutes = require('./routes/characteristicRoutes'); // cambiado
 const supplierRoutes = require('./routes/supplierRoutes');
 const productCategoryRoutes = require('./routes/productCategoryRoutes');
 const usersRoutes = require('./routes/UsersRoutes');
@@ -12,8 +12,10 @@ const serviceCategoryRoutes = require('./routes/ServiceCategoryRoutes');
 const servicesRoutes = require('./routes/ServicesRoutes');
 const serviceDetailRoutes = require('./routes/ventas/DetalleServicioRoutes');
 const roleRoutes = require('./routes/roles/RoleRoutes');
-const clientRoutes = require('./routes/clients/ClienteRoutes');
 const userRoleRoutes = require('./routes/UserRoleRoutes');
+const purchaseRoutes = require('./routes/PurchaseRoutes')
+const authRoutes = require('./routes/auth/AuthRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes'); //Cambiado
 
 // Importar middleware de errores directamente
 const ErrorMiddleware = require('./middlewares/errorMiddleware');
@@ -52,6 +54,7 @@ app.use((req, res, next) => {
 });
 
 // Rutas de la API
+app.use('/api/auth', authRoutes);
 app.use('/api/productos', productRoutes);
 app.use('/api/caracteristicas', characteristicRoutes);
 app.use('/api/proveedores', supplierRoutes);
@@ -63,8 +66,9 @@ app.use('/api/categorias-servicios', serviceCategoryRoutes);
 app.use('/api/servicios', servicesRoutes);
 app.use('/api/ventas/detalles-servicios', serviceDetailRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/clientes', clientRoutes);
 app.use('/api/usuario-roles', userRoleRoutes);
+app.use('/api/citas', appointmentRoutes);
+app.use('/api/compras', purchaseRoutes)|
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {   
