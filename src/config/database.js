@@ -1,5 +1,5 @@
 const { Sequelize } = require('sequelize');
-const config = require('../../config/config.js');
+const config = require('../../config/config');
 
 // Obtener configuración según el entorno
 const env = process.env.NODE_ENV || 'development';
