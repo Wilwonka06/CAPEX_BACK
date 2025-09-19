@@ -39,10 +39,10 @@ module.exports = {
       }
     });
 
-    // Agregar índice único para evitar duplicados
+    // Agregar índice único para evitar duplicados (nombre cambiado para evitar conflicto)
     await queryInterface.addIndex('fichas_tecnicas', ['id_producto', 'id_caracteristica'], {
       unique: true,
-      name: 'unique_product_characteristic'
+      name: 'uq_fichas_tecnicas_product_characteristic'
     });
   },
 

@@ -41,8 +41,8 @@ router.get('/all',
 
 // ===== RUTAS BÁSICAS DE ROLES =====
 
-// GET /api/roles - Obtener todos los roles
-router.get('/', 
+// GET /api/roles - Obtener todos los roles con paginación y búsqueda
+router.get('/',
   authenticateToken,
   requirePermission('read'),
   RoleController.getAllRoles

@@ -11,6 +11,9 @@ router.get('/', SchedulingController.getAll);
 // Buscar programaciones por usuario
 router.get('/usuario/:id_usuario', SchedulingController.getByUser);
 
+// Búsqueda general de programaciones
+router.get('/search', SchedulingController.searchSchedulings);
+
 router.get('/:id', SchedulingController.getById);
 
 // PUT solo valida consistencia de campos enviados

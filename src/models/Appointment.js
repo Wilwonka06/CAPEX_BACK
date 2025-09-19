@@ -1,14 +1,14 @@
+// src/models/Appointment.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-const Appointment = sequelize.define('Appointment', {
-  id_servicio_cliente: {
+const Citas = sequelize.define('Citas', {
+  id_cita: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  id_usuario: {
+  id_cliente: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
@@ -16,24 +16,12 @@ const Appointment = sequelize.define('Appointment', {
       key: 'id_usuario'
     }
   },
-  id_servicio: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'servicios',
-      key: 'id_servicio'
-    }
-  },
   fecha_servicio: {
     type: DataTypes.DATEONLY,
     allowNull: false,
     validate: {
       isDate: true,
-      isAfterToday(value) {
-        if (new Date(value) <= new Date()) {
-          throw new Error('La fecha del servicio debe ser posterior a hoy');
-        }
-      }
+      isAfter: new Date().toISOString().split('T')[0]
     }
   },
   hora_entrada: {
@@ -47,27 +35,28 @@ const Appointment = sequelize.define('Appointment', {
     type: DataTypes.TIME,
     allowNull: false,
     validate: {
-      is: /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/,
-      horaSalidaDespuesEntrada(value) {
-        if (this.hora_entrada && value <= this.hora_entrada) {
-          throw new Error('La hora de salida debe ser posterior a la hora de entrada');
-        }
-      }
+      is: /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/
     }
   },
   estado: {
     type: DataTypes.ENUM(
-      'Agendada',
+      'Agendada', 
       'Confirmada', 
-      'Reprogramada',
-      'En proceso',
-      'Finalizada',
+      'Reprogramada', 
+      'En proceso', 
+      'Finalizada', 
       'Pagada',
-      'Cancelada por el cliente',
+      'Cancelada por el usuario',
       'No asistio'
     ),
     allowNull: false,
-    defaultValue: 'Agendada'
+    defaultValue: 'Agendada',
+    validate: {
+      isIn: {
+        args: [['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el usuario', 'No asistio']],
+        msg: 'Estado inválido'
+      }
+    }
   },
   valor_total: {
     type: DataTypes.DECIMAL(15, 2),
@@ -79,29 +68,41 @@ const Appointment = sequelize.define('Appointment', {
   },
   motivo: {
     type: DataTypes.STRING(100),
-    allowNull: false,
+    allowNull: true,
     validate: {
-      len: [1, 100]
+      len: {
+        args: [1, 100],
+        msg: 'El motivo debe tener entre 1 y 100 caracteres'
+      }
     }
+  },
+  fecha_creacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
-  tableName: 'servicios_clientes',
+  tableName: 'citas',
   timestamps: false,
-  underscored: true,
   indexes: [
     {
-      fields: ['id_cliente']
-    },
-    {
-      fields: ['id_servicio']
+      fields: ['id_cliente'] // Referencia a id_usuario del usuario
     },
     {
       fields: ['fecha_servicio']
     },
     {
       fields: ['estado']
+    },
+    {
+      fields: ['fecha_servicio', 'hora_entrada']
     }
   ]
 });
 
-module.exports = Appointment;
+module.exports = Citas;

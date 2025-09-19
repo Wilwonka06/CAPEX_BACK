@@ -76,15 +76,20 @@ const Usuario = sequelize.define('Usuario', {
     }
   },
   estado: {
-    type: DataTypes.ENUM('Activo', 'Inactivo', 'Suspendido'),
+    type: DataTypes.ENUM('Activo', 'Inactivo'),
     allowNull: false,
     defaultValue: 'Activo',
     validate: {
       isIn: {
-        args: [['Activo', 'Inactivo', 'Suspendido']],
-        msg: 'El estado debe ser Activo, Inactivo o Suspendido'
+        args: [['Activo', 'Inactivo']],
+        msg: 'El estado debe ser Activo o Inactivo'
       }
     }
+  },
+  concepto_estado: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Concepto o razón del estado actual del usuario (opcional, principalmente para empleados)'
   },
   direccion: {
     type: DataTypes.TEXT,

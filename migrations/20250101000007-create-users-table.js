@@ -1,6 +1,5 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('usuarios', {
@@ -45,6 +44,36 @@ module.exports = {
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
+      },
+      foto: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+        comment: 'URL o ruta de la foto del usuario'
+      },
+      estado: {
+        type: Sequelize.ENUM('Activo', 'Inactivo'),
+        allowNull: false,
+        defaultValue: 'Activo'
+      },
+      direccion: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+        comment: 'Dirección completa del usuario'
+      },
+      concepto_estado: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+        comment: 'Concepto o razón del estado actual del usuario (opcional, requerido para empleados)'
+      },
+      createdAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
       }
     });
   },

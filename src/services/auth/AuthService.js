@@ -2,7 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const jwtConfig = require('../../config/jwt');
 const { Usuario } = require('../../models/User');
-const Client = require('../../models/clients/Client');
 const { Role } = require('../../models/roles/Role');
 const { sequelize } = require('../../config/database');
 
@@ -13,13 +12,11 @@ const { sequelize } = require('../../config/database');
 class AuthService {
 
   /**
-   * Registrar un nuevo usuario como cliente
+   * Registrar un nuevo usuario como usuario
    * @param {Object} userData - Datos del usuario
-   * @returns {Promise<Object>} Usuario creado con información del cliente
+   * @returns {Promise<Object>} Usuario creado
    */
   static async registerUser(userData) {
-    const transaction = await sequelize.transaction();
-    
     try {
       // Validar que el email no exista
       const existingUser = await Usuario.findOne({
@@ -42,26 +39,22 @@ class AuthService {
         throw new Error('El documento ya está registrado');
       }
 
-      // Buscar el rol de cliente (asumiendo que existe un rol con ID 2 para clientes)
-      // Si no existe, usar el rol por defecto (ID 1)
-      let roleId = 2; // Rol de cliente por defecto
+      // Buscar el rol de usuario (asumiendo que existe un rol con ID 1 para usuarios)
+      let roleId = 1; // Rol de usuario por defecto
       
       try {
-        const clientRole = await Role.findOne({
-          where: { 
-            nombre: 'Cliente',
+        const userRole = await Role.findOne({
+          where: {
+            nombre: 'Usuario',
             estado: true
           }
         });
         
-        if (clientRole) {
-          roleId = clientRole.id_rol;
-        } else {
-          // Si no existe el rol de cliente, usar el rol por defecto
-          roleId = 1;
+        if (userRole) {
+          roleId = userRole.id_rol;
         }
       } catch (error) {
-        console.warn('No se pudo verificar el rol de cliente, usando rol por defecto:', error.message);
+        console.warn('No se pudo verificar el rol de usuario, usando rol por defecto:', error.message);
         roleId = 1;
       }
 
@@ -73,39 +66,18 @@ class AuthService {
       const newUser = await Usuario.create({
         ...userData,
         contrasena: hashedPassword,
-        roleId: roleId
-      }, { transaction });
+        roleId: roleId,
+        estado: 'Activo'
+        // concepto_estado es opcional
+      });
 
-      // Crear el cliente asociado al usuario
-      const newClient = await Client.create({
-        id_usuario: newUser.id_usuario,
-        direccion: null, // Se puede actualizar después
-        estado: true,
-        fecha_creacion: new Date(),
-        fecha_actualizacion: new Date()
-      }, { transaction });
-
-      // Confirmar la transacción
-      await transaction.commit();
-
-      // Retornar usuario sin password y con información del cliente
+      // Retornar usuario sin password
       const userData = newUser.toJSON();
       delete userData.contrasena;
       
-      return {
-        ...userData,
-        cliente: {
-          id_cliente: newClient.id_cliente,
-          direccion: newClient.direccion,
-          estado: newClient.estado,
-          fecha_creacion: newClient.fecha_creacion
-        }
-      };
+      return userData;
 
     } catch (error) {
-      // Revertir la transacción en caso de error
-      await transaction.rollback();
-      
       // Si ya es un error personalizado, mantenerlo
       if (error.message.includes('ya está registrado')) {
         throw error;
@@ -146,11 +118,6 @@ class AuthService {
         throw new Error('Credenciales inválidas');
       }
 
-      // Buscar información del cliente si existe
-      const client = await Client.findOne({
-        where: { id_usuario: user.id_usuario }
-      });
-
       // Generar token JWT
       const token = jwt.sign(
         {
@@ -167,17 +134,10 @@ class AuthService {
       const userData = user.toJSON();
       delete userData.contrasena;
       
-              return {
-          token,
-          user: {
-            ...userData,
-            cliente: client ? {
-              id_cliente: client.id_cliente,
-              direccion: client.direccion,
-              estado: client.estado
-            } : null
-          }
-        };
+      return {
+        token,
+        user: userData
+      };
 
     } catch (error) {
       // Si ya es un error personalizado, mantenerlo
@@ -224,23 +184,11 @@ class AuthService {
         throw new Error('Usuario no encontrado');
       }
 
-      // Buscar información del cliente si existe
-      const client = await Client.findOne({
-        where: { id_usuario: user.id_usuario }
-      });
-
       // Retornar usuario sin password
       const userData = user.toJSON();
       delete userData.contrasena;
       
-      return {
-        ...userData,
-        cliente: client ? {
-          id_cliente: client.id_cliente,
-          direccion: client.direccion,
-          estado: client.estado
-        } : null
-      };
+      return userData;
 
     } catch (error) {
       throw new Error(`Error al obtener información del usuario: ${error.message}`);
@@ -254,8 +202,6 @@ class AuthService {
    * @returns {Promise<Object>} Usuario actualizado
    */
   static async editProfile(userId, updateData) {
-    const transaction = await sequelize.transaction();
-    
     try {
       // Verificar que el usuario existe
       const user = await Usuario.findByPk(userId);
@@ -319,14 +265,22 @@ class AuthService {
         updateFields.foto = updateData.foto;
       }
 
+      if (updateData.direccion !== undefined) {
+        updateFields.direccion = updateData.direccion;
+      }
+
+      if (updateData.estado !== undefined) {
+        updateFields.estado = updateData.estado;
+      }
+
+      if (updateData.concepto_estado !== undefined) {
+        updateFields.concepto_estado = updateData.concepto_estado;
+      }
+
       // Actualizar el usuario
       await Usuario.update(updateFields, {
-        where: { id_usuario: userId },
-        transaction
+        where: { id_usuario: userId }
       });
-
-      // Confirmar la transacción
-      await transaction.commit();
 
       // Obtener el usuario actualizado con información del rol
       const updatedUser = await Usuario.findByPk(userId, {
@@ -339,28 +293,13 @@ class AuthService {
         ]
       });
 
-      // Buscar información del cliente si existe
-      const client = await Client.findOne({
-        where: { id_usuario: userId }
-      });
-
       // Retornar usuario sin password
       const userData = updatedUser.toJSON();
       delete userData.contrasena;
       
-      return {
-        ...userData,
-        cliente: client ? {
-          id_cliente: client.id_cliente,
-          direccion: client.direccion,
-          estado: client.estado
-        } : null
-      };
+      return userData;
 
     } catch (error) {
-      // Revertir la transacción en caso de error
-      await transaction.rollback();
-      
       // Si ya es un error personalizado, mantenerlo
       if (error.message.includes('ya está registrado') || error.message.includes('no encontrado')) {
         throw error;

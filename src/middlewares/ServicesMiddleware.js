@@ -3,7 +3,7 @@
  * Middleware to validate data for creating/updating services
  */
 const validateServiceData = (req, res, next) => {
-  const { nombre, id_categoria_servicio, duracion, precio } = req.body;
+  const { nombre, id_categoria_servicio, descripcion, duracion, precio } = req.body;
 
   // Validate required fields
   if (!nombre) {
@@ -18,9 +18,9 @@ const validateServiceData = (req, res, next) => {
     });
   }
 
-  if (nombre.length > 20 && nombre.length < 3) {
+  if (nombre.length > 50 || nombre.length < 3) {
     return res.status(400).json({
-      message: "El nombre no puede tener más de 20 caracteres ni tener menos de 3",
+      message: "El nombre debe tener entre 3 y 50 caracteres",
     });
   }
 
@@ -29,8 +29,8 @@ const validateServiceData = (req, res, next) => {
     return res.status(400).json({ message: "El id de la categoria es obligatorio" });
   }
 
-  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
-    return res.status(400).json({ message: "La descripcion en obligatoria, no puede tener más de 100 caracteres ni ser menor a 5." });
+  if (descripcion && (descripcion.length > 255 || descripcion.length < 5)) {
+    return res.status(400).json({ message: "La descripción debe tener entre 5 y 255 caracteres." });
   }
 
   // Validate duration
@@ -59,16 +59,16 @@ const validateServiceUpdate = (req, res, next) => {
         message: "El nombre solo puede contener letras, acentos y espacios",
       });
     }
-    if (nombre.length > 20 && nombre.length < 3) {
+    if (nombre.length > 50 || nombre.length < 3) {
       return res.status(400).json({
-        message: "El nombre no puede tener más de 20 caracteres ni tener menos de 3",
+        message: "El nombre debe tener entre 3 y 50 caracteres",
       });
     }
   }
 
-  if (!descripcion && descripcion.length > 100 && descripcion.length < 5) {
+  if (descripcion && (descripcion.length > 255 || descripcion.length < 5)) {
     return res.status(400).json({
-      message: "La descripción es obligatoria, no puede tener más de 100 caracteres ni ser menor a 5.",
+      message: "La descripción debe tener entre 5 y 255 caracteres.",
     });
   }
 
