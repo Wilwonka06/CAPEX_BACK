@@ -17,7 +17,7 @@ class AuthController {
       
       res.status(201).json({
         success: true,
-        message: 'Usuario registrado exitosamente como cliente',
+        message: 'Usuario registrado exitosamente como usuario',
         data: newUser,
         timestamp: new Date().toISOString()
       });

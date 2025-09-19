@@ -2,11 +2,25 @@ const { Role, Permission, Privilege, RolePermissionPrivilege } = require('../../
 const { sequelize } = require('../../config/database');
 
 class RoleService {
-  // Get all roles
-  static async getAllRoles() {
+  // Get all roles with pagination and search
+  static async getAllRoles(options = {}) {
     try {
-      const roles = await Role.findAll({
+      const { page = 1, limit = 10, search = '' } = options;
+      const offset = (page - 1) * limit;
+      const whereClause = {};
+
+      if (search) {
+        whereClause[Op.or] = [
+          { nombre: { [Op.like]: `%${search}%` } },
+          { descripcion: { [Op.like]: `%${search}%` } }
+        ];
+      }
+
+      const { count, rows } = await Role.findAndCountAll({
+        where: whereClause,
         order: [['id_rol', 'ASC']],
+        limit,
+        offset,
         include: [
           {
             model: Permission,
@@ -20,7 +34,7 @@ class RoleService {
       });
 
       // Procesar cada rol para obtener solo los privilegios específicos
-      const processedRoles = await Promise.all(roles.map(async (role) => {
+      const processedRoles = await Promise.all(rows.map(async (role) => {
         const roleData = role.toJSON();
         
         // Obtener los permisos con sus privilegios específicos
@@ -53,7 +67,15 @@ class RoleService {
       return {
         success: true,
         message: 'Roles obtenidos exitosamente',
-        data: processedRoles
+        data: processedRoles,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit),
+          hasNext: page * limit < count,
+          hasPrev: page > 1
+        }
       };
     } catch (error) {
       throw new Error(`Error al obtener roles: ${error.message}`);

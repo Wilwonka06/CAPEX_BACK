@@ -45,7 +45,7 @@ module.exports = {
     await queryInterface.addConstraint('programaciones', {
       fields: ['fecha_inicio', 'hora_entrada', 'id_usuario'],
       type: 'unique',
-      name: 'unique_programacion_usuario'
+      name: 'uq_programacion_usuario'
     });
 
     // Restricción CHECK (hora_salida > hora_entrada)

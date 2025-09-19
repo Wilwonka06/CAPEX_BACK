@@ -33,7 +33,7 @@ const ServiceDetail = sequelize.define('ServiceDetail', {
     }
   },
   id_cliente: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER, // Referencia a id_usuario del usuario
     allowNull: true,
     references: {
       model: 'usuarios',
@@ -87,15 +87,15 @@ const ServiceDetail = sequelize.define('ServiceDetail', {
       'Reprogramada', 
       'En proceso', 
       'Finalizada', 
-      'Pagada', 
-      'Cancelada por el cliente', 
+      'Pagada',
+      'Cancelada por el usuario',
       'No asistio'
     ),
     allowNull: false,
     defaultValue: 'Agendada',
     validate: {
       isIn: {
-        args: [['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el cliente', 'No asistio']],
+        args: [['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el usuario', 'No asistio']],
         msg: 'Estado inválido'
       }
     }

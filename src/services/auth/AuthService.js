@@ -12,7 +12,7 @@ const { sequelize } = require('../../config/database');
 class AuthService {
 
   /**
-   * Registrar un nuevo usuario como cliente
+   * Registrar un nuevo usuario como usuario
    * @param {Object} userData - Datos del usuario
    * @returns {Promise<Object>} Usuario creado
    */
@@ -39,22 +39,22 @@ class AuthService {
         throw new Error('El documento ya está registrado');
       }
 
-      // Buscar el rol de cliente (asumiendo que existe un rol con ID 1 para clientes)
-      let roleId = 1; // Rol de cliente por defecto
+      // Buscar el rol de usuario (asumiendo que existe un rol con ID 1 para usuarios)
+      let roleId = 1; // Rol de usuario por defecto
       
       try {
-        const clientRole = await Role.findOne({
-          where: { 
-            nombre: 'Cliente',
+        const userRole = await Role.findOne({
+          where: {
+            nombre: 'Usuario',
             estado: true
           }
         });
         
-        if (clientRole) {
-          roleId = clientRole.id_rol;
+        if (userRole) {
+          roleId = userRole.id_rol;
         }
       } catch (error) {
-        console.warn('No se pudo verificar el rol de cliente, usando rol por defecto:', error.message);
+        console.warn('No se pudo verificar el rol de usuario, usando rol por defecto:', error.message);
         roleId = 1;
       }
 

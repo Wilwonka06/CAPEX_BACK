@@ -23,8 +23,8 @@ class CitasService {
       if (filters.fecha_hasta) whereClause.fecha_servicio[Op.lte] = filters.fecha_hasta;
     }
 
-    if (filters.id_cliente) {
-      whereClause.id_cliente = filters.id_cliente;
+    if (filters.id_usuario) {
+      whereClause.id_cliente = filters.id_usuario; // Mantener foreignKey id_cliente para compatibilidad BD
     }
 
     const { count, rows } = await Citas.findAndCountAll({
@@ -32,7 +32,7 @@ class CitasService {
       include: [
         {
           model: Usuario,
-          as: 'cliente',
+          as: 'usuario',
           attributes: ['id_usuario', 'nombre', 'telefono', 'correo']
         },
         {
@@ -81,7 +81,7 @@ class CitasService {
         include: [
           {
             model: Usuario,
-            as: 'cliente',
+            as: 'usuario',
             attributes: ['id_usuario', 'nombre', 'telefono', 'correo', 'direccion']
           },
           {
@@ -127,10 +127,10 @@ class CitasService {
     try {
       const { cita, servicios } = appointmentData;
 
-      // Validar que el cliente existe y está activo
-      const cliente = await Usuario.findByPk(cita.id_cliente);
-      if (!cliente || cliente.estado !== 'Activo') {
-        throw new Error('Cliente no encontrado o inactivo');
+      // Validar que el usuario existe y está activo
+      const usuario = await Usuario.findByPk(cita.id_cliente);
+      if (!usuario || usuario.estado !== 'Activo') {
+        throw new Error('Usuario no encontrado o inactivo');
       }
 
       // Validar servicios
@@ -170,7 +170,7 @@ class CitasService {
         const serviceData = await this.prepareServiceData(
           servicio,
           newCitas.id_cita,
-          cita.id_cliente,
+          cita.id_cliente, // id_usuario del usuario
           cita.fecha_servicio
         );
         const newService = await ServiceDetail.create(serviceData, { transaction });
@@ -208,7 +208,7 @@ class CitasService {
       }
 
       // Validar que la cita no esté finalizada o cancelada
-      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+      if (['Finalizada', 'Pagada', 'Cancelada por el usuario'].includes(appointment.estado)) {
         throw new Error('No se puede modificar una cita finalizada, pagada o cancelada');
       }
 
@@ -242,7 +242,7 @@ class CitasService {
           const serviceData = await this.prepareServiceData(
             servicio,
             id,
-            cita.id_cliente,
+            cita.id_cliente, // id_usuario del usuario
             cita.fecha_servicio
           );
           await ServiceDetail.create(serviceData, { transaction });
@@ -275,7 +275,7 @@ class CitasService {
   }
 
   // Cancelar cita
-  async cancelAppointment(id, motivo = 'Cancelada por el cliente') {
+  async cancelAppointment(id, motivo = 'Cancelada por el usuario') {
     try {
       const appointment = await Citas.findByPk(id);
       if (!appointment) {
@@ -286,21 +286,21 @@ class CitasService {
       }
 
       // Validar que se puede cancelar
-      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+      if (['Finalizada', 'Pagada', 'Cancelada por el usuario'].includes(appointment.estado)) {
         return {
           success: false,
           message: 'No se puede cancelar una cita que ya está finalizada, pagada o cancelada'
         };
       }
 
-      await appointment.update({ 
-        estado: 'Cancelada por el cliente',
+      await appointment.update({
+        estado: 'Cancelada por el usuario',
         motivo: motivo
       });
 
       // Cancelar todos los servicios asociados
       await ServiceDetail.update(
-        { estado: 'Cancelada por el cliente' },
+        { estado: 'Cancelada por el usuario' },
         { where: { id_cita: id } }
       );
 
@@ -322,7 +322,7 @@ class CitasService {
       include: [
         {
           model: Usuario,
-          as: 'cliente',
+          as: 'usuario',
           where: {
             [Op.or]: [
               { nombre: { [Op.like]: `%${query}%` } },
@@ -388,7 +388,7 @@ class CitasService {
       }
 
       // Validar que la cita no esté finalizada o cancelada
-      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+      if (['Finalizada', 'Pagada', 'Cancelada por el usuario'].includes(appointment.estado)) {
         throw new Error('No se puede agregar servicios a una cita finalizada, pagada o cancelada');
       }
 
@@ -399,7 +399,7 @@ class CitasService {
       const preparedServiceData = await this.prepareServiceData(
         serviceData,
         id,
-        appointment.id_cliente,
+        appointment.id_cliente, // id_usuario del usuario
         appointment.fecha_servicio
       );
       const newService = await ServiceDetail.create(preparedServiceData, { transaction });
@@ -459,14 +459,14 @@ class CitasService {
       }
 
       // Validar que se puede cancelar
-      if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(service.estado)) {
+      if (['Finalizada', 'Pagada', 'Cancelada por el usuario'].includes(service.estado)) {
         return {
           success: false,
           message: 'No se puede cancelar un servicio que ya está finalizado, pagado o cancelado'
         };
       }
 
-      await service.update({ estado: 'Cancelada por el cliente' });
+      await service.update({ estado: 'Cancelada por el usuario' });
 
       // Recalcular totales si hay servicios activos
       const activeServices = await ServiceDetail.findAll({
@@ -478,7 +478,7 @@ class CitasService {
 
       if (activeServices.length === 0) {
         // Si no hay servicios activos, cancelar toda la cita
-        await appointment.update({ estado: 'Cancelada por el cliente' });
+        await appointment.update({ estado: 'Cancelada por el usuario' });
       } else {
         // Recalcular totales
         const { horaSalida, valorTotal } = await this.calculateAppointmentTotals(activeServices);
@@ -580,7 +580,7 @@ class CitasService {
         where: {
           id_empleado: servicio.id_empleado,
           fecha_programada: fechaServicio,
-          estado: { [Op.notIn]: ['Cancelada por el cliente', 'No asistio'] },
+          estado: { [Op.notIn]: ['Cancelada por el usuario', 'No asistio'] },
           [Op.or]: [
             {
               hora_inicio: {
@@ -625,14 +625,14 @@ class CitasService {
   }
 
   // Preparar datos del servicio
-  async prepareServiceData(servicio, idCita, idCliente, fechaProgramada) {
+  async prepareServiceData(servicio, idCita, idUsuario, fechaProgramada) {
     const service = await Services.findByPk(servicio.id_servicio);
     
     return {
       id_empleado: servicio.id_empleado,
       id_servicio: servicio.id_servicio,
       id_cita: idCita,
-      id_cliente: idCliente || null,
+      id_cliente: idUsuario || null, // Mantener foreignKey id_cliente
       precio_unitario: servicio.precio_unitario ?? service.precio,
       cantidad: servicio.cantidad || 1,
       hora_inicio: servicio.hora_inicio,

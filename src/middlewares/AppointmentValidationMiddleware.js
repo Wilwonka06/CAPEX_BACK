@@ -21,14 +21,14 @@ const validateCreateAppointment = [
   // Validar datos de la cita
   body('cita.id_cliente')
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo')
+    .withMessage('ID del usuario debe ser un entero positivo')
     .custom(async (value) => {
-      const cliente = await Usuario.findByPk(value);
-      if (!cliente) {
-        throw new Error('Cliente no encontrado');
+      const usuario = await Usuario.findByPk(value);
+      if (!usuario) {
+        throw new Error('Usuario no encontrado');
       }
-      if (cliente.estado !== 'Activo') {
-        throw new Error('Cliente debe estar activo');
+      if (usuario.estado !== 'Activo') {
+        throw new Error('Usuario debe estar activo');
       }
       return true;
     }),
@@ -116,15 +116,15 @@ const validateUpdateAppointment = [
   body('cita.id_cliente')
     .optional()
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo')
+    .withMessage('ID del usuario debe ser un entero positivo')
     .custom(async (value) => {
       if (value) {
-        const cliente = await Usuario.findByPk(value);
-        if (!cliente) {
-          throw new Error('Cliente no encontrado');
+        const usuario = await Usuario.findByPk(value);
+        if (!usuario) {
+          throw new Error('Usuario no encontrado');
         }
-        if (cliente.estado !== 'Activo') {
-          throw new Error('Cliente debe estar activo');
+        if (usuario.estado !== 'Activo') {
+          throw new Error('Usuario debe estar activo');
         }
       }
       return true;
@@ -160,7 +160,7 @@ const validateUpdateAppointment = [
 
   body('cita.estado')
     .optional()
-    .isIn(['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el cliente', 'No asistio'])
+    .isIn(['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el usuario', 'No asistio'])
     .withMessage('Estado inválido'),
 
   // Validar servicios si se proporcionan
@@ -358,7 +358,7 @@ const validateAppointmentFilters = [
 
   query('estado')
     .optional()
-    .isIn(['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el cliente', 'No asistio'])
+    .isIn(['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el usuario', 'No asistio'])
     .withMessage('Estado inválido'),
 
   query('fecha_desde')
@@ -371,10 +371,10 @@ const validateAppointmentFilters = [
     .isISO8601()
     .withMessage('Fecha hasta debe ser una fecha válida'),
 
-  query('id_cliente')
+  query('id_usuario')
     .optional()
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo'),
+    .withMessage('ID del usuario debe ser un entero positivo'),
 
   handleValidationErrors
 ];
@@ -398,11 +398,11 @@ const validateEmployeeId = [
   handleValidationErrors
 ];
 
-// Validaciones para obtener citas por cliente
-const validateClientId = [
-  param('clientId')
+// Validaciones para obtener citas por usuario
+const validateUserId = [
+  param('userId')
     .isInt({ min: 1 })
-    .withMessage('ID del cliente debe ser un entero positivo'),
+    .withMessage('ID del usuario debe ser un entero positivo'),
 
   query('page')
     .optional()
@@ -432,7 +432,7 @@ const validateAppointmentNotFinalized = async (req, res, next) => {
     
     const appointment = appointmentResult.data;
     
-    if (['Finalizada', 'Pagada', 'Cancelada por el cliente'].includes(appointment.estado)) {
+    if (['Finalizada', 'Pagada', 'Cancelada por el usuario'].includes(appointment.estado)) {
       return res.status(403).json({
         success: false,
         message: 'No se puede modificar una cita finalizada, pagada o cancelada',
@@ -461,7 +461,7 @@ module.exports = {
   validateServiceId,
   validateAppointmentFilters,
   validateEmployeeId,
-  validateClientId,
+  validateUserId,
   validateAppointmentNotFinalized,
   handleValidationErrors
 };

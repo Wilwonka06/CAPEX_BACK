@@ -33,13 +33,13 @@ module.exports = {
       },
       estado: {
         type: Sequelize.ENUM(
-          'Agendada', 
-          'Confirmada', 
-          'Reprogramada', 
-          'En proceso', 
-          'Finalizada', 
-          'Pagada', 
-          'Cancelada por el cliente', 
+          'Agendada',
+          'Confirmada',
+          'Reprogramada',
+          'En proceso',
+          'Finalizada',
+          'Pagada',
+          'Cancelada por el usuario',
           'No asistio'
         ),
         allowNull: false,

@@ -45,15 +45,15 @@ const Citas = sequelize.define('Citas', {
       'Reprogramada', 
       'En proceso', 
       'Finalizada', 
-      'Pagada', 
-      'Cancelada por el cliente', 
+      'Pagada',
+      'Cancelada por el usuario',
       'No asistio'
     ),
     allowNull: false,
     defaultValue: 'Agendada',
     validate: {
       isIn: {
-        args: [['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el cliente', 'No asistio']],
+        args: [['Agendada', 'Confirmada', 'Reprogramada', 'En proceso', 'Finalizada', 'Pagada', 'Cancelada por el usuario', 'No asistio']],
         msg: 'Estado inválido'
       }
     }
@@ -91,7 +91,7 @@ const Citas = sequelize.define('Citas', {
   timestamps: false,
   indexes: [
     {
-      fields: ['id_cliente']
+      fields: ['id_cliente'] // Referencia a id_usuario del usuario
     },
     {
       fields: ['fecha_servicio']
