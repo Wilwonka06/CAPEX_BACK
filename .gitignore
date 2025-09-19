@@ -151,3 +151,8 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+.kilocode
+
+config/
+ config.json
